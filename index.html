@@ -438,6 +438,7 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: var(--gray-400); }
       <div class="login-logo"><span class="material-icons">inventory_2</span></div>
       <div class="login-title">Welcome Back</div>
       <div class="login-subtitle">Sign in to your account</div>
+      <div id="login-status" style="text-align:center; margin-bottom:16px; padding:10px; border-radius:8px; font-size:13px; display:none;"></div>
       <form id="login-form">
         <div class="form-group">
           <label class="form-label">Username</label>
@@ -451,11 +452,10 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: var(--gray-400); }
           <span class="material-icons">login</span> Sign In
         </button>
       </form>
-      <div style="text-align:center; margin-top:20px; font-size:12px; color:var(--gray-500);">
-        <p>Demo accounts:</p>
-        <p>admin / admin123</p>
-        <p>warehouse / warehouse123</p>
-        <p>supervisor / supervisor123</p>
+      <div id="login-info" style="text-align:center; margin-top:20px; font-size:12px; color:var(--gray-500);">
+        <p id="demo-accounts-text">Demo accounts:</p>
+        <p id="demo-accounts-list">admin / admin123<br>warehouse / warehouse123<br>supervisor / supervisor123</p>
+        <p id="api-status" style="margin-top:10px; color:var(--primary); font-weight:500;"></p>
       </div>
     </div>
   </div>
@@ -636,21 +636,21 @@ const state = {
 };
 
 const DEMO_INVENTORY = [
-  { qrCode: 'QR001', inventoryId: 'INV001', itemDescription: 'Steel Pipe 2"', category: 'Raw Materials', location: 'Warehouse A', onHand: 100, stockIn: 150, stockOut: 50, mrs: 0, finalOnHand: 100, baseUnit: 'pcs', unitCost: 25.50 },
-  { qrCode: 'QR002', inventoryId: 'INV002', itemDescription: 'PVC Fitting 1"', category: 'Raw Materials', location: 'Warehouse A', onHand: 200, stockIn: 300, stockOut: 100, mrs: 0, finalOnHand: 200, baseUnit: 'pcs', unitCost: 5.75 },
-  { qrCode: 'QR003', inventoryId: 'INV003', itemDescription: 'Welding Rod E6013', category: 'Consumables', location: 'Warehouse B', onHand: 50, stockIn: 100, stockOut: 50, mrs: 0, finalOnHand: 50, baseUnit: 'kg', unitCost: 12.00 },
-  { qrCode: 'QR004', inventoryId: 'INV004', itemDescription: 'Safety Helmet', category: 'Safety Equipment', location: 'Warehouse C', onHand: 25, stockIn: 50, stockOut: 25, mrs: 0, finalOnHand: 25, baseUnit: 'pcs', unitCost: 15.00 },
-  { qrCode: 'QR005', inventoryId: 'INV005', itemDescription: 'Cutting Disc 4"', category: 'Consumables', location: 'Warehouse B', onHand: 10, stockIn: 50, stockOut: 40, mrs: 0, finalOnHand: 10, baseUnit: 'pcs', unitCost: 3.50 },
-  { qrCode: 'QR006', inventoryId: 'INV006', itemDescription: 'Angle Grinder', category: 'Tools', location: 'Warehouse C', onHand: 5, stockIn: 10, stockOut: 5, mrs: 0, finalOnHand: 5, baseUnit: 'pcs', unitCost: 85.00 },
-  { qrCode: 'QR007', inventoryId: 'INV007', itemDescription: 'Drill Bit Set', category: 'Tools', location: 'Warehouse C', onHand: 8, stockIn: 15, stockOut: 7, mrs: 0, finalOnHand: 8, baseUnit: 'set', unitCost: 45.00 },
-  { qrCode: 'QR008', inventoryId: 'INV008', itemDescription: 'Cement 50kg', category: 'Raw Materials', location: 'Warehouse A', onHand: 0, stockIn: 200, stockOut: 200, mrs: 0, finalOnHand: 0, baseUnit: 'bag', unitCost: 8.50 },
+  { inventoryId: 'INV001', itemDescription: 'Steel Pipe 2"', category: 'Raw Materials', location: 'Warehouse A', onHand: 100, stockIn: 150, stockOut: 50, mrs: 0, finalOnHand: 100, baseUnit: 'pcs', unitCost: 25.50 },
+  { inventoryId: 'INV002', itemDescription: 'PVC Fitting 1"', category: 'Raw Materials', location: 'Warehouse A', onHand: 200, stockIn: 300, stockOut: 100, mrs: 0, finalOnHand: 200, baseUnit: 'pcs', unitCost: 5.75 },
+  { inventoryId: 'INV003', itemDescription: 'Welding Rod E6013', category: 'Consumables', location: 'Warehouse B', onHand: 50, stockIn: 100, stockOut: 50, mrs: 0, finalOnHand: 50, baseUnit: 'kg', unitCost: 12.00 },
+  { inventoryId: 'INV004', itemDescription: 'Safety Helmet', category: 'Safety Equipment', location: 'Warehouse C', onHand: 25, stockIn: 50, stockOut: 25, mrs: 0, finalOnHand: 25, baseUnit: 'pcs', unitCost: 15.00 },
+  { inventoryId: 'INV005', itemDescription: 'Cutting Disc 4"', category: 'Consumables', location: 'Warehouse B', onHand: 10, stockIn: 50, stockOut: 40, mrs: 0, finalOnHand: 10, baseUnit: 'pcs', unitCost: 3.50 },
+  { inventoryId: 'INV006', itemDescription: 'Angle Grinder', category: 'Tools', location: 'Warehouse C', onHand: 5, stockIn: 10, stockOut: 5, mrs: 0, finalOnHand: 5, baseUnit: 'pcs', unitCost: 85.00 },
+  { inventoryId: 'INV007', itemDescription: 'Drill Bit Set', category: 'Tools', location: 'Warehouse C', onHand: 8, stockIn: 15, stockOut: 7, mrs: 0, finalOnHand: 8, baseUnit: 'set', unitCost: 45.00 },
+  { inventoryId: 'INV008', itemDescription: 'Cement 50kg', category: 'Raw Materials', location: 'Warehouse A', onHand: 0, stockIn: 200, stockOut: 200, mrs: 0, finalOnHand: 0, baseUnit: 'bag', unitCost: 8.50 },
 ];
 
 const DEMO_TRANSACTIONS = [
-  { date: new Date(Date.now() - 86400000 * 2), inventoryId: 'INV001', itemDescription: 'Steel Pipe 2"', type: 'Stock In', qty: 50, balance: 150, user: 'admin', remarks: 'Initial stock' },
-  { date: new Date(Date.now() - 86400000 * 1), inventoryId: 'INV001', itemDescription: 'Steel Pipe 2"', type: 'Stock Out', qty: 30, balance: 120, user: 'warehouse', remarks: 'Project X' },
-  { date: new Date(Date.now() - 86400000 * 1), inventoryId: 'INV002', itemDescription: 'PVC Fitting 1"', type: 'Stock In', qty: 100, balance: 300, user: 'admin', remarks: 'Delivery' },
-  { date: new Date(), inventoryId: 'INV003', itemDescription: 'Welding Rod E6013', type: 'Stock Out', qty: 20, balance: 30, user: 'warehouse', remarks: 'Maintenance' },
+  { date: new Date(Date.now() - 86400000 * 2), inventoryId: 'INV001', itemDescription: 'Steel Pipe 2"', type: 'Stock In', qty: 50, user: 'admin', remarks: 'Initial stock' },
+  { date: new Date(Date.now() - 86400000 * 1), inventoryId: 'INV001', itemDescription: 'Steel Pipe 2"', type: 'Stock Out', qty: 30, user: 'warehouse', remarks: 'Project X' },
+  { date: new Date(Date.now() - 86400000 * 1), inventoryId: 'INV002', itemDescription: 'PVC Fitting 1"', type: 'Stock In', qty: 100, user: 'admin', remarks: 'Delivery' },
+  { date: new Date(), inventoryId: 'INV003', itemDescription: 'Welding Rod E6013', type: 'Stock Out', qty: 20, user: 'warehouse', remarks: 'Maintenance' },
 ];
 
 // --- INITIALIZATION ---
@@ -693,6 +693,9 @@ function initConfig() {
     if (saved) CONFIG.API_URL = saved;
   }
   if (CONFIG.API_URL) CONFIG.DEMO_MODE = false;
+
+  // Update login page to show connection status
+  setTimeout(updateLoginStatus, 100);
 }
 
 function initDarkMode() {
@@ -718,9 +721,11 @@ async function handleLogin(e) {
   const username = document.getElementById('login-username').value;
   const password = document.getElementById('login-password').value;
   const btn = document.getElementById('login-btn');
+  const statusDiv = document.getElementById('login-status');
 
   btn.disabled = true;
   btn.innerHTML = '<span class="material-icons">hourglass_top</span> Signing in...';
+  statusDiv.style.display = 'none';
 
   const result = await apiCall('login', { username, password });
 
@@ -730,11 +735,45 @@ async function handleLogin(e) {
     showToast('Welcome, ' + result.user.name + '!', 'success');
     showApp();
   } else {
+    // Show detailed error in the status div
+    statusDiv.style.display = 'block';
+    statusDiv.style.background = '#fee2e2';
+    statusDiv.style.color = '#991b1b';
+    statusDiv.style.border = '1px solid #fecaca';
+
+    let errorMsg = result.error || 'Login failed';
+    if (!CONFIG.API_URL) {
+      errorMsg += '
+
+App is in DEMO mode. Only these accounts work:
+admin, warehouse, supervisor';
+    } else {
+      errorMsg += '
+
+Make sure this user exists in your Google Sheet\'s Users tab.';
+    }
+    statusDiv.textContent = errorMsg;
     showToast(result.error || 'Login failed', 'error');
   }
 
   btn.disabled = false;
   btn.innerHTML = '<span class="material-icons">login</span> Sign In';
+}
+
+function updateLoginStatus() {
+  const apiStatus = document.getElementById('api-status');
+  const demoText = document.getElementById('demo-accounts-text');
+  const demoList = document.getElementById('demo-accounts-list');
+
+  if (CONFIG.API_URL) {
+    apiStatus.innerHTML = 'Connected to: ' + CONFIG.API_URL.substring(0, 35) + '...';
+    apiStatus.style.color = '#22c55e';
+    demoText.textContent = 'Using real accounts from Google Sheet';
+    demoList.innerHTML = 'Add users in the "Users" sheet';
+  } else {
+    apiStatus.innerHTML = 'DEMO MODE - Not connected to backend';
+    apiStatus.style.color = '#f59e0b';
+  }
 }
 
 function logout() {
@@ -820,7 +859,7 @@ function simulateApiResponse(action, data) {
         }
         if (data.filters.search) {
           const s = data.filters.search.toLowerCase();
-          items = items.filter(i => i.itemDescription.toLowerCase().includes(s) || i.inventoryId.toLowerCase().includes(s) || i.qrCode.toLowerCase().includes(s));
+          items = items.filter(i => i.itemDescription.toLowerCase().includes(s) || i.inventoryId.toLowerCase().includes(s));
         }
       }
       const page = data.page || 1;
@@ -829,7 +868,7 @@ function simulateApiResponse(action, data) {
       return { success: true, data: items.slice(start, start + limit), pagination: { page: page, limit: limit, total: items.length, pages: Math.ceil(items.length / limit) } };
 
     case 'getItemByQR':
-      const item = DEMO_INVENTORY.find(i => i.qrCode === data.qrCode || i.inventoryId === data.qrCode);
+      const item = DEMO_INVENTORY.find(i => i.inventoryId === data.qrCode);
       return item ? { success: true, data: item } : { success: false, error: 'Item not found' };
 
     case 'searchItem':
@@ -844,22 +883,17 @@ function simulateApiResponse(action, data) {
       const qty = parseInt(data.qty);
       if (action === 'stockIn') {
         invItem.stockIn += qty;
-        invItem.onHand += qty;
-        invItem.finalOnHand += qty;
       } else if (action === 'stockOut') {
-        if (invItem.onHand < qty) return { success: false, error: 'Insufficient stock' };
         invItem.stockOut += qty;
-        invItem.onHand -= qty;
-        invItem.finalOnHand -= qty;
       } else {
         invItem.mrs += qty;
-        invItem.onHand += qty;
-        invItem.finalOnHand += qty;
       }
+      // Final on-hand is computed by formula in real sheet
+      invItem.finalOnHand = invItem.onHand + invItem.stockIn - invItem.stockOut + invItem.mrs;
       DEMO_TRANSACTIONS.unshift({
         date: new Date(), inventoryId: data.inventoryId, itemDescription: invItem.itemDescription,
         type: action === 'stockIn' ? 'Stock In' : action === 'stockOut' ? 'Stock Out' : 'MRS Return',
-        qty: qty, balance: invItem.finalOnHand, user: data.user || 'demo', remarks: data.remarks || ''
+        qty: qty, user: data.user || 'demo', remarks: data.remarks || ''
       });
       return { success: true, message: action + ' successful' };
 
@@ -1057,11 +1091,10 @@ async function showMaterialDetail(inventoryId) {
 
   document.getElementById('material-detail-content').innerHTML = `
     <div class="material-card">
-      <div class="material-card-qr"><div class="material-card-qr-code">${item.qrCode}</div></div>
       <div class="material-card-title">${item.itemDescription}</div>
       <div class="material-card-id">${item.inventoryId} | ${item.category}</div>
       <div class="material-card-stats">
-        <div><div class="material-card-stat-value">${item.finalOnHand}</div><div class="material-card-stat-label">On Hand</div></div>
+        <div><div class="material-card-stat-value">${item.finalOnHand}</div><div class="material-card-stat-label">Final On Hand</div></div>
         <div><div class="material-card-stat-value">${item.stockIn}</div><div class="material-card-stat-label">Stock In</div></div>
         <div><div class="material-card-stat-value">${item.stockOut}</div><div class="material-card-stat-label">Stock Out</div></div>
       </div>
@@ -1078,7 +1111,7 @@ async function showMaterialDetail(inventoryId) {
           <div class="timeline-item ${t.type === 'Stock In' ? 'in' : t.type === 'Stock Out' ? 'out' : 'mrs'}">
             <div class="timeline-date">${new Date(t.date).toLocaleString()}</div>
             <div class="timeline-content">${t.type} - ${t.qty} ${item.baseUnit}</div>
-            <div class="timeline-meta">Balance: ${t.balance} | ${t.user}</div>
+            <div class="timeline-meta">By: ${t.user}</div>
           </div>
         `).join('') : '<div style="color:var(--gray-500); font-size:13px;">No history found</div>'}
       </div>
