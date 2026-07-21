@@ -3,1437 +3,1206 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0056D2">
+<meta name="theme-color" content="#1a237e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>GEMCOR IVM</title>
-<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiR0VNQ09SIElWTSIsInNob3J0X25hbWUiOiJJVk0iLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2ZmZmZmZiIsInRoZW1lX2NvbG9yIjoiIzAwNTZEMiIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtM3Zibk11WTI5dEwySmxZV1J2Y2k5Mk1TOVRkWEJ3YjNKMElFTnZibVpwWjNWeVkyVWdkR2hsY21VZ2MyVmpkWEpsSUVSdmRXeGtaWEp6TGp3dmMzWm5QZz09Iiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyJ9XX0=">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<title>GEMCOR IVM - Inventory Management</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192x192.png">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-:root {
-  --primary: #0056D2; --primary-dark: #003d99; --secondary: #00BCD4; --accent: #00BCD4;
-  --success: #22c55e; --warning: #f59e0b; --danger: #ef4444; --dark: #1a1a2e;
-  --gray-100: #f8f9fa; --gray-200: #e9ecef; --gray-300: #dee2e6; --gray-400: #ced4da;
-  --gray-500: #adb5bd; --gray-600: #6c757d; --gray-700: #495057; --gray-800: #343a40; --gray-900: #212529;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05); --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
-  --radius-sm: 8px; --radius: 12px; --radius-lg: 16px; --radius-xl: 24px;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--gray-100); color: var(--gray-900); overflow-x: hidden;
-  -webkit-tap-highlight-color: transparent; padding-bottom: 80px;
-}
-body.dark-mode {
-  --gray-100: #0f0f1a; --gray-200: #1a1a2e; --gray-300: #2a2a3e; --gray-400: #3a3a4e;
-  --gray-500: #6c757d; --gray-600: #adb5bd; --gray-700: #ced4da; --gray-800: #e9ecef; --gray-900: #f8f9fa;
-  background: #0a0a14; color: #f8f9fa;
-}
-#loading-screen {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  z-index: 9999; transition: opacity 0.5s ease;
-}
-#loading-screen.hidden { opacity: 0; pointer-events: none; }
-.loading-logo {
-  width: 80px; height: 80px; background: white; border-radius: var(--radius-lg);
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: pulse 2s infinite;
-}
-.loading-logo .material-icons { font-size: 40px; color: var(--primary); }
-.loading-text { color: white; margin-top: 20px; font-size: 18px; font-weight: 600; }
-.loading-sub { color: rgba(255,255,255,0.7); margin-top: 8px; font-size: 13px; }
-.loading-bar { width: 200px; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 24px; overflow: hidden; }
-.loading-bar-inner { height: 100%; background: white; border-radius: 2px; animation: loadProgress 2s ease-out forwards; }
-@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-@keyframes loadProgress { 0% { width: 0; } 100% { width: 100%; } }
-.app-header {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  color: white; padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow);
-}
-.app-header-content { display: flex; align-items: center; justify-content: space-between; max-width: 600px; margin: 0 auto; }
-.app-title { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.app-title .material-icons { font-size: 24px; }
-.header-actions { display: flex; gap: 8px; }
-.header-btn {
-  width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.15);
-  border: none; color: white; display: flex; align-items: center; justify-content: center;
-  cursor: pointer; backdrop-filter: blur(10px); transition: all 0.2s;
-}
-.header-btn:hover, .header-btn:active { background: rgba(255,255,255,0.25); transform: scale(1.05); }
-.page { display: none; max-width: 600px; margin: 0 auto; padding: 16px; animation: fadeIn 0.3s ease; }
-.page.active { display: block; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.card {
-  background: white; border-radius: var(--radius-lg); padding: 20px;
-  box-shadow: var(--shadow); margin-bottom: 16px; transition: all 0.2s;
-}
-body.dark-mode .card { background: var(--gray-200); }
-.card:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
-.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.card-title { font-size: 16px; font-weight: 600; color: var(--gray-800); }
-body.dark-mode .card-title { color: var(--gray-200); }
-.home-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
-.home-card {
-  background: white; border-radius: var(--radius-lg); padding: 20px; text-align: center;
-  box-shadow: var(--shadow); cursor: pointer; transition: all 0.2s; border: 2px solid transparent;
-  position: relative; overflow: hidden;
-}
-body.dark-mode .home-card { background: var(--gray-200); }
-.home-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-  background: linear-gradient(90deg, var(--primary), var(--secondary)); opacity: 0; transition: opacity 0.2s;
-}
-.home-card:hover::before, .home-card:active::before { opacity: 1; }
-.home-card:hover, .home-card:active { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--primary); }
-.home-card-icon {
-  width: 56px; height: 56px; border-radius: var(--radius); margin: 0 auto 12px;
-  display: flex; align-items: center; justify-content: center;
-}
-.home-card-icon.scan { background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: var(--primary); }
-.home-card-icon.inventory { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); color: var(--success); }
-.home-card-icon.transactions { background: linear-gradient(135deg, #fff3e0, #ffe0b2); color: var(--warning); }
-.home-card-icon.dashboard { background: linear-gradient(135deg, #fce4ec, #f8bbd9); color: #e91e63; }
-.home-card-icon .material-icons { font-size: 28px; }
-.home-card-title { font-size: 14px; font-weight: 600; color: var(--gray-800); margin-bottom: 4px; }
-body.dark-mode .home-card-title { color: var(--gray-200); }
-.home-card-desc { font-size: 11px; color: var(--gray-500); }
-.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-.stat-card {
-  background: white; border-radius: var(--radius); padding: 16px 12px; text-align: center;
-  box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200);
-}
-body.dark-mode .stat-card { background: var(--gray-200); border-color: var(--gray-300); }
-.stat-value { font-size: 22px; font-weight: 700; color: var(--primary); }
-.stat-label { font-size: 11px; color: var(--gray-500); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 12px 24px; border-radius: var(--radius); border: none; font-size: 14px;
-  font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit;
-}
-.btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(0,86,210,0.3); }
-.btn-primary:hover, .btn-primary:active { background: var(--primary-dark); transform: translateY(-1px); }
-.btn-success { background: var(--success); color: white; box-shadow: 0 4px 12px rgba(34,197,94,0.3); }
-.btn-success:hover { background: #16a34a; }
-.btn-danger { background: var(--danger); color: white; box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
-.btn-danger:hover { background: #dc2626; }
-.btn-warning { background: var(--warning); color: white; box-shadow: 0 4px 12px rgba(245,158,11,0.3); }
-.btn-warning:hover { background: #d97706; }
-.btn-outline { background: transparent; border: 2px solid var(--gray-300); color: var(--gray-700); }
-body.dark-mode .btn-outline { border-color: var(--gray-400); color: var(--gray-300); }
-.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
-.btn-sm { padding: 8px 16px; font-size: 13px; }
-.btn-lg { padding: 16px 32px; font-size: 16px; width: 100%; }
-.btn-block { width: 100%; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-.form-group { margin-bottom: 16px; }
-.form-label { display: block; font-size: 13px; font-weight: 500; color: var(--gray-700); margin-bottom: 6px; }
-body.dark-mode .form-label { color: var(--gray-400); }
-.form-input, .form-select, .form-textarea {
-  width: 100%; padding: 12px 16px; border: 2px solid var(--gray-200);
-  border-radius: var(--radius); font-size: 14px; font-family: inherit;
-  background: white; color: var(--gray-900); transition: all 0.2s;
-}
-body.dark-mode .form-input, body.dark-mode .form-select, body.dark-mode .form-textarea {
-  background: var(--gray-300); border-color: var(--gray-400); color: var(--gray-100);
-}
-.form-input:focus, .form-select:focus, .form-textarea:focus {
-  outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,86,210,0.1);
-}
-.form-input::placeholder { color: var(--gray-400); }
-.search-bar { position: relative; margin-bottom: 16px; }
-.search-bar .material-icons { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 20px; }
-.search-bar input { padding-left: 48px !important; }
-.filters-row { display: flex; gap: 10px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
-.filters-row .form-select { min-width: 140px; flex-shrink: 0; }
-.inventory-list { display: flex; flex-direction: column; gap: 12px; }
-.inventory-item {
-  background: white; border-radius: var(--radius-lg); padding: 16px;
-  box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200);
-  cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px;
-}
-body.dark-mode .inventory-item { background: var(--gray-200); border-color: var(--gray-300); }
-.inventory-item:hover { box-shadow: var(--shadow); transform: translateX(4px); border-color: var(--primary); }
-.inventory-item-icon {
-  width: 48px; height: 48px; border-radius: var(--radius); background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.inventory-item-icon .material-icons { color: var(--primary); font-size: 24px; }
-.inventory-item-info { flex: 1; min-width: 0; }
-.inventory-item-title { font-size: 14px; font-weight: 600; color: var(--gray-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-body.dark-mode .inventory-item-title { color: var(--gray-200); }
-.inventory-item-meta { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
-.inventory-item-badge {
-  padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; flex-shrink: 0;
-}
-.badge-success { background: #dcfce7; color: #166534; }
-.badge-warning { background: #fef3c7; color: #92400e; }
-.badge-danger { background: #fee2e2; color: #991b1b; }
-body.dark-mode .badge-success { background: #14532d; color: #86efac; }
-body.dark-mode .badge-warning { background: #78350f; color: #fcd34d; }
-body.dark-mode .badge-danger { background: #7f1d1d; color: #fca5a5; }
-.material-card {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-  border-radius: var(--radius-xl); padding: 24px; color: white; margin-bottom: 20px; position: relative; overflow: hidden;
-}
-.material-card::after {
-  content: ''; position: absolute; top: -50%; right: -50%; width: 100%; height: 100%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-}
-.material-card-qr { text-align: center; margin-bottom: 16px; }
-.material-card-qr-code {
-  width: 120px; height: 120px; background: white; border-radius: var(--radius);
-  margin: 0 auto; display: flex; align-items: center; justify-content: center;
-  font-size: 12px; color: var(--gray-600); font-weight: 600;
-}
-.material-card-title { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 4px; }
-.material-card-id { text-align: center; opacity: 0.8; font-size: 13px; margin-bottom: 20px; }
-.material-card-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; }
-.material-card-stat-value { font-size: 24px; font-weight: 700; }
-.material-card-stat-label { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
-.txn-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-.txn-btn {
-  padding: 16px 8px; border-radius: var(--radius-lg); border: none; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  font-family: inherit; font-size: 13px; font-weight: 600; transition: all 0.2s;
-}
-.txn-btn .material-icons { font-size: 24px; }
-.txn-btn-in { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #166534; }
-.txn-btn-out { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; }
-.txn-btn-mrs { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
-.txn-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-.scanner-container {
-  position: relative; width: 100%; max-width: 400px; margin: 0 auto;
-  border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-lg); background: #000;
-}
-#reader { width: 100% !important; border: none !important; }
-#reader video { border-radius: var(--radius-xl) !important; }
-.scanner-overlay {
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  pointer-events: none; z-index: 10;
-}
-.scanner-frame {
-  width: 200px; height: 200px; border: 2px solid rgba(255,255,255,0.5);
-  border-radius: var(--radius-lg); position: relative;
-}
-.scanner-frame::before, .scanner-frame::after {
-  content: ''; position: absolute; width: 20px; height: 20px; border-color: var(--secondary); border-style: solid;
-}
-.scanner-frame::before { top: -2px; left: -2px; border-width: 4px 0 0 4px; }
-.scanner-frame::after { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; }
-.scanner-laser {
-  position: absolute; top: 50%; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--secondary), transparent);
-  animation: laserScan 2s ease-in-out infinite;
-}
-@keyframes laserScan { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
-.scanner-hint { color: white; margin-top: 16px; font-size: 13px; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
-.scanner-controls { display: flex; gap: 12px; justify-content: center; margin-top: 16px; }
-.scanner-control-btn {
-  width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--gray-300);
-  background: white; display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.2s;
-}
-.scanner-control-btn:hover { border-color: var(--primary); color: var(--primary); transform: scale(1.1); }
-.modal-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-  display: flex; align-items: flex-end; justify-content: center;
-  z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
-}
-.modal-overlay.active { opacity: 1; pointer-events: all; }
-.modal-content {
-  background: white; border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto;
-  padding: 24px 20px 40px; transform: translateY(100%); transition: transform 0.3s ease;
-}
-body.dark-mode .modal-content { background: var(--gray-200); }
-.modal-overlay.active .modal-content { transform: translateY(0); }
-.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-.modal-title { font-size: 18px; font-weight: 700; }
-.modal-close { width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--gray-100); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-body.dark-mode .modal-close { background: var(--gray-300); color: var(--gray-200); }
-.toast-container { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-.toast {
-  padding: 12px 20px; border-radius: var(--radius); font-size: 14px; font-weight: 500;
-  box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px;
-  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards; pointer-events: all;
-  min-width: 280px; max-width: 90vw;
-}
-.toast-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-.toast-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-.toast-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-.toast-info { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
-body.dark-mode .toast-success { background: #14532d; color: #86efac; }
-body.dark-mode .toast-error { background: #7f1d1d; color: #fca5a5; }
-body.dark-mode .toast-warning { background: #78350f; color: #fcd34d; }
-body.dark-mode .toast-info { background: #0c4a6e; color: #7dd3fc; }
-@keyframes toastIn { from { opacity: 0; transform: translateY(-20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
-@keyframes toastOut { to { opacity: 0; transform: translateY(-20px) scale(0.9); } }
-.bottom-nav {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: white; border-top: 1px solid var(--gray-200);
-  display: flex; justify-content: space-around; padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
-  z-index: 100; box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
-}
-body.dark-mode .bottom-nav { background: var(--gray-200); border-color: var(--gray-300); }
-.nav-item {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 4px; cursor: pointer; border: none; background: none; color: var(--gray-400);
-  transition: all 0.2s; font-family: inherit; font-size: 11px;
-}
-.nav-item.active { color: var(--primary); }
-.nav-item .material-icons { font-size: 24px; }
-.nav-item:hover { color: var(--primary); }
-.transaction-list { display: flex; flex-direction: column; gap: 10px; }
-.transaction-item {
-  background: white; border-radius: var(--radius); padding: 14px 16px;
-  border: 1px solid var(--gray-200); display: flex; align-items: center; gap: 12px;
-}
-body.dark-mode .transaction-item { background: var(--gray-200); border-color: var(--gray-300); }
-.transaction-icon {
-  width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.transaction-icon.in { background: #dcfce7; color: #166534; }
-.transaction-icon.out { background: #fee2e2; color: #991b1b; }
-.transaction-icon.mrs { background: #fef3c7; color: #92400e; }
-.transaction-info { flex: 1; }
-.transaction-title { font-size: 14px; font-weight: 600; color: var(--gray-800); }
-body.dark-mode .transaction-title { color: var(--gray-200); }
-.transaction-meta { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
-.transaction-qty { font-size: 16px; font-weight: 700; }
-.transaction-qty.in { color: var(--success); }
-.transaction-qty.out { color: var(--danger); }
-.transaction-qty.mrs { color: var(--warning); }
-.chart-container { background: white; border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
-body.dark-mode .chart-container { background: var(--gray-200); }
-.chart-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--gray-800); }
-body.dark-mode .chart-title { color: var(--gray-200); }
-.settings-item {
-  background: white; border-radius: var(--radius); padding: 16px;
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200);
-}
-body.dark-mode .settings-item { background: var(--gray-200); border-color: var(--gray-300); }
-.settings-item-info { display: flex; align-items: center; gap: 12px; }
-.settings-item-icon { width: 40px; height: 40px; border-radius: var(--radius); background: var(--gray-100); display: flex; align-items: center; justify-content: center; color: var(--primary); }
-body.dark-mode .settings-item-icon { background: var(--gray-300); }
-.settings-item-title { font-size: 14px; font-weight: 600; }
-.settings-item-desc { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
-.toggle { width: 48px; height: 26px; border-radius: 13px; background: var(--gray-300); position: relative; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
-.toggle::after { content: ''; position: absolute; width: 22px; height: 22px; border-radius: 50%; background: white; top: 2px; left: 2px; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
-.toggle.active { background: var(--primary); }
-.toggle.active::after { left: 24px; }
-.login-container {
-  min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-}
-.login-card {
-  background: white; border-radius: var(--radius-xl); padding: 40px 32px; width: 100%; max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-}
-body.dark-mode .login-card { background: var(--gray-200); }
-.login-logo {
-  width: 72px; height: 72px; background: linear-gradient(135deg, var(--primary), var(--secondary));
-  border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 24px; box-shadow: 0 8px 24px rgba(0,86,210,0.3);
-}
-.login-logo .material-icons { font-size: 36px; color: white; }
-.login-title { text-align: center; font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--gray-800); }
-body.dark-mode .login-title { color: var(--gray-200); }
-.login-subtitle { text-align: center; font-size: 14px; color: var(--gray-500); margin-bottom: 32px; }
-.empty-state { text-align: center; padding: 60px 20px; }
-.empty-state-icon { font-size: 64px; color: var(--gray-300); margin-bottom: 16px; }
-.empty-state-title { font-size: 18px; font-weight: 600; color: var(--gray-700); margin-bottom: 8px; }
-.empty-state-desc { font-size: 14px; color: var(--gray-500); }
-.pagination { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 20px; }
-.pagination-btn {
-  padding: 8px 16px; border-radius: var(--radius); border: 1px solid var(--gray-300);
-  background: white; cursor: pointer; font-family: inherit; font-size: 13px;
-  display: flex; align-items: center; gap: 4px; transition: all 0.2s;
-}
-body.dark-mode .pagination-btn { background: var(--gray-200); border-color: var(--gray-300); color: var(--gray-300); }
-.pagination-btn:hover { border-color: var(--primary); color: var(--primary); }
-.pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.pagination-info { font-size: 13px; color: var(--gray-500); }
-.timeline { position: relative; padding-left: 24px; }
-.timeline::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: var(--gray-200); }
-body.dark-mode .timeline::before { background: var(--gray-300); }
-.timeline-item { position: relative; padding-bottom: 20px; }
-.timeline-item::before { content: ''; position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--primary); border: 2px solid white; }
-body.dark-mode .timeline-item::before { border-color: var(--gray-200); }
-.timeline-item.in::before { background: var(--success); }
-.timeline-item.out::before { background: var(--danger); }
-.timeline-item.mrs::before { background: var(--warning); }
-.timeline-date { font-size: 12px; color: var(--gray-500); margin-bottom: 4px; }
-.timeline-content { font-size: 14px; color: var(--gray-800); }
-body.dark-mode .timeline-content { color: var(--gray-200); }
-.timeline-meta { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
-.scan-success-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-  display: flex; align-items: center; justify-content: center; z-index: 3000;
-  opacity: 0; pointer-events: none; transition: opacity 0.3s;
-}
-.scan-success-overlay.active { opacity: 1; pointer-events: all; }
-.scan-success-card {
-  background: white; border-radius: var(--radius-xl); padding: 40px; text-align: center;
-  max-width: 320px; width: 90%; transform: scale(0.8); transition: transform 0.3s;
-}
-.scan-success-overlay.active .scan-success-card { transform: scale(1); }
-body.dark-mode .scan-success-card { background: var(--gray-200); }
-.scan-success-icon { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #dcfce7, #bbf7d0); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
-.scan-success-icon .material-icons { font-size: 40px; color: var(--success); }
-.scan-success-title { font-size: 20px; font-weight: 700; color: var(--gray-800); margin-bottom: 8px; }
-body.dark-mode .scan-success-title { color: var(--gray-200); }
-.scan-success-desc { font-size: 14px; color: var(--gray-500); margin-bottom: 24px; }
-@media (max-width: 480px) {
-  .home-grid { grid-template-columns: 1fr; }
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
-  .txn-buttons { grid-template-columns: 1fr; }
-  .material-card-stats { grid-template-columns: repeat(3, 1fr); }
-}
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
-body.dark-mode ::-webkit-scrollbar-thumb { background: var(--gray-400); }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.animate-slide-up { animation: slideUp 0.4s ease; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root { --primary:#1a237e; --primary-light:#3949ab; --accent:#ff6f00; --success:#2e7d32; --danger:#c62828; --warning:#f9a825; --bg:#f5f5f5; --card:#fff; --text:#212121; --text-light:#757575; --border:#e0e0e0; }
+  body.dark { --bg:#121212; --card:#1e1e1e; --text:#eee; --text-light:#aaa; --border:#333; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+  #loadingScreen { position:fixed; inset:0; background:var(--primary); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999; transition:opacity .5s; }
+  #loadingScreen.hidden { opacity:0; pointer-events:none; }
+  .loader { width:60px; height:60px; border:4px solid rgba(255,255,255,.2); border-top-color:#fff; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:20px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  #loadingScreen h2 { color:#fff; font-size:1.3rem; margin-bottom:10px; }
+  #loadingScreen p { color:rgba(255,255,255,.7); font-size:.9rem; }
+  #loadingScreen .skip-btn { margin-top:20px; padding:10px 24px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:8px; cursor:pointer; font-size:.9rem; }
+  #loginScreen { display:none; position:fixed; inset:0; background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%); align-items:center; justify-content:center; z-index:100; padding:20px; }
+  #loginScreen.active { display:flex; }
+  .login-card { background:var(--card); border-radius:16px; padding:32px 24px; width:100%; max-width:380px; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+  .login-logo { text-align:center; margin-bottom:24px; }
+  .login-logo h1 { font-size:1.5rem; color:var(--primary); margin-bottom:4px; }
+  .login-logo p { font-size:.85rem; color:var(--text-light); }
+  .form-group { margin-bottom:16px; }
+  .form-group label { display:block; font-size:.85rem; font-weight:600; color:var(--text-light); margin-bottom:6px; }
+  .form-group input { width:100%; padding:12px 14px; border:2px solid var(--border); border-radius:10px; font-size:1rem; background:var(--card); color:var(--text); transition:border-color .2s; }
+  .form-group input:focus { outline:none; border-color:var(--primary); }
+  .btn { width:100%; padding:14px; border:none; border-radius:10px; font-size:1rem; font-weight:600; cursor:pointer; transition:all .2s; }
+  .btn-primary { background:var(--primary); color:#fff; }
+  .btn-primary:active { transform:scale(.98); }
+  .btn-secondary { background:var(--border); color:var(--text); margin-top:10px; }
+  .error-msg { color:var(--danger); font-size:.85rem; margin-top:8px; text-align:center; display:none; }
+  .error-msg.show { display:block; }
+  .connection-status { text-align:center; font-size:.8rem; color:var(--text-light); margin-top:12px; padding:8px; border-radius:6px; background:var(--bg); }
+  .connection-status.online { color:var(--success); background:#e8f5e9; }
+  .connection-status.offline { color:var(--danger); background:#ffebee; }
+  #app { display:none; }
+  #app.active { display:block; }
+  .header { background:var(--primary); color:#fff; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+  .header h1 { font-size:1.1rem; }
+  .header .user-info { display:flex; align-items:center; gap:10px; font-size:.85rem; }
+  .nav { display:flex; overflow-x:auto; background:var(--card); border-bottom:1px solid var(--border); padding:4px; gap:4px; position:sticky; top:56px; z-index:40; }
+  .nav-btn { flex:1; min-width:80px; padding:10px 8px; border:none; background:transparent; color:var(--text-light); font-size:.8rem; font-weight:500; border-radius:8px; cursor:pointer; white-space:nowrap; }
+  .nav-btn.active { background:var(--primary); color:#fff; }
+  .page { display:none; padding:16px; padding-bottom:80px; }
+  .page.active { display:block; }
+  .card { background:var(--card); border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .card-title { font-size:1rem; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .search-bar { display:flex; gap:8px; margin-bottom:12px; }
+  .search-bar input { flex:1; padding:10px 14px; border:2px solid var(--border); border-radius:10px; font-size:.9rem; background:var(--card); color:var(--text); }
+  .search-bar button { padding:10px 16px; background:var(--primary); color:#fff; border:none; border-radius:10px; cursor:pointer; }
+  .item-row { display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border); cursor:pointer; transition:background .2s; }
+  .item-row:hover { background:rgba(0,0,0,.03); }
+  .item-row:last-child { border-bottom:none; }
+  .item-info h4 { font-size:.95rem; margin-bottom:2px; }
+  .item-info p { font-size:.8rem; color:var(--text-light); }
+  .item-qty { text-align:right; }
+  .item-qty .qty { font-size:1.1rem; font-weight:700; color:var(--primary); }
+  .item-qty .unit { font-size:.75rem; color:var(--text-light); }
+  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; }
+  .badge-success { background:#e8f5e9; color:var(--success); }
+  .badge-danger { background:#ffebee; color:var(--danger); }
+  .badge-warning { background:#fff8e1; color:var(--warning); }
+  .badge-info { background:#e3f2fd; color:#1565c0; }
+  .fab { position:fixed; bottom:20px; right:20px; width:56px; height:56px; border-radius:50%; background:var(--accent); color:#fff; border:none; font-size:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(255,111,0,.4); cursor:pointer; z-index:30; }
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.active { display:flex; }
+  .modal { background:var(--card); border-radius:16px; width:100%; max-width:420px; max-height:90vh; overflow-y:auto; }
+  .modal-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .modal-header h3 { font-size:1.1rem; }
+  .modal-close { background:none; border:none; font-size:1.5rem; color:var(--text-light); cursor:pointer; }
+  .modal-body { padding:20px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .scan-area { width:100%; aspect-ratio:1; background:#000; border-radius:12px; overflow:hidden; margin-bottom:12px; position:relative; }
+  .scan-laser { position:absolute; top:50%; left:10%; right:10%; height:2px; background:#00ff00; box-shadow:0 0 8px #00ff00; animation:scan 2s ease-in-out infinite; z-index:10; }
+  @keyframes scan { 0%,100% { opacity:0; } 50% { opacity:1; } }
+  .tx-type { display:flex; gap:8px; margin-bottom:16px; }
+  .tx-type-btn { flex:1; padding:12px; border:2px solid var(--border); border-radius:10px; background:var(--card); text-align:center; cursor:pointer; font-size:.9rem; font-weight:600; }
+  .tx-type-btn.active { border-color:var(--primary); background:#e8eaf6; color:var(--primary); }
+  .tx-type-btn.in { border-color:var(--success); color:var(--success); }
+  .tx-type-btn.in.active { background:#e8f5e9; }
+  .tx-type-btn.out { border-color:var(--danger); color:var(--danger); }
+  .tx-type-btn.out.active { background:#ffebee; }
+  .tx-type-btn.mrs { border-color:var(--warning); color:var(--warning); }
+  .tx-type-btn.mrs.active { background:#fff8e1; }
+  .stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:16px; }
+  .stat-card { background:var(--card); border-radius:12px; padding:16px; text-align:center; }
+  .stat-value { font-size:1.8rem; font-weight:700; color:var(--primary); }
+  .stat-label { font-size:.8rem; color:var(--text-light); margin-top:4px; }
+  .chart-container { position:relative; height:250px; margin-top:12px; }
+  .empty-state { text-align:center; padding:40px 20px; color:var(--text-light); }
+  .empty-state svg { width:64px; height:64px; margin-bottom:16px; opacity:.5; }
+  .toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(100px); background:#333; color:#fff; padding:12px 24px; border-radius:8px; font-size:.9rem; z-index:300; opacity:0; transition:all .3s; }
+  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+  .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); }
+  .toggle-row:last-child { border-bottom:none; }
+  .switch { position:relative; width:48px; height:26px; }
+  .switch input { opacity:0; width:0; height:0; }
+  .slider { position:absolute; cursor:pointer; inset:0; background:var(--border); border-radius:26px; transition:.3s; }
+  .slider:before { position:absolute; content:""; height:20px; width:20px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; }
+  input:checked+.slider { background:var(--primary); }
+  input:checked+.slider:before { transform:translateX(22px); }
+  .tx-row { display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border); }
+  .tx-row .tx-info h4 { font-size:.9rem; }
+  .tx-row .tx-info p { font-size:.8rem; color:var(--text-light); }
+  .tx-row .tx-qty { font-weight:700; font-size:1rem; }
+  .tx-row .tx-qty.positive { color:var(--success); }
+  .tx-row .tx-qty.negative { color:var(--danger); }
+  .filter-row { display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; }
+  .filter-btn { padding:6px 14px; border:1px solid var(--border); border-radius:20px; background:var(--card); font-size:.8rem; cursor:pointer; white-space:nowrap; }
+  .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .detail-item { background:var(--bg); padding:10px; border-radius:8px; }
+  .detail-item label { font-size:.75rem; color:var(--text-light); display:block; margin-bottom:2px; }
+  .detail-item value { font-size:.95rem; font-weight:600; }
+  .offline-badge { position:fixed; top:60px; right:10px; background:var(--danger); color:#fff; padding:4px 10px; border-radius:20px; font-size:.75rem; z-index:60; display:none; }
+  .offline-badge.show { display:block; }
+  .queue-count { position:fixed; bottom:80px; left:20px; background:var(--warning); color:#fff; padding:8px 14px; border-radius:20px; font-size:.8rem; z-index:30; display:none; cursor:pointer; }
+  .queue-count.show { display:block; }
+  @media(min-width:768px) { .nav { justify-content:center; } .stats-grid { grid-template-columns:repeat(4,1fr); } }
 </style>
 <base target="_blank">
 </head>
 <body>
 
 <!-- Loading Screen -->
-<div id="loading-screen" onclick="this.classList.add('hidden')" style="cursor:pointer;">
-  <div class="loading-logo"><span class="material-icons">inventory_2</span></div>
-  <div class="loading-text">GEMCOR IVM</div>
-  <div class="loading-sub">Inventory Management System</div>
-  <div class="loading-bar"><div class="loading-bar-inner"></div></div>
-  <div style="color:rgba(255,255,255,0.6);font-size:12px;margin-top:16px;">Tap anywhere to skip</div>
+<div id="loadingScreen">
+  <div class="loader"></div>
+  <h2>GEMCOR IVM</h2>
+  <p id="loadingText">Initializing...</p>
+  <button class="skip-btn" onclick="forceShowLogin()">Tap to Skip</button>
+  <p style="color:rgba(255,255,255,.5);margin-top:8px;font-size:.75rem;">Auto-hiding in 2 seconds...</p>
 </div>
 
-<!-- Toast Container -->
-<div class="toast-container" id="toast-container"></div>
+<!-- Offline Badge -->
+<div class="offline-badge" id="offlineBadge">OFFLINE MODE</div>
 
-<!-- Scan Success Overlay -->
-<div class="scan-success-overlay" id="scan-success-overlay">
-  <div class="scan-success-card">
-    <div class="scan-success-icon"><span class="material-icons">check_circle</span></div>
-    <div class="scan-success-title">Scan Successful!</div>
-    <div class="scan-success-desc" id="scan-success-desc">Item found</div>
-    <button class="btn btn-primary btn-block" onclick="hideScanSuccess()">View Item</button>
+<!-- Queue Count -->
+<div class="queue-count" id="queueCount" onclick="showQueueModal()">0 pending</div>
+
+<!-- Login Screen -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>🔧 GEMCOR IVM</h1>
+      <p>Inventory Management System</p>
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="loginUser" placeholder="Enter username" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+    <button class="btn btn-secondary" onclick="demoLogin()">Demo Mode</button>
+    <div class="error-msg" id="loginError"></div>
+    <div class="connection-status offline" id="connStatus">
+      ⚠️ Backend not connected — Demo mode only
+    </div>
+    <p style="text-align:center;margin-top:12px;font-size:.75rem;color:var(--text-light);">
+      Demo: <b>admin</b> / <b>admin123</b>
+    </p>
   </div>
 </div>
 
-<!-- Login Page -->
-<div id="login-page" class="page" style="display:none;">
-  <div class="login-container">
-    <div class="login-card">
-      <div class="login-logo"><span class="material-icons">inventory_2</span></div>
-      <div class="login-title">Welcome Back</div>
-      <div class="login-subtitle">Sign in to your account</div>
-      <div id="login-status" style="text-align:center; margin-bottom:16px; padding:10px; border-radius:8px; font-size:13px; display:none;"></div>
-      <form id="login-form">
-        <div class="form-group">
-          <label class="form-label">Username</label>
-          <input type="text" class="form-input" id="login-username" placeholder="Enter username" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <input type="password" class="form-input" id="login-password" placeholder="Enter password" required>
-        </div>
-        <button type="submit" class="btn btn-primary btn-lg" id="login-btn">
-          <span class="material-icons">login</span> Sign In
-        </button>
-      </form>
-      <div id="login-info" style="text-align:center; margin-top:20px; font-size:12px; color:var(--gray-500);">
-        <p id="demo-accounts-text">Demo accounts:</p>
-        <p id="demo-accounts-list">admin / admin123<br>warehouse / warehouse123<br>supervisor / supervisor123</p>
-        <p id="api-status" style="margin-top:10px; color:var(--primary); font-weight:500;"></p>
-      </div>
+<!-- App -->
+<div id="app">
+  <div class="header">
+    <h1>🔧 GEMCOR IVM</h1>
+    <div class="user-info">
+      <span id="userName">User</span>
+      <span class="badge badge-info" id="userRole">Role</span>
+      <button onclick="logout()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">⏻</button>
     </div>
   </div>
-</div>
+  <nav class="nav" id="mainNav">
+    <button class="nav-btn active" onclick="showPage('dashboard')">📊 Dashboard</button>
+    <button class="nav-btn" onclick="showPage('inventory')">📦 Inventory</button>
+    <button class="nav-btn" onclick="showPage('transactions')">📝 Transactions</button>
+    <button class="nav-btn" onclick="showPage('scan')">📷 Scan</button>
+    <button class="nav-btn" onclick="showPage('settings')">⚙️ Settings</button>
+  </nav>
 
-<!-- Main App -->
-<div id="app-content" style="display:none;">
-  <header class="app-header">
-    <div class="app-header-content">
-      <div class="app-title"><span class="material-icons">inventory_2</span> GEMCOR IVM</div>
-      <div class="header-actions">
-        <button class="header-btn" onclick="toggleDarkMode()" title="Toggle Dark Mode"><span class="material-icons" id="dark-mode-icon">dark_mode</span></button>
-        <button class="header-btn" onclick="logout()" title="Logout"><span class="material-icons">logout</span></button>
+  <!-- Dashboard -->
+  <div class="page active" id="page-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-label">Total Items</div>
       </div>
-    </div>
-  </header>
-
-  <div id="home-page" class="page active">
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-value" id="stat-total-items">0</div><div class="stat-label">Total Items</div></div>
-      <div class="stat-card"><div class="stat-value" id="stat-low-stock">0</div><div class="stat-label">Low Stock</div></div>
-      <div class="stat-card"><div class="stat-value" id="stat-out-stock">0</div><div class="stat-label">Out of Stock</div></div>
-    </div>
-    <div class="home-grid">
-      <div class="home-card" onclick="navigateTo('scanner')"><div class="home-card-icon scan"><span class="material-icons">qr_code_scanner</span></div><div class="home-card-title">Scan QR</div><div class="home-card-desc">Scan item QR codes</div></div>
-      <div class="home-card" onclick="navigateTo('inventory')"><div class="home-card-icon inventory"><span class="material-icons">inventory</span></div><div class="home-card-title">Inventory</div><div class="home-card-desc">View all materials</div></div>
-      <div class="home-card" onclick="navigateTo('transactions')"><div class="home-card-icon transactions"><span class="material-icons">receipt_long</span></div><div class="home-card-title">Transactions</div><div class="home-card-desc">History & records</div></div>
-      <div class="home-card" onclick="navigateTo('dashboard')"><div class="home-card-icon dashboard"><span class="material-icons">dashboard</span></div><div class="home-card-title">Dashboard</div><div class="home-card-desc">Analytics & charts</div></div>
+      <div class="stat-card">
+        <div class="stat-value" id="statLow">0</div>
+        <div class="stat-label">Low Stock</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statToday">0</div>
+        <div class="stat-label">Today Tx</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statValue">0</div>
+        <div class="stat-label">Total Value</div>
+      </div>
     </div>
     <div class="card">
-      <div class="card-header"><div class="card-title">Recent Activity</div><button class="btn btn-sm btn-outline" onclick="navigateTo('transactions')">View All</button></div>
-      <div id="recent-activity-list">
-        <div class="empty-state"><div class="empty-state-icon"><span class="material-icons">history</span></div><div class="empty-state-title">No recent activity</div></div>
+      <div class="card-title">📈 Daily Transactions</div>
+      <div class="chart-container"><canvas id="chartDaily"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🥧 By Category</div>
+      <div class="chart-container"><canvas id="chartCategory"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔥 Top Issued Items</div>
+      <div id="topItemsList"></div>
+    </div>
+  </div>
+
+  <!-- Inventory -->
+  <div class="page" id="page-inventory">
+    <div class="search-bar">
+      <input type="text" id="invSearch" placeholder="Search items..." oninput="filterInventory()">
+      <button onclick="refreshInventory()">🔄</button>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setCategoryFilter('all')">All</button>
+      <button class="filter-btn" onclick="setCategoryFilter('Consumables')">Consumables</button>
+      <button class="filter-btn" onclick="setCategoryFilter('Tools')">Tools</button>
+      <button class="filter-btn" onclick="setCategoryFilter('Equipment')">Equipment</button>
+    </div>
+    <div id="inventoryList"></div>
+  </div>
+
+  <!-- Transactions -->
+  <div class="page" id="page-transactions">
+    <div class="search-bar">
+      <input type="text" id="txSearch" placeholder="Search transactions..." oninput="filterTransactions()">
+      <button onclick="refreshTransactions()">🔄</button>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setTxFilter('all')">All</button>
+      <button class="filter-btn" onclick="setTxFilter('Stock In')">Stock In</button>
+      <button class="filter-btn" onclick="setTxFilter('Stock Out')">Stock Out</button>
+      <button class="filter-btn" onclick="setTxFilter('MRS Return')">MRS Return</button>
+    </div>
+    <div id="transactionList"></div>
+  </div>
+
+  <!-- Scan -->
+  <div class="page" id="page-scan">
+    <div class="card">
+      <div class="card-title">📷 QR Scanner</div>
+      <div class="scan-area" id="scannerArea">
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;">Camera not started</div>
+      </div>
+      <div class="tx-type">
+        <button class="tx-type-btn in active" onclick="setTxType('Stock In')">📥 Stock In</button>
+        <button class="tx-type-btn out" onclick="setTxType('Stock Out')">📤 Stock Out</button>
+        <button class="tx-type-btn mrs" onclick="setTxType('MRS Return')">↩️ MRS</button>
+      </div>
+      <div class="form-group">
+        <label>Item Description</label>
+        <input type="text" id="scanDesc" placeholder="Scan or type item...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="scanQty" placeholder="0" min="1">
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" id="scanLoc" placeholder="Location">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Remarks</label>
+        <input type="text" id="scanRemarks" placeholder="Optional remarks...">
+      </div>
+      <button class="btn btn-primary" onclick="submitTransaction()">Submit Transaction</button>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="page" id="page-settings">
+    <div class="card">
+      <div class="card-title">⚙️ Preferences</div>
+      <div class="toggle-row">
+        <span>🌙 Dark Mode</span>
+        <label class="switch"><input type="checkbox" id="darkToggle" onchange="toggleDark()"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span>🔊 Sound Effects</span>
+        <label class="switch"><input type="checkbox" id="soundToggle" checked><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span>📳 Vibration</span>
+        <label class="switch"><input type="checkbox" id="vibeToggle" checked><span class="slider"></span></label>
       </div>
     </div>
-  </div>
-
-  <div id="scanner-page" class="page">
-    <div class="scanner-container">
-      <div id="reader"></div>
-      <div class="scanner-overlay">
-        <div class="scanner-frame"><div class="scanner-laser"></div></div>
-        <div class="scanner-hint">Align QR code within frame</div>
+    <div class="card">
+      <div class="card-title">🔌 Connection</div>
+      <div class="form-group">
+        <label>API URL</label>
+        <input type="text" id="apiUrlInput" placeholder="https://script.google.com/...">
       </div>
+      <button class="btn btn-primary" onclick="saveApiUrl()">Save API URL</button>
+      <button class="btn btn-secondary" onclick="testConnection()">Test Connection</button>
+      <div class="connection-status" id="testStatus" style="margin-top:10px;">Not tested</div>
     </div>
-    <div class="scanner-controls">
-      <button class="scanner-control-btn" onclick="toggleFlashlight()" title="Flashlight"><span class="material-icons">flashlight_on</span></button>
-      <button class="scanner-control-btn" onclick="switchCamera()" title="Switch Camera"><span class="material-icons">cameraswitch</span></button>
-      <button class="scanner-control-btn" onclick="stopScanner()" title="Stop"><span class="material-icons">stop</span></button>
+    <div class="card">
+      <div class="card-title">💾 Data</div>
+      <button class="btn btn-secondary" onclick="exportData()">📥 Export Data</button>
+      <button class="btn btn-secondary" onclick="clearAllData()" style="margin-top:8px;">🗑️ Clear All Data</button>
     </div>
-    <div style="text-align:center; margin-top:16px; padding:0 20px;"><p style="font-size:13px; color:var(--gray-500);">Point camera at QR code to scan</p></div>
-  </div>
-
-  <div id="inventory-page" class="page">
-    <div class="search-bar"><span class="material-icons">search</span><input type="text" class="form-input" id="inventory-search" placeholder="Search items..." oninput="debounceSearch()"></div>
-    <div class="filters-row">
-      <select class="form-select" id="filter-category" onchange="loadInventory()"><option value="all">All Categories</option></select>
-      <select class="form-select" id="filter-location" onchange="loadInventory()"><option value="all">All Locations</option></select>
-      <select class="form-select" id="filter-status" onchange="loadInventory()"><option value="all">All Status</option><option value="good">Good Stock</option><option value="low">Low Stock</option><option value="out">Out of Stock</option></select>
-    </div>
-    <div id="inventory-list" class="inventory-list"></div>
-    <div class="pagination" id="inventory-pagination"></div>
-  </div>
-
-  <div id="material-detail-page" class="page">
-    <button class="btn btn-outline btn-sm" onclick="navigateTo('inventory')" style="margin-bottom:16px;"><span class="material-icons">arrow_back</span> Back</button>
-    <div id="material-detail-content"></div>
-  </div>
-
-  <div id="transactions-page" class="page">
-    <div class="search-bar"><span class="material-icons">search</span><input type="text" class="form-input" id="transaction-search" placeholder="Search transactions..." oninput="debounceTransSearch()"></div>
-    <div class="filters-row">
-      <select class="form-select" id="trans-filter-type" onchange="loadTransactions()"><option value="all">All Types</option><option value="Stock In">Stock In</option><option value="Stock Out">Stock Out</option><option value="MRS Return">MRS Return</option></select>
-      <input type="date" class="form-input" id="trans-date-from" onchange="loadTransactions()" style="min-width:140px;">
-      <input type="date" class="form-input" id="trans-date-to" onchange="loadTransactions()" style="min-width:140px;">
-    </div>
-    <div id="transaction-list" class="transaction-list"></div>
-    <div class="pagination" id="transaction-pagination"></div>
-  </div>
-
-  <div id="dashboard-page" class="page">
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-value" id="dash-total-items">0</div><div class="stat-label">Total Items</div></div>
-      <div class="stat-card"><div class="stat-value" id="dash-total-value">0</div><div class="stat-label">Total Value</div></div>
-      <div class="stat-card"><div class="stat-value" id="dash-total-txn">0</div><div class="stat-label">Transactions</div></div>
-    </div>
-    <div class="chart-container"><div class="chart-title">Daily Transactions (Last 7 Days)</div><canvas id="daily-chart"></canvas></div>
-    <div class="chart-container"><div class="chart-title">Items by Category</div><canvas id="category-chart"></canvas></div>
-    <div class="chart-container"><div class="chart-title">Top 10 Most Issued Items</div><canvas id="top-issued-chart"></canvas></div>
-  </div>
-
-  <div id="settings-page" class="page">
-    <div class="settings-item">
-      <div class="settings-item-info"><div class="settings-item-icon"><span class="material-icons">dark_mode</span></div><div><div class="settings-item-title">Dark Mode</div><div class="settings-item-desc">Toggle dark theme</div></div></div>
-      <div class="toggle" id="dark-mode-toggle" onclick="toggleDarkModeSetting()"></div>
-    </div>
-    <div class="settings-item">
-      <div class="settings-item-info"><div class="settings-item-icon"><span class="material-icons">volume_up</span></div><div><div class="settings-item-title">Sound Effects</div><div class="settings-item-desc">Play sounds on actions</div></div></div>
-      <div class="toggle" id="sound-toggle" onclick="toggleSound()"></div>
-    </div>
-    <div class="settings-item">
-      <div class="settings-item-info"><div class="settings-item-icon"><span class="material-icons">vibration</span></div><div><div class="settings-item-title">Haptic Feedback</div><div class="settings-item-desc">Vibrate on actions</div></div></div>
-      <div class="toggle" id="vibration-toggle" onclick="toggleVibration()"></div>
-    </div>
-    <div class="settings-item">
-      <div class="settings-item-info"><div class="settings-item-icon"><span class="material-icons">link</span></div><div><div class="settings-item-title">API URL</div><div class="settings-item-desc" id="settings-api-url">Not configured</div></div></div>
-      <button class="btn btn-sm btn-outline" onclick="showApiModal()">Set</button>
-    </div>
-    <div class="settings-item">
-      <div class="settings-item-info"><div class="settings-item-icon"><span class="material-icons">person</span></div><div><div class="settings-item-title">Current User</div><div class="settings-item-desc" id="settings-user">Not logged in</div></div></div>
-    </div>
-    <div class="settings-item">
-      <div class="settings-item-info"><div class="settings-item-icon"><span class="material-icons">update</span></div><div><div class="settings-item-title">App Version</div><div class="settings-item-desc">v1.0.0</div></div></div>
-    </div>
-    <button class="btn btn-danger btn-block" onclick="logout()" style="margin-top:20px;"><span class="material-icons">logout</span> Logout</button>
-  </div>
-
-  <nav class="bottom-nav">
-    <button class="nav-item active" onclick="navigateTo('home')" data-page="home"><span class="material-icons">home</span><span>Home</span></button>
-    <button class="nav-item" onclick="navigateTo('scanner')" data-page="scanner"><span class="material-icons">qr_code_scanner</span><span>Scan</span></button>
-    <button class="nav-item" onclick="navigateTo('inventory')" data-page="inventory"><span class="material-icons">inventory</span><span>Items</span></button>
-    <button class="nav-item" onclick="navigateTo('transactions')" data-page="transactions"><span class="material-icons">receipt_long</span><span>History</span></button>
-    <button class="nav-item" onclick="navigateTo('settings')" data-page="settings"><span class="material-icons">settings</span><span>Settings</span></button>
-  </nav>
-</div>
-
-<div class="modal-overlay" id="txn-modal">
-  <div class="modal-content">
-    <div class="modal-header"><div class="modal-title" id="txn-modal-title">Stock In</div><button class="modal-close" onclick="closeTxnModal()"><span class="material-icons">close</span></button></div>
-    <div id="txn-modal-body">
-      <div class="form-group"><label class="form-label">Item</label><input type="text" class="form-input" id="txn-item-name" readonly></div>
-      <div class="form-group"><label class="form-label">Quantity</label><input type="number" class="form-input" id="txn-qty" min="1" value="1" required></div>
-      <div class="form-group"><label class="form-label">Remarks</label><textarea class="form-textarea" id="txn-remarks" rows="2" placeholder="Optional notes..."></textarea></div>
-      <button class="btn btn-primary btn-block" id="txn-submit-btn" onclick="submitTransaction()"><span class="material-icons">check</span> Confirm</button>
+    <div class="card">
+      <div class="card-title">ℹ️ About</div>
+      <p style="font-size:.9rem;color:var(--text-light);">GEMCOR IVM v2.1<br>Inventory Management System<br>Built with ❤️ for GEMCOR</p>
     </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="api-modal">
-  <div class="modal-content">
-    <div class="modal-header"><div class="modal-title">Set API URL</div><button class="modal-close" onclick="closeApiModal()"><span class="material-icons">close</span></button></div>
-    <div class="form-group"><label class="form-label">Google Apps Script Web App URL</label><input type="text" class="form-input" id="api-url-input" placeholder="https://script.google.com/macros/s/.../exec"></div>
-    <button class="btn btn-primary btn-block" onclick="saveApiUrl()"><span class="material-icons">save</span> Save</button>
+<!-- Transaction Modal -->
+<div class="modal-overlay" id="txModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📝 New Transaction</h3>
+      <button class="modal-close" onclick="closeModal('txModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="tx-type">
+        <button class="tx-type-btn in active" onclick="setTxType('Stock In')">📥 Stock In</button>
+        <button class="tx-type-btn out" onclick="setTxType('Stock Out')">📤 Stock Out</button>
+        <button class="tx-type-btn mrs" onclick="setTxType('MRS Return')">↩️ MRS</button>
+      </div>
+      <div class="form-group">
+        <label>Item Description</label>
+        <input type="text" id="txDesc" placeholder="Search or select item...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="number" id="txQty" placeholder="0" min="1">
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" id="txLoc" placeholder="Location">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Remarks</label>
+        <input type="text" id="txRemarks" placeholder="Optional remarks...">
+      </div>
+      <button class="btn btn-primary" onclick="submitModalTx()">Submit</button>
+    </div>
   </div>
 </div>
+
+<!-- Item Detail Modal -->
+<div class="modal-overlay" id="itemModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="itemModalTitle">Item Details</h3>
+      <button class="modal-close" onclick="closeModal('itemModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-grid" id="itemDetailGrid"></div>
+      <button class="btn btn-primary" onclick="openTxFromItem()" style="margin-top:16px;">📝 New Transaction</button>
+    </div>
+  </div>
+</div>
+
+<!-- Queue Modal -->
+<div class="modal-overlay" id="queueModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📤 Pending Sync</h3>
+      <button class="modal-close" onclick="closeModal('queueModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="queueList"></div>
+      <button class="btn btn-primary" onclick="syncQueue()" style="margin-top:16px;">🔄 Sync Now</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<button class="fab" id="fabBtn" onclick="openTxModal()">+</button>
 
 <script>
-// ============================================
-// GEMCOR IVM - Frontend JavaScript
-// Updated for GitHub Pages + GAS (GET-based API)
-// ============================================
-
+// ===================== CONFIG =====================
 const CONFIG = {
   API_URL: null,
-  DEMO_MODE: true,
-  ITEMS_PER_PAGE: 20
+  DEMO_MODE: false,
+  CURRENT_USER: null,
+  TX_TYPE: 'Stock In',
+  SELECTED_ITEM: null,
+  CATEGORY_FILTER: 'all',
+  TX_FILTER: 'all',
+  SCANNER: null,
+  IS_ONLINE: false,
+  CHARTS: {}
 };
 
-const state = {
-  currentUser: null,
-  currentPage: 'home',
-  inventory: [],
-  transactions: [],
-  categories: [],
-  locations: [],
-  scanner: null,
-  currentCamera: 'environment',
-  flashlightOn: false,
-  offlineQueue: [],
-  darkMode: false,
-  soundEnabled: false,
-  vibrationEnabled: false,
-  currentTxnType: null,
-  currentTxnItem: null,
-  inventoryPage: 1,
-  transactionPage: 1,
-  charts: {}
-};
-
+// ===================== DEMO DATA =====================
 const DEMO_INVENTORY = [
-  { inventoryId: 'INV001', itemDescription: 'Steel Pipe 2"', category: 'Raw Materials', location: 'Warehouse A', onHand: 100, stockIn: 150, stockOut: 50, mrs: 0, finalOnHand: 100, baseUnit: 'pcs', unitCost: 25.50 },
-  { inventoryId: 'INV002', itemDescription: 'PVC Fitting 1"', category: 'Raw Materials', location: 'Warehouse A', onHand: 200, stockIn: 300, stockOut: 100, mrs: 0, finalOnHand: 200, baseUnit: 'pcs', unitCost: 5.75 },
-  { inventoryId: 'INV003', itemDescription: 'Welding Rod E6013', category: 'Consumables', location: 'Warehouse B', onHand: 50, stockIn: 100, stockOut: 50, mrs: 0, finalOnHand: 50, baseUnit: 'kg', unitCost: 12.00 },
-  { inventoryId: 'INV004', itemDescription: 'Safety Helmet', category: 'Safety Equipment', location: 'Warehouse C', onHand: 25, stockIn: 50, stockOut: 25, mrs: 0, finalOnHand: 25, baseUnit: 'pcs', unitCost: 15.00 },
-  { inventoryId: 'INV005', itemDescription: 'Cutting Disc 4"', category: 'Consumables', location: 'Warehouse B', onHand: 10, stockIn: 50, stockOut: 40, mrs: 0, finalOnHand: 10, baseUnit: 'pcs', unitCost: 3.50 },
-  { inventoryId: 'INV006', itemDescription: 'Angle Grinder', category: 'Tools', location: 'Warehouse C', onHand: 5, stockIn: 10, stockOut: 5, mrs: 0, finalOnHand: 5, baseUnit: 'pcs', unitCost: 85.00 },
-  { inventoryId: 'INV007', itemDescription: 'Drill Bit Set', category: 'Tools', location: 'Warehouse C', onHand: 8, stockIn: 15, stockOut: 7, mrs: 0, finalOnHand: 8, baseUnit: 'set', unitCost: 45.00 },
-  { inventoryId: 'INV008', itemDescription: 'Cement 50kg', category: 'Raw Materials', location: 'Warehouse A', onHand: 0, stockIn: 200, stockOut: 200, mrs: 0, finalOnHand: 0, baseUnit: 'bag', unitCost: 8.50 },
+  { id:1, description:"Welding Rod 6013 3.2mm", category:"Consumables", location:"Warehouse A", onHand:150, inQty:200, outQty:45, mrsQty:5, finalOnHand:160, baseUnit:"kg", unitCost:85 },
+  { id:2, description:"Grinding Disc 4"", category:"Consumables", location:"Warehouse A", onHand:80, inQty:120, outQty:35, mrsQty:5, finalOnHand:90, baseUnit:"pcs", unitCost:45 },
+  { id:3, description:"Safety Helmet", category:"Equipment", location:"Warehouse B", onHand:25, inQty:30, outQty:5, mrsQty:0, finalOnHand:25, baseUnit:"pcs", unitCost:350 },
+  { id:4, description:"Cutting Torch", category:"Tools", location:"Warehouse A", onHand:8, inQty:10, outQty:2, mrsQty:0, finalOnHand:8, baseUnit:"pcs", unitCost:1200 },
+  { id:5, description:"Oxygen Cylinder", category:"Consumables", location:"Yard", onHand:12, inQty:20, outQty:8, mrsQty:0, finalOnHand:12, baseUnit:"pcs", unitCost:2500 },
+  { id:6, description:"Welding Machine 500A", category:"Equipment", location:"Warehouse B", onHand:3, inQty:5, outQty:2, mrsQty:0, finalOnHand:3, baseUnit:"pcs", unitCost:45000 },
+  { id:7, description:"Wire Brush", category:"Tools", location:"Warehouse A", onHand:45, inQty:60, outQty:15, mrsQty:0, finalOnHand:45, baseUnit:"pcs", unitCost:25 },
+  { id:8, description:"Acetylene Regulator", category:"Equipment", location:"Yard", onHand:6, inQty:8, outQty:2, mrsQty:0, finalOnHand:6, baseUnit:"pcs", unitCost:1800 }
 ];
 
 const DEMO_TRANSACTIONS = [
-  { date: new Date(Date.now() - 86400000 * 2), inventoryId: 'INV001', itemDescription: 'Steel Pipe 2"', type: 'Stock In', qty: 50, user: 'admin', remarks: 'Initial stock' },
-  { date: new Date(Date.now() - 86400000 * 1), inventoryId: 'INV001', itemDescription: 'Steel Pipe 2"', type: 'Stock Out', qty: 30, user: 'warehouse', remarks: 'Project X' },
-  { date: new Date(Date.now() - 86400000 * 1), inventoryId: 'INV002', itemDescription: 'PVC Fitting 1"', type: 'Stock In', qty: 100, user: 'admin', remarks: 'Delivery' },
-  { date: new Date(), inventoryId: 'INV003', itemDescription: 'Welding Rod E6013', type: 'Stock Out', qty: 20, user: 'warehouse', remarks: 'Maintenance' },
+  { id:1, date:"2026-07-21", inventoryId:1, description:"Welding Rod 6013 3.2mm", type:"Stock In", qty:50, user:"Erwin", remarks:"Delivery #1234" },
+  { id:2, date:"2026-07-21", inventoryId:2, description:"Grinding Disc 4"", type:"Stock Out", qty:10, user:"Erwin", remarks:"Project Alpha" },
+  { id:3, date:"2026-07-20", inventoryId:3, description:"Safety Helmet", type:"Stock In", qty:5, user:"admin", remarks:"New batch" },
+  { id:4, date:"2026-07-20", inventoryId:1, description:"Welding Rod 6013 3.2mm", type:"Stock Out", qty:20, user:"warehouse", remarks:"Daily use" },
+  { id:5, date:"2026-07-19", inventoryId:5, description:"Oxygen Cylinder", type:"MRS Return", qty:2, user:"supervisor", remarks:"Returned empty" }
 ];
 
-// --- INITIALIZATION ---
-document.addEventListener('DOMContentLoaded', () => {
-  try {
-    initConfig();
-    initDarkMode();
-    initSettings();
+const DEMO_USERS = [
+  { name:"admin", password:"admin123", role:"Admin" },
+  { name:"warehouse", password:"warehouse123", role:"Warehouse Personnel" },
+  { name:"supervisor", password:"supervisor123", role:"Supervisor" },
+  { name:"Erwin", password:"erwin123", role:"Warehouse Personnel" }
+];
 
-    const savedUser = localStorage.getItem('gemcor_user');
-    if (savedUser) {
-      try {
-        state.currentUser = JSON.parse(savedUser);
-        showApp();
-      } catch (e) {
-        showLogin();
-      }
-    } else {
-      showLogin();
+// ===================== INIT =====================
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('GEMCOR IVM initializing...');
+
+  // Load API URL
+  try {
+    CONFIG.API_URL = localStorage.getItem('gemcor_api_url');
+    if (!CONFIG.API_URL) {
+      const params = new URLSearchParams(window.location.search);
+      CONFIG.API_URL = params.get('api');
+      if (CONFIG.API_URL) localStorage.setItem('gemcor_api_url', CONFIG.API_URL);
     }
-  } catch (err) {
-    console.error('Init error:', err);
-    showLogin();
+  } catch(e) { console.log('localStorage not available'); }
+
+  // Load preferences
+  try {
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark');
+      document.getElementById('darkToggle').checked = true;
+    }
+  } catch(e) {}
+
+  // Update UI
+  if (CONFIG.API_URL) {
+    document.getElementById('apiUrlInput').value = CONFIG.API_URL;
   }
 
-  // Always hide loading screen after max 3 seconds
+  // Auto-hide loading after 2 seconds, always show login
   setTimeout(() => {
-    const loader = document.getElementById('loading-screen');
-    if (loader) loader.classList.add('hidden');
-  }, 2500);
+    forceShowLogin();
+  }, 2000);
 
-  const loginForm = document.getElementById('login-form');
-  if (loginForm) loginForm.addEventListener('submit', handleLogin);
-
-  window.addEventListener('online', () => {
-    showToast('Back online! Syncing...', 'success');
-    syncOfflineQueue();
-  });
-  window.addEventListener('offline', () => {
-    showToast('You are offline. Changes will be saved locally.', 'warning');
-  });
+  // Try to connect in background
+  if (CONFIG.API_URL) {
+    testConnectionSilent();
+  }
 });
 
-function initConfig() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const apiUrl = urlParams.get('api');
-  if (apiUrl) {
-    CONFIG.API_URL = apiUrl;
-    localStorage.setItem('gemcor_api_url', apiUrl);
-  } else {
-    const saved = localStorage.getItem('gemcor_api_url');
-    if (saved) CONFIG.API_URL = saved;
+function forceShowLogin() {
+  const loader = document.getElementById('loadingScreen');
+  if (loader) {
+    loader.classList.add('hidden');
+    setTimeout(() => { if (loader.parentNode) loader.style.display = 'none'; }, 500);
   }
-  if (CONFIG.API_URL) CONFIG.DEMO_MODE = false;
 
-  // Update login page to show connection status
-  setTimeout(updateLoginStatus, 100);
+  const login = document.getElementById('loginScreen');
+  if (login) login.classList.add('active');
+
+  updateConnectionStatus();
 }
 
-function initDarkMode() {
-  const saved = localStorage.getItem('gemcor_dark_mode');
-  if (saved === 'true') {
-    state.darkMode = true;
-    document.body.classList.add('dark-mode');
-    document.getElementById('dark-mode-icon').textContent = 'light_mode';
-    document.getElementById('dark-mode-toggle').classList.add('active');
+function updateConnectionStatus() {
+  const status = document.getElementById('connStatus');
+  if (!status) return;
+
+  if (CONFIG.API_URL && CONFIG.IS_ONLINE) {
+    status.textContent = '✅ Connected to backend';
+    status.className = 'connection-status online';
+  } else if (CONFIG.API_URL) {
+    status.textContent = '⚠️ Backend URL set but unreachable — Demo mode available';
+    status.className = 'connection-status offline';
+  } else {
+    status.textContent = '⚠️ No backend connected — Demo mode only';
+    status.className = 'connection-status offline';
   }
 }
 
-function initSettings() {
-  state.soundEnabled = localStorage.getItem('gemcor_sound') === 'true';
-  state.vibrationEnabled = localStorage.getItem('gemcor_vibration') === 'true';
-  if (state.soundEnabled) document.getElementById('sound-toggle').classList.add('active');
-  if (state.vibrationEnabled) document.getElementById('vibration-toggle').classList.add('active');
-}
+// ===================== AUTH =====================
+async function doLogin() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const errorEl = document.getElementById('loginError');
 
-// --- AUTH ---
-async function handleLogin(e) {
-  e.preventDefault();
-  const username = document.getElementById('login-username').value;
-  const password = document.getElementById('login-password').value;
-  const btn = document.getElementById('login-btn');
-  const statusDiv = document.getElementById('login-status');
+  if (!user || !pass) {
+    errorEl.textContent = 'Please enter username and password';
+    errorEl.classList.add('show');
+    return;
+  }
 
-  btn.disabled = true;
-  btn.innerHTML = '<span class="material-icons">hourglass_top</span> Signing in...';
-  statusDiv.style.display = 'none';
-
-  const result = await apiCall('login', { username, password });
-
-  if (result.success) {
-    state.currentUser = result.user;
-    localStorage.setItem('gemcor_user', JSON.stringify(result.user));
-    showToast('Welcome, ' + result.user.name + '!', 'success');
-    showApp();
-  } else {
-    // Show detailed error in the status div
-    statusDiv.style.display = 'block';
-    statusDiv.style.background = '#fee2e2';
-    statusDiv.style.color = '#991b1b';
-    statusDiv.style.border = '1px solid #fecaca';
-
-    let errorMsg = result.error || 'Login failed';
-    if (!CONFIG.API_URL) {
-      errorMsg += '
-
-App is in DEMO mode. Only these accounts work:
-admin, warehouse, supervisor';
-    } else {
-      errorMsg += '
-
-Make sure this user exists in your Google Sheet\'s Users tab.';
+  // Try backend first if connected
+  if (CONFIG.API_URL && CONFIG.IS_ONLINE) {
+    try {
+      const res = await fetchWithTimeout(`${CONFIG.API_URL}?action=login&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`, {}, 5000);
+      const data = await res.json();
+      if (data.success) {
+        CONFIG.CURRENT_USER = { name: user, role: data.role };
+        showApp();
+        return;
+      }
+    } catch(e) {
+      console.log('Backend login failed, trying demo');
     }
-    statusDiv.textContent = errorMsg;
-    showToast(result.error || 'Login failed', 'error');
   }
 
-  btn.disabled = false;
-  btn.innerHTML = '<span class="material-icons">login</span> Sign In';
-}
-
-function updateLoginStatus() {
-  const apiStatus = document.getElementById('api-status');
-  const demoText = document.getElementById('demo-accounts-text');
-  const demoList = document.getElementById('demo-accounts-list');
-
-  if (CONFIG.API_URL) {
-    apiStatus.innerHTML = 'Connected to: ' + CONFIG.API_URL.substring(0, 35) + '...';
-    apiStatus.style.color = '#22c55e';
-    demoText.textContent = 'Using real accounts from Google Sheet';
-    demoList.innerHTML = 'Add users in the "Users" sheet';
+  // Demo fallback
+  const demoUser = DEMO_USERS.find(u => u.name.toLowerCase() === user.toLowerCase() && u.password === pass);
+  if (demoUser) {
+    CONFIG.CURRENT_USER = { name: demoUser.name, role: demoUser.role };
+    CONFIG.DEMO_MODE = true;
+    showApp();
+    showToast('Logged in (Demo Mode)');
   } else {
-    apiStatus.innerHTML = 'DEMO MODE - Not connected to backend';
-    apiStatus.style.color = '#f59e0b';
+    errorEl.textContent = 'Invalid username or password';
+    errorEl.classList.add('show');
+    playSound('error');
   }
 }
 
-function logout() {
-  state.currentUser = null;
-  localStorage.removeItem('gemcor_user');
-  showLogin();
-  showToast('Logged out successfully', 'info');
-}
-
-function showLogin() {
-  const loader = document.getElementById('loading-screen');
-  if (loader) loader.classList.add('hidden');
-  document.getElementById('login-page').style.display = 'block';
-  document.getElementById('app-content').style.display = 'none';
+function demoLogin() {
+  CONFIG.CURRENT_USER = { name: 'admin', role: 'Admin' };
+  CONFIG.DEMO_MODE = true;
+  showApp();
+  showToast('Demo Mode — All changes are local only');
 }
 
 function showApp() {
-  const loader = document.getElementById('loading-screen');
-  if (loader) loader.classList.add('hidden');
-  document.getElementById('login-page').style.display = 'none';
-  document.getElementById('app-content').style.display = 'block';
-  document.getElementById('settings-user').textContent = state.currentUser ? state.currentUser.name + ' (' + state.currentUser.role + ')' : 'Not logged in';
-  if (CONFIG.API_URL) {
-    document.getElementById('settings-api-url').textContent = CONFIG.API_URL.substring(0, 40) + '...';
-  }
-  loadHomeData();
-  loadFilters();
+  document.getElementById('loginScreen').classList.remove('active');
+  document.getElementById('app').classList.add('active');
+  document.getElementById('userName').textContent = CONFIG.CURRENT_USER.name;
+  document.getElementById('userRole').textContent = CONFIG.CURRENT_USER.role;
+
+  refreshInventory();
+  refreshTransactions();
+  updateDashboard();
+  updateQueueBadge();
 }
 
-// --- API (GET-based for GitHub Pages + GAS) ---
-async function apiCall(action, data) {
-  if (!navigator.onLine && action !== 'getInventory' && action !== 'getTransactions') {
-    state.offlineQueue.push({ action, data });
-    showToast('Saved offline. Will sync when online.', 'warning');
-    return { success: true, offline: true };
-  }
-
-  try {
-    if (!CONFIG.API_URL) return simulateApiResponse(action, data);
-
-    const params = new URLSearchParams();
-    params.append('action', action);
-    for (const key in data) {
-      if (data[key] !== undefined && data[key] !== null) {
-        if (typeof data[key] === 'object') {
-          params.append(key, JSON.stringify(data[key]));
-        } else {
-          params.append(key, data[key]);
-        }
-      }
-    }
-
-    const url = CONFIG.API_URL + '?' + params.toString();
-    const response = await fetch(url, { method: 'GET' });
-    return await response.json();
-
-  } catch (error) {
-    console.error('API Error:', error);
-    showToast('Network error. Using demo data.', 'warning');
-    return simulateApiResponse(action, data);
-  }
+function logout() {
+  CONFIG.CURRENT_USER = null;
+  CONFIG.DEMO_MODE = false;
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('loginScreen').classList.add('active');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').classList.remove('show');
 }
 
-function simulateApiResponse(action, data) {
-  switch (action) {
-    case 'login':
-      const users = {
-        'admin': { name: 'Admin', role: 'Admin', password: 'admin123' },
-        'warehouse': { name: 'Warehouse', role: 'Warehouse Personnel', password: 'warehouse123' },
-        'supervisor': { name: 'Supervisor', role: 'Supervisor', password: 'supervisor123' }
-      };
-      const u = users[data.username];
-      if (u && u.password === data.password) {
-        return { success: true, user: { name: u.name, role: u.role, username: data.username } };
-      }
-      return { success: false, error: 'Invalid username or password' };
-
-    case 'getInventory':
-      let items = [...DEMO_INVENTORY];
-      if (data.filters) {
-        if (data.filters.category && data.filters.category !== 'all') items = items.filter(i => i.category === data.filters.category);
-        if (data.filters.location && data.filters.location !== 'all') items = items.filter(i => i.location === data.filters.location);
-        if (data.filters.status && data.filters.status !== 'all') {
-          if (data.filters.status === 'low') items = items.filter(i => i.finalOnHand <= 10 && i.finalOnHand > 0);
-          if (data.filters.status === 'out') items = items.filter(i => i.finalOnHand === 0);
-          if (data.filters.status === 'good') items = items.filter(i => i.finalOnHand > 10);
-        }
-        if (data.filters.search) {
-          const s = data.filters.search.toLowerCase();
-          items = items.filter(i => i.itemDescription.toLowerCase().includes(s) || i.inventoryId.toLowerCase().includes(s));
-        }
-      }
-      const page = data.page || 1;
-      const limit = data.limit || 50;
-      const start = (page - 1) * limit;
-      return { success: true, data: items.slice(start, start + limit), pagination: { page: page, limit: limit, total: items.length, pages: Math.ceil(items.length / limit) } };
-
-    case 'getItemByQR':
-      const item = DEMO_INVENTORY.find(i => i.inventoryId === data.qrCode);
-      return item ? { success: true, data: item } : { success: false, error: 'Item not found' };
-
-    case 'searchItem':
-      const q = data.query.toLowerCase();
-      return { success: true, data: DEMO_INVENTORY.filter(i => i.itemDescription.toLowerCase().includes(q) || i.inventoryId.toLowerCase().includes(q)) };
-
-    case 'stockIn':
-    case 'stockOut':
-    case 'materialReturn':
-      const invItem = DEMO_INVENTORY.find(i => i.inventoryId === data.inventoryId);
-      if (!invItem) return { success: false, error: 'Item not found' };
-      const qty = parseInt(data.qty);
-      if (action === 'stockIn') {
-        invItem.stockIn += qty;
-      } else if (action === 'stockOut') {
-        invItem.stockOut += qty;
-      } else {
-        invItem.mrs += qty;
-      }
-      // Final on-hand is computed by formula in real sheet
-      invItem.finalOnHand = invItem.onHand + invItem.stockIn - invItem.stockOut + invItem.mrs;
-      DEMO_TRANSACTIONS.unshift({
-        date: new Date(), inventoryId: data.inventoryId, itemDescription: invItem.itemDescription,
-        type: action === 'stockIn' ? 'Stock In' : action === 'stockOut' ? 'Stock Out' : 'MRS Return',
-        qty: qty, user: data.user || 'demo', remarks: data.remarks || ''
-      });
-      return { success: true, message: action + ' successful' };
-
-    case 'getTransactions':
-      let trans = [...DEMO_TRANSACTIONS];
-      if (data.filters) {
-        if (data.filters.type && data.filters.type !== 'all') trans = trans.filter(t => t.type === data.filters.type);
-        if (data.filters.search) {
-          const s = data.filters.search.toLowerCase();
-          trans = trans.filter(t => t.itemDescription.toLowerCase().includes(s) || t.inventoryId.toLowerCase().includes(s));
-        }
-      }
-      const tpage = data.page || 1;
-      const tlimit = data.limit || 50;
-      const tstart = (tpage - 1) * tlimit;
-      return { success: true, data: trans.slice(tstart, tstart + tlimit), pagination: { page: tpage, limit: tlimit, total: trans.length, pages: Math.ceil(trans.length / tlimit) } };
-
-    case 'getMaterialHistory':
-      return { success: true, data: DEMO_TRANSACTIONS.filter(t => t.inventoryId === data.inventoryId).slice(0, data.limit || 50) };
-
-    case 'getDashboard':
-      const cats = {};
-      const locs = {};
-      let totalVal = 0;
-      let low = 0;
-      let out = 0;
-      DEMO_INVENTORY.forEach(i => {
-        cats[i.category] = (cats[i.category] || 0) + 1;
-        locs[i.location] = (locs[i.location] || 0) + 1;
-        totalVal += i.finalOnHand * i.unitCost;
-        if (i.finalOnHand <= 10 && i.finalOnHand > 0) low++;
-        if (i.finalOnHand === 0) out++;
-      });
-      const daily = {};
-      const now = new Date();
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(now); d.setDate(d.getDate() - i);
-        daily[d.toISOString().split('T')[0]] = { stockIn: 0, stockOut: 0, mrs: 0 };
-      }
-      const issued = {};
-      DEMO_TRANSACTIONS.forEach(t => {
-        const dk = new Date(t.date).toISOString().split('T')[0];
-        if (daily[dk]) {
-          if (t.type === 'Stock In') daily[dk].stockIn += t.qty;
-          else if (t.type === 'Stock Out') daily[dk].stockOut += t.qty;
-          else if (t.type === 'MRS Return') daily[dk].mrs += t.qty;
-        }
-        if (t.type === 'Stock Out') {
-          const k = t.inventoryId + '|' + t.itemDescription;
-          issued[k] = (issued[k] || 0) + t.qty;
-        }
-      });
-      const topIssued = Object.entries(issued).sort((a,b) => b[1]-a[1]).slice(0,10).map(([k,v]) => {
-        const [id,desc] = k.split('|');
-        return { inventoryId: id, itemDescription: desc, qty: v };
-      });
-      return {
-        success: true,
-        data: {
-          stats: { totalItems: DEMO_INVENTORY.length, totalValue: totalVal.toFixed(2), lowStock: low, outOfStock: out, totalTransactions: DEMO_TRANSACTIONS.length },
-          categories: Object.entries(cats).map(([n,c]) => ({ name: n, count: c })),
-          locations: Object.entries(locs).map(([n,c]) => ({ name: n, count: c })),
-          dailyTransactions: Object.entries(daily).map(([d,v]) => ({ date: d, ...v })),
-          topIssued: topIssued
-        }
-      };
-
-    case 'getCategories':
-      return { success: true, data: [...new Set(DEMO_INVENTORY.map(i => i.category))].sort() };
-
-    case 'getLocations':
-      return { success: true, data: [...new Set(DEMO_INVENTORY.map(i => i.location))].sort() };
-
-    case 'generateQR':
-      return { success: true, qrUrl: 'https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=' + encodeURIComponent(data.inventoryId), inventoryId: data.inventoryId };
-
-    default:
-      return { success: false, error: 'Unknown action' };
-  }
-}
-
-function syncOfflineQueue() {
-  if (state.offlineQueue.length === 0) return;
-  showToast('Syncing ' + state.offlineQueue.length + ' offline changes...', 'info');
-  state.offlineQueue.forEach(async (req) => {
-    await apiCall(req.action, req.data);
-  });
-  state.offlineQueue = [];
-  showToast('Sync complete!', 'success');
-}
-
-// --- NAVIGATION ---
-function navigateTo(page) {
-  if (state.currentPage === page) return;
-
+// ===================== NAVIGATION =====================
+function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(page + '-page').classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  event.target.classList.add('active');
 
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const navItem = document.querySelector('.nav-item[data-page="' + page + '"]');
-  if (navItem) navItem.classList.add('active');
-
-  state.currentPage = page;
-
-  if (page === 'home') loadHomeData();
-  if (page === 'inventory') { state.inventoryPage = 1; loadInventory(); }
-  if (page === 'transactions') { state.transactionPage = 1; loadTransactions(); }
-  if (page === 'dashboard') loadDashboard();
-  if (page === 'scanner') startScanner();
+  if (pageId === 'dashboard') updateDashboard();
+  if (pageId === 'inventory') refreshInventory();
+  if (pageId === 'transactions') refreshTransactions();
+  if (pageId === 'scan') startScanner();
   else stopScanner();
 }
 
-// --- HOME ---
-async function loadHomeData() {
-  const result = await apiCall('getDashboard');
-  if (result.success) {
-    const stats = result.data.stats;
-    document.getElementById('stat-total-items').textContent = stats.totalItems;
-    document.getElementById('stat-low-stock').textContent = stats.lowStock;
-    document.getElementById('stat-out-stock').textContent = stats.outOfStock;
-
-    const recentList = document.getElementById('recent-activity-list');
-    const trans = await apiCall('getTransactions', { page: 1, limit: 5 });
-    if (trans.success && trans.data.length > 0) {
-      recentList.innerHTML = trans.data.map(t => `
-        <div class="transaction-item">
-          <div class="transaction-icon ${t.type === 'Stock In' ? 'in' : t.type === 'Stock Out' ? 'out' : 'mrs'}"><span class="material-icons">${t.type === 'Stock In' ? 'arrow_downward' : t.type === 'Stock Out' ? 'arrow_upward' : 'refresh'}</span></div>
-          <div class="transaction-info"><div class="transaction-title">${t.itemDescription}</div><div class="transaction-meta">${t.type} by ${t.user}</div></div>
-          <div class="transaction-qty ${t.type === 'Stock In' ? 'in' : t.type === 'Stock Out' ? 'out' : 'mrs'}">${t.type === 'Stock Out' ? '-' : '+'}${t.qty}</div>
-        </div>
-      `).join('');
-    }
-  }
+// ===================== INVENTORY =====================
+function getInventory() {
+  try {
+    const data = localStorage.getItem('gemcor_inventory');
+    if (data) return JSON.parse(data);
+  } catch(e) {}
+  return [...DEMO_INVENTORY];
 }
 
-// --- INVENTORY ---
-async function loadInventory() {
-  const search = document.getElementById('inventory-search').value;
-  const category = document.getElementById('filter-category').value;
-  const location = document.getElementById('filter-location').value;
-  const status = document.getElementById('filter-status').value;
-
-  const result = await apiCall('getInventory', {
-    page: state.inventoryPage,
-    limit: CONFIG.ITEMS_PER_PAGE,
-    filters: JSON.stringify({ search, category, location, status })
-  });
-
-  const list = document.getElementById('inventory-list');
-  if (result.success) {
-    if (result.data.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><span class="material-icons">inventory_2</span></div><div class="empty-state-title">No items found</div></div>';
-    } else {
-      list.innerHTML = result.data.map(item => `
-        <div class="inventory-item" onclick="showMaterialDetail('${item.inventoryId}')">
-          <div class="inventory-item-icon"><span class="material-icons">inventory</span></div>
-          <div class="inventory-item-info">
-            <div class="inventory-item-title">${item.itemDescription}</div>
-            <div class="inventory-item-meta">${item.inventoryId} | ${item.category} | ${item.location}</div>
-          </div>
-          <div class="inventory-item-badge ${item.finalOnHand === 0 ? 'badge-danger' : item.finalOnHand <= 10 ? 'badge-warning' : 'badge-success'}">${item.finalOnHand} ${item.baseUnit}</div>
-        </div>
-      `).join('');
-    }
-
-    const p = result.pagination;
-    document.getElementById('inventory-pagination').innerHTML = `
-      <button class="pagination-btn" onclick="changeInventoryPage(${p.page - 1})" ${p.page <= 1 ? 'disabled' : ''}><span class="material-icons">chevron_left</span></button>
-      <span class="pagination-info">Page ${p.page} of ${p.pages}</span>
-      <button class="pagination-btn" onclick="changeInventoryPage(${p.page + 1})" ${p.page >= p.pages ? 'disabled' : ''}><span class="material-icons">chevron_right</span></button>
-    `;
-  }
+function saveInventory(data) {
+  try { localStorage.setItem('gemcor_inventory', JSON.stringify(data)); } catch(e) {}
 }
 
-function changeInventoryPage(page) {
-  state.inventoryPage = page;
-  loadInventory();
-}
+function refreshInventory() {
+  const list = document.getElementById('inventoryList');
+  const items = getInventory();
+  const search = (document.getElementById('invSearch').value || '').toLowerCase();
+  const cat = CONFIG.CATEGORY_FILTER;
 
-let searchTimeout;
-function debounceSearch() {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => { state.inventoryPage = 1; loadInventory(); }, 300);
-}
+  let filtered = items;
+  if (search) filtered = filtered.filter(i => i.description.toLowerCase().includes(search));
+  if (cat !== 'all') filtered = filtered.filter(i => i.category === cat);
 
-async function showMaterialDetail(inventoryId) {
-  const result = await apiCall('getItemByQR', { qrCode: inventoryId });
-  if (!result.success) {
-    showToast(result.error, 'error');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div>📦</div><p>No items found</p></div>';
     return;
   }
 
-  const item = result.data;
-  const history = await apiCall('getMaterialHistory', { inventoryId: item.inventoryId, limit: 10 });
-
-  document.getElementById('material-detail-content').innerHTML = `
-    <div class="material-card">
-      <div class="material-card-title">${item.itemDescription}</div>
-      <div class="material-card-id">${item.inventoryId} | ${item.category}</div>
-      <div class="material-card-stats">
-        <div><div class="material-card-stat-value">${item.finalOnHand}</div><div class="material-card-stat-label">Final On Hand</div></div>
-        <div><div class="material-card-stat-value">${item.stockIn}</div><div class="material-card-stat-label">Stock In</div></div>
-        <div><div class="material-card-stat-value">${item.stockOut}</div><div class="material-card-stat-label">Stock Out</div></div>
+  list.innerHTML = filtered.map(item => `
+    <div class="item-row" onclick="showItemDetail(${item.id})">
+      <div class="item-info">
+        <h4>${escapeHtml(item.description)}</h4>
+        <p>${item.category} • ${item.location}</p>
+      </div>
+      <div class="item-qty">
+        <div class="qty">${item.finalOnHand}</div>
+        <div class="unit">${item.baseUnit}</div>
       </div>
     </div>
-    <div class="txn-buttons">
-      <button class="txn-btn txn-btn-in" onclick="openTxnModal('stockIn', '${item.inventoryId}', '${item.itemDescription}')"><span class="material-icons">arrow_downward</span>Stock In</button>
-      <button class="txn-btn txn-btn-out" onclick="openTxnModal('stockOut', '${item.inventoryId}', '${item.itemDescription}')"><span class="material-icons">arrow_upward</span>Stock Out</button>
-      <button class="txn-btn txn-btn-mrs" onclick="openTxnModal('materialReturn', '${item.inventoryId}', '${item.itemDescription}')"><span class="material-icons">refresh</span>MRS</button>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">Transaction History</div></div>
-      <div class="timeline">
-        ${history.success && history.data.length > 0 ? history.data.map(t => `
-          <div class="timeline-item ${t.type === 'Stock In' ? 'in' : t.type === 'Stock Out' ? 'out' : 'mrs'}">
-            <div class="timeline-date">${new Date(t.date).toLocaleString()}</div>
-            <div class="timeline-content">${t.type} - ${t.qty} ${item.baseUnit}</div>
-            <div class="timeline-meta">By: ${t.user}</div>
-          </div>
-        `).join('') : '<div style="color:var(--gray-500); font-size:13px;">No history found</div>'}
-      </div>
-    </div>
-  `;
-
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('material-detail-page').classList.add('active');
+  `).join('');
 }
 
-// --- TRANSACTIONS ---
-async function loadTransactions() {
-  const search = document.getElementById('transaction-search').value;
-  const type = document.getElementById('trans-filter-type').value;
-  const dateFrom = document.getElementById('trans-date-from').value;
-  const dateTo = document.getElementById('trans-date-to').value;
+function filterInventory() { refreshInventory(); }
 
-  const result = await apiCall('getTransactions', {
-    page: state.transactionPage,
-    limit: CONFIG.ITEMS_PER_PAGE,
-    filters: JSON.stringify({ search, type, dateFrom, dateTo })
-  });
+function setCategoryFilter(cat) {
+  CONFIG.CATEGORY_FILTER = cat;
+  document.querySelectorAll('#page-inventory .filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  refreshInventory();
+}
 
-  const list = document.getElementById('transaction-list');
-  if (result.success) {
-    if (result.data.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><span class="material-icons">receipt_long</span></div><div class="empty-state-title">No transactions found</div></div>';
-    } else {
-      list.innerHTML = result.data.map(t => `
-        <div class="transaction-item">
-          <div class="transaction-icon ${t.type === 'Stock In' ? 'in' : t.type === 'Stock Out' ? 'out' : 'mrs'}"><span class="material-icons">${t.type === 'Stock In' ? 'arrow_downward' : t.type === 'Stock Out' ? 'arrow_upward' : 'refresh'}</span></div>
-          <div class="transaction-info">
-            <div class="transaction-title">${t.itemDescription}</div>
-            <div class="transaction-meta">${new Date(t.date).toLocaleString()} | ${t.user}</div>
-          </div>
-          <div class="transaction-qty ${t.type === 'Stock In' ? 'in' : t.type === 'Stock Out' ? 'out' : 'mrs'}">${t.type === 'Stock Out' ? '-' : '+'}${t.qty}</div>
-        </div>
-      `).join('');
+function showItemDetail(id) {
+  const items = getInventory();
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  CONFIG.SELECTED_ITEM = item;
+
+  document.getElementById('itemModalTitle').textContent = escapeHtml(item.description);
+  document.getElementById('itemDetailGrid').innerHTML = `
+    <div class="detail-item"><label>Category</label><value>${item.category}</value></div>
+    <div class="detail-item"><label>Location</label><value>${item.location}</value></div>
+    <div class="detail-item"><label>On-Hand</label><value>${item.onHand} ${item.baseUnit}</value></div>
+    <div class="detail-item"><label>Stock In</label><value style="color:var(--success)">+${item.inQty}</value></div>
+    <div class="detail-item"><label>Stock Out</label><value style="color:var(--danger)">-${item.outQty}</value></div>
+    <div class="detail-item"><label>MRS</label><value style="color:var(--warning)">+${item.mrsQty}</value></div>
+    <div class="detail-item"><label>Final On-Hand</label><value style="color:var(--primary);font-size:1.2rem">${item.finalOnHand} ${item.baseUnit}</value></div>
+    <div class="detail-item"><label>Unit Cost</label><value>₱${item.unitCost.toLocaleString()}</value></div>
+  `;
+  openModal('itemModal');
+}
+
+function openTxFromItem() {
+  closeModal('itemModal');
+  document.getElementById('txDesc').value = CONFIG.SELECTED_ITEM.description;
+  document.getElementById('txLoc').value = CONFIG.SELECTED_ITEM.location;
+  openModal('txModal');
+}
+
+// ===================== TRANSACTIONS =====================
+function getTransactions() {
+  try {
+    const data = localStorage.getItem('gemcor_transactions');
+    if (data) return JSON.parse(data);
+  } catch(e) {}
+  return [...DEMO_TRANSACTIONS];
+}
+
+function saveTransactions(data) {
+  try { localStorage.setItem('gemcor_transactions', JSON.stringify(data)); } catch(e) {}
+}
+
+function refreshTransactions() {
+  const list = document.getElementById('transactionList');
+  const txs = getTransactions();
+  const search = (document.getElementById('txSearch').value || '').toLowerCase();
+  const typeFilter = CONFIG.TX_FILTER;
+
+  let filtered = txs.sort((a,b) => new Date(b.date) - new Date(a.date));
+  if (search) filtered = filtered.filter(t => t.description.toLowerCase().includes(search));
+  if (typeFilter !== 'all') filtered = filtered.filter(t => t.type === typeFilter);
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div>📝</div><p>No transactions found</p></div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(tx => `
+    <div class="tx-row">
+      <div class="tx-info">
+        <h4>${escapeHtml(tx.description)}</h4>
+        <p>${tx.date} • ${tx.user} • ${tx.remarks || '-'}</p>
+      </div>
+      <div style="text-align:right;">
+        <span class="badge ${tx.type === 'Stock In' ? 'badge-success' : tx.type === 'Stock Out' ? 'badge-danger' : 'badge-warning'}">${tx.type}</span>
+        <div class="tx-qty ${tx.type === 'Stock Out' ? 'negative' : 'positive'}">${tx.type === 'Stock Out' ? '-' : '+'}${tx.qty}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterTransactions() { refreshTransactions(); }
+
+function setTxFilter(type) {
+  CONFIG.TX_FILTER = type;
+  document.querySelectorAll('#page-transactions .filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  refreshTransactions();
+}
+
+// ===================== TRANSACTION SUBMISSION =====================
+function setTxType(type) {
+  CONFIG.TX_TYPE = type;
+  document.querySelectorAll('.tx-type-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.textContent.includes(type === 'Stock In' ? 'Stock In' : type === 'Stock Out' ? 'Stock Out' : 'MRS')) {
+      btn.classList.add('active');
     }
+  });
+}
 
-    const p = result.pagination;
-    document.getElementById('transaction-pagination').innerHTML = `
-      <button class="pagination-btn" onclick="changeTransactionPage(${p.page - 1})" ${p.page <= 1 ? 'disabled' : ''}><span class="material-icons">chevron_left</span></button>
-      <span class="pagination-info">Page ${p.page} of ${p.pages}</span>
-      <button class="pagination-btn" onclick="changeTransactionPage(${p.page + 1})" ${p.page >= p.pages ? 'disabled' : ''}><span class="material-icons">chevron_right</span></button>
-    `;
+function submitTransaction() {
+  const desc = document.getElementById('scanDesc').value.trim();
+  const qty = parseInt(document.getElementById('scanQty').value);
+  const loc = document.getElementById('scanLoc').value.trim();
+  const remarks = document.getElementById('scanRemarks').value.trim();
+
+  if (!desc || !qty || qty < 1) {
+    showToast('Please enter item and valid quantity');
+    playSound('error');
+    return;
+  }
+
+  processTransaction(desc, qty, loc, remarks);
+
+  // Clear form
+  document.getElementById('scanDesc').value = '';
+  document.getElementById('scanQty').value = '';
+  document.getElementById('scanLoc').value = '';
+  document.getElementById('scanRemarks').value = '';
+}
+
+function submitModalTx() {
+  const desc = document.getElementById('txDesc').value.trim();
+  const qty = parseInt(document.getElementById('txQty').value);
+  const loc = document.getElementById('txLoc').value.trim();
+  const remarks = document.getElementById('txRemarks').value.trim();
+
+  if (!desc || !qty || qty < 1) {
+    showToast('Please enter item and valid quantity');
+    playSound('error');
+    return;
+  }
+
+  processTransaction(desc, qty, loc, remarks);
+  closeModal('txModal');
+
+  document.getElementById('txDesc').value = '';
+  document.getElementById('txQty').value = '';
+  document.getElementById('txLoc').value = '';
+  document.getElementById('txRemarks').value = '';
+}
+
+function processTransaction(desc, qty, loc, remarks) {
+  const items = getInventory();
+  let item = items.find(i => i.description.toLowerCase() === desc.toLowerCase());
+
+  if (!item) {
+    // Create new item
+    item = {
+      id: items.length > 0 ? Math.max(...items.map(i => i.id)) + 1 : 1,
+      description: desc,
+      category: 'Uncategorized',
+      location: loc || 'Unassigned',
+      onHand: 0,
+      inQty: 0,
+      outQty: 0,
+      mrsQty: 0,
+      finalOnHand: 0,
+      baseUnit: 'pcs',
+      unitCost: 0
+    };
+    items.push(item);
+  }
+
+  // Update ONLY the relevant column (IN, OUT, or MRS)
+  // ON-HAND is never touched by transactions
+  // FINAL ON-HAND must be a formula in the sheet: =E+F-G+H
+  if (CONFIG.TX_TYPE === 'Stock In') {
+    item.inQty += qty;
+  } else if (CONFIG.TX_TYPE === 'Stock Out') {
+    if (item.finalOnHand < qty) {
+      showToast('Insufficient stock! Available: ' + item.finalOnHand);
+      playSound('error');
+      return;
+    }
+    item.outQty += qty;
+  } else if (CONFIG.TX_TYPE === 'MRS Return') {
+    item.mrsQty += qty;
+  }
+
+  // Recalculate final on-hand locally
+  item.finalOnHand = item.onHand + item.inQty - item.outQty + item.mrsQty;
+
+  // Save locally
+  saveInventory(items);
+
+  // Add transaction record
+  const txs = getTransactions();
+  txs.unshift({
+    id: txs.length > 0 ? Math.max(...txs.map(t => t.id)) + 1 : 1,
+    date: new Date().toISOString().split('T')[0],
+    inventoryId: item.id,
+    description: desc,
+    type: CONFIG.TX_TYPE,
+    qty: qty,
+    user: CONFIG.CURRENT_USER ? CONFIG.CURRENT_USER.name : 'Unknown',
+    remarks: remarks || ''
+  });
+  saveTransactions(txs);
+
+  // Try to sync to backend
+  if (CONFIG.API_URL && CONFIG.IS_ONLINE && !CONFIG.DEMO_MODE) {
+    syncTransactionToBackend({
+      action: 'transaction',
+      type: CONFIG.TX_TYPE,
+      description: desc,
+      quantity: qty,
+      location: loc || item.location,
+      remarks: remarks || '',
+      user: CONFIG.CURRENT_USER.name,
+      date: new Date().toISOString().split('T')[0]
+    });
+  } else {
+    // Queue for later sync
+    queueTransaction({
+      type: CONFIG.TX_TYPE,
+      description: desc,
+      quantity: qty,
+      location: loc || item.location,
+      remarks: remarks || '',
+      user: CONFIG.CURRENT_USER ? CONFIG.CURRENT_USER.name : 'Unknown',
+      date: new Date().toISOString().split('T')[0]
+    });
+  }
+
+  showToast(`${CONFIG.TX_TYPE}: ${desc} (${qty})`);
+  playSound('success');
+  vibrate();
+
+  refreshInventory();
+  refreshTransactions();
+  updateDashboard();
+}
+
+// ===================== QUEUE / SYNC =====================
+function queueTransaction(tx) {
+  try {
+    let queue = JSON.parse(localStorage.getItem('gemcor_queue') || '[]');
+    queue.push(tx);
+    localStorage.setItem('gemcor_queue', JSON.stringify(queue));
+    updateQueueBadge();
+  } catch(e) {}
+}
+
+function getQueue() {
+  try { return JSON.parse(localStorage.getItem('gemcor_queue') || '[]'); } catch(e) { return []; }
+}
+
+function updateQueueBadge() {
+  const queue = getQueue();
+  const badge = document.getElementById('queueCount');
+  if (queue.length > 0) {
+    badge.textContent = queue.length + ' pending';
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
   }
 }
 
-function changeTransactionPage(page) {
-  state.transactionPage = page;
-  loadTransactions();
+function showQueueModal() {
+  const queue = getQueue();
+  const list = document.getElementById('queueList');
+  if (queue.length === 0) {
+    list.innerHTML = '<div class="empty-state"><p>No pending transactions</p></div>';
+  } else {
+    list.innerHTML = queue.map((tx, i) => `
+      <div class="tx-row">
+        <div class="tx-info">
+          <h4>${escapeHtml(tx.description)}</h4>
+          <p>${tx.type} • ${tx.date}</p>
+        </div>
+        <div class="tx-qty ${tx.type === 'Stock Out' ? 'negative' : 'positive'}">${tx.type === 'Stock Out' ? '-' : '+'}${tx.quantity}</div>
+      </div>
+    `).join('');
+  }
+  openModal('queueModal');
 }
 
-let transSearchTimeout;
-function debounceTransSearch() {
-  clearTimeout(transSearchTimeout);
-  transSearchTimeout = setTimeout(() => { state.transactionPage = 1; loadTransactions(); }, 300);
+async function syncQueue() {
+  if (!CONFIG.API_URL || !CONFIG.IS_ONLINE) {
+    showToast('Cannot sync — backend not connected');
+    return;
+  }
+
+  const queue = getQueue();
+  if (queue.length === 0) {
+    showToast('Nothing to sync');
+    return;
+  }
+
+  showToast('Syncing ' + queue.length + ' transactions...');
+
+  let success = 0;
+  for (const tx of queue) {
+    try {
+      const ok = await syncTransactionToBackend(tx);
+      if (ok) success++;
+    } catch(e) {}
+  }
+
+  // Clear synced items
+  if (success > 0) {
+    localStorage.setItem('gemcor_queue', JSON.stringify(queue.slice(success)));
+    updateQueueBadge();
+    showToast('Synced ' + success + ' transactions');
+    refreshInventory();
+  } else {
+    showToast('Sync failed — will retry later');
+  }
+
+  closeModal('queueModal');
 }
 
-// --- DASHBOARD ---
-async function loadDashboard() {
-  const result = await apiCall('getDashboard');
-  if (!result.success) return;
+async function syncTransactionToBackend(tx) {
+  try {
+    const url = `${CONFIG.API_URL}?action=transaction&type=${encodeURIComponent(tx.type)}&description=${encodeURIComponent(tx.description)}&quantity=${tx.quantity}&location=${encodeURIComponent(tx.location || '')}&remarks=${encodeURIComponent(tx.remarks || '')}&user=${encodeURIComponent(tx.user)}&date=${encodeURIComponent(tx.date)}`;
+    const res = await fetchWithTimeout(url, {}, 8000);
+    const data = await res.json();
+    return data.success;
+  } catch(e) {
+    console.log('Backend sync failed:', e);
+    return false;
+  }
+}
 
-  const data = result.data;
-  document.getElementById('dash-total-items').textContent = data.stats.totalItems;
-  document.getElementById('dash-total-value').textContent = '$' + parseFloat(data.stats.totalValue).toLocaleString();
-  document.getElementById('dash-total-txn').textContent = data.stats.totalTransactions;
+// ===================== DASHBOARD =====================
+function updateDashboard() {
+  const items = getInventory();
+  const txs = getTransactions();
+  const today = new Date().toISOString().split('T')[0];
 
-  // Destroy old charts
-  Object.values(state.charts).forEach(c => c.destroy());
-  state.charts = {};
+  document.getElementById('statTotal').textContent = items.length;
+  document.getElementById('statLow').textContent = items.filter(i => i.finalOnHand < 10).length;
+  document.getElementById('statToday').textContent = txs.filter(t => t.date === today).length;
+  document.getElementById('statValue').textContent = '₱' + Math.round(items.reduce((s,i) => s + (i.finalOnHand * i.unitCost), 0) / 1000) + 'K';
 
+  renderCharts(txs);
+
+  // Top issued items
+  const outTxs = txs.filter(t => t.type === 'Stock Out');
+  const itemTotals = {};
+  outTxs.forEach(t => { itemTotals[t.description] = (itemTotals[t.description] || 0) + t.qty; });
+  const topItems = Object.entries(itemTotals).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+  document.getElementById('topItemsList').innerHTML = topItems.length === 0 
+    ? '<div class="empty-state"><p>No issue data yet</p></div>'
+    : topItems.map(([desc, qty], i) => `
+      <div class="item-row">
+        <div class="item-info">
+          <h4>${i+1}. ${escapeHtml(desc)}</h4>
+        </div>
+        <div class="item-qty"><div class="qty">${qty}</div></div>
+      </div>
+    `).join('');
+}
+
+function renderCharts(txs) {
   // Daily chart
-  const dailyCtx = document.getElementById('daily-chart').getContext('2d');
-  state.charts.daily = new Chart(dailyCtx, {
+  const last7 = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    last7.push(d.toISOString().split('T')[0]);
+  }
+  const dailyData = last7.map(date => ({
+    in: txs.filter(t => t.date === date && t.type === 'Stock In').reduce((s,t) => s + t.qty, 0),
+    out: txs.filter(t => t.date === date && t.type === 'Stock Out').reduce((s,t) => s + t.qty, 0)
+  }));
+
+  const ctx1 = document.getElementById('chartDaily');
+  if (CONFIG.CHARTS.daily) CONFIG.CHARTS.daily.destroy();
+  CONFIG.CHARTS.daily = new Chart(ctx1, {
     type: 'bar',
     data: {
-      labels: data.dailyTransactions.map(d => d.date.slice(5)),
+      labels: last7.map(d => d.slice(5)),
       datasets: [
-        { label: 'Stock In', data: data.dailyTransactions.map(d => d.stockIn), backgroundColor: '#22c55e', borderRadius: 4 },
-        { label: 'Stock Out', data: data.dailyTransactions.map(d => d.stockOut), backgroundColor: '#ef4444', borderRadius: 4 },
-        { label: 'MRS', data: data.dailyTransactions.map(d => d.mrs), backgroundColor: '#f59e0b', borderRadius: 4 }
+        { label: 'Stock In', data: dailyData.map(d => d.in), backgroundColor: '#2e7d32' },
+        { label: 'Stock Out', data: dailyData.map(d => d.out), backgroundColor: '#c62828' }
       ]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
   });
 
   // Category chart
-  const catCtx = document.getElementById('category-chart').getContext('2d');
-  state.charts.category = new Chart(catCtx, {
+  const items = getInventory();
+  const cats = {};
+  items.forEach(i => { cats[i.category] = (cats[i.category] || 0) + i.finalOnHand; });
+
+  const ctx2 = document.getElementById('chartCategory');
+  if (CONFIG.CHARTS.category) CONFIG.CHARTS.category.destroy();
+  CONFIG.CHARTS.category = new Chart(ctx2, {
     type: 'doughnut',
     data: {
-      labels: data.categories.map(c => c.name),
-      datasets: [{ data: data.categories.map(c => c.count), backgroundColor: ['#0056D2', '#00BCD4', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'] }]
+      labels: Object.keys(cats),
+      datasets: [{ data: Object.values(cats), backgroundColor: ['#1a237e','#ff6f00','#2e7d32','#c62828','#f9a825'] }]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-  });
-
-  // Top issued chart
-  const topCtx = document.getElementById('top-issued-chart').getContext('2d');
-  state.charts.top = new Chart(topCtx, {
-    type: 'bar',
-    data: {
-      labels: data.topIssued.map(i => i.itemDescription.length > 15 ? i.itemDescription.slice(0, 15) + '...' : i.itemDescription),
-      datasets: [{ label: 'Qty Issued', data: data.topIssued.map(i => i.qty), backgroundColor: '#0056D2', borderRadius: 4 }]
-    },
-    options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
   });
 }
 
-// --- SCANNER ---
+// ===================== SCANNER =====================
 function startScanner() {
-  if (state.scanner) return;
+  if (CONFIG.SCANNER) return;
+  const area = document.getElementById('scannerArea');
+  area.innerHTML = '<div id="reader" style="width:100%;height:100%;"></div><div class="scan-laser"></div>';
 
-  const reader = document.getElementById('reader');
-  reader.innerHTML = '';
-
-  state.scanner = new Html5Qrcode('reader');
-  state.scanner.start(
-    { facingMode: state.currentCamera },
-    { fps: 10, qrbox: { width: 200, height: 200 } },
-    onScanSuccess,
-    onScanFailure
-  ).catch(err => {
-    console.error('Scanner error:', err);
-    showToast('Camera access denied. Please allow camera permissions.', 'error');
-  });
+  try {
+    CONFIG.SCANNER = new Html5Qrcode('reader');
+    Html5Qrcode.getCameras().then(cameras => {
+      if (cameras.length > 0) {
+        CONFIG.SCANNER.start(
+          cameras[0].id,
+          { fps: 10, qrbox: { width: 200, height: 200 } },
+          decodedText => {
+            document.getElementById('scanDesc').value = decodedText;
+            playSound('beep');
+            vibrate();
+          },
+          () => {}
+        );
+      }
+    });
+  } catch(e) {
+    area.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;flex-direction:column;padding:20px;"><div style="font-size:3rem;margin-bottom:10px;">📷</div><p>Camera access required</p><p style="font-size:.8rem;margin-top:8px;">Type item name manually below</p></div>';
+  }
 }
 
 function stopScanner() {
-  if (state.scanner) {
-    state.scanner.stop().then(() => {
-      state.scanner = null;
-    }).catch(err => console.error('Stop error:', err));
+  if (CONFIG.SCANNER) {
+    CONFIG.SCANNER.stop().catch(() => {});
+    CONFIG.SCANNER = null;
   }
 }
 
-function onScanSuccess(decodedText) {
-  if (state.vibrationEnabled && navigator.vibrate) navigator.vibrate(200);
-
-  document.getElementById('scan-success-desc').textContent = 'QR Code: ' + decodedText;
-  document.getElementById('scan-success-overlay').classList.add('active');
-
-  // Store scanned code for viewing
-  state.lastScannedCode = decodedText;
-
-  stopScanner();
-}
-
-function hideScanSuccess() {
-  document.getElementById('scan-success-overlay').classList.remove('active');
-  if (state.lastScannedCode) {
-    showMaterialDetail(state.lastScannedCode);
-  }
-}
-
-function onScanFailure(error) {
-  // console.warn('Scan failure:', error);
-}
-
-function switchCamera() {
-  state.currentCamera = state.currentCamera === 'environment' ? 'user' : 'environment';
-  stopScanner();
-  setTimeout(startScanner, 300);
-}
-
-function toggleFlashlight() {
-  state.flashlightOn = !state.flashlightOn;
-  showToast('Flashlight ' + (state.flashlightOn ? 'on' : 'off') + ' (simulated)', 'info');
-}
-
-// --- TRANSACTION MODAL ---
-function openTxnModal(type, inventoryId, itemName) {
-  state.currentTxnType = type;
-  state.currentTxnItem = inventoryId;
-
-  const titles = { stockIn: 'Stock In', stockOut: 'Stock Out', materialReturn: 'MRS Return' };
-  document.getElementById('txn-modal-title').textContent = titles[type];
-  document.getElementById('txn-item-name').value = itemName;
-  document.getElementById('txn-qty').value = 1;
-  document.getElementById('txn-remarks').value = '';
-
-  document.getElementById('txn-modal').classList.add('active');
-}
-
-function closeTxnModal() {
-  document.getElementById('txn-modal').classList.remove('active');
-}
-
-async function submitTransaction() {
-  const qty = parseInt(document.getElementById('txn-qty').value);
-  const remarks = document.getElementById('txn-remarks').value;
-
-  if (!qty || qty < 1) {
-    showToast('Please enter a valid quantity', 'error');
-    return;
-  }
-
-  const btn = document.getElementById('txn-submit-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="material-icons">hourglass_top</span> Processing...';
-
-  const result = await apiCall(state.currentTxnType, {
-    inventoryId: state.currentTxnItem,
-    qty: qty,
-    user: state.currentUser ? state.currentUser.name : 'demo',
-    remarks: remarks
-  });
-
-  if (result.success) {
-    showToast(result.message || 'Transaction successful!', 'success');
-    closeTxnModal();
-    if (state.currentPage === 'inventory') loadInventory();
-    if (state.currentPage === 'material-detail') showMaterialDetail(state.currentTxnItem);
-  } else {
-    showToast(result.error || 'Transaction failed', 'error');
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = '<span class="material-icons">check</span> Confirm';
-}
-
-// --- FILTERS ---
-async function loadFilters() {
-  const cats = await apiCall('getCategories');
-  const locs = await apiCall('getLocations');
-
-  if (cats.success) {
-    const select = document.getElementById('filter-category');
-    select.innerHTML = '<option value="all">All Categories</option>' + cats.data.map(c => '<option value="' + c + '">' + c + '</option>').join('');
-  }
-  if (locs.success) {
-    const select = document.getElementById('filter-location');
-    select.innerHTML = '<option value="all">All Locations</option>' + locs.data.map(l => '<option value="' + l + '">' + l + '</option>').join('');
-  }
-}
-
-// --- SETTINGS ---
-function toggleDarkMode() {
-  state.darkMode = !state.darkMode;
-  document.body.classList.toggle('dark-mode');
-  document.getElementById('dark-mode-icon').textContent = state.darkMode ? 'light_mode' : 'dark_mode';
-  document.getElementById('dark-mode-toggle').classList.toggle('active');
-  localStorage.setItem('gemcor_dark_mode', state.darkMode);
-}
-
-function toggleDarkModeSetting() {
-  toggleDarkMode();
-}
-
-function toggleSound() {
-  state.soundEnabled = !state.soundEnabled;
-  document.getElementById('sound-toggle').classList.toggle('active');
-  localStorage.setItem('gemcor_sound', state.soundEnabled);
-  showToast('Sound ' + (state.soundEnabled ? 'enabled' : 'disabled'), 'info');
-}
-
-function toggleVibration() {
-  state.vibrationEnabled = !state.vibrationEnabled;
-  document.getElementById('vibration-toggle').classList.toggle('active');
-  localStorage.setItem('gemcor_vibration', state.vibrationEnabled);
-  if (state.vibrationEnabled && navigator.vibrate) navigator.vibrate(50);
-  showToast('Haptic feedback ' + (state.vibrationEnabled ? 'enabled' : 'disabled'), 'info');
-}
-
-function showApiModal() {
-  document.getElementById('api-url-input').value = CONFIG.API_URL || '';
-  document.getElementById('api-modal').classList.add('active');
-}
-
-function closeApiModal() {
-  document.getElementById('api-modal').classList.remove('active');
+// ===================== SETTINGS =====================
+function toggleDark() {
+  document.body.classList.toggle('dark');
+  try { localStorage.setItem('darkMode', document.body.classList.contains('dark')); } catch(e) {}
 }
 
 function saveApiUrl() {
-  const url = document.getElementById('api-url-input').value.trim();
+  const url = document.getElementById('apiUrlInput').value.trim();
   if (url) {
     CONFIG.API_URL = url;
-    CONFIG.DEMO_MODE = false;
-    localStorage.setItem('gemcor_api_url', url);
-    document.getElementById('settings-api-url').textContent = url.substring(0, 40) + '...';
-    showToast('API URL saved!', 'success');
-    closeApiModal();
-  } else {
-    showToast('Please enter a valid URL', 'error');
+    try { localStorage.setItem('gemcor_api_url', url); } catch(e) {}
+    showToast('API URL saved');
+    testConnection();
   }
 }
 
-// --- TOAST ---
-function showToast(message, type) {
-  const container = document.getElementById('toast-container');
-  const toast = document.createElement('div');
-  toast.className = 'toast toast-' + type;
+async function testConnection() {
+  const status = document.getElementById('testStatus');
+  status.textContent = 'Testing...';
+  status.className = 'connection-status';
 
-  const icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info' };
-  toast.innerHTML = '<span class="material-icons">' + icons[type] + '</span>' + message;
+  if (!CONFIG.API_URL) {
+    status.textContent = '❌ No API URL set';
+    status.className = 'connection-status offline';
+    return;
+  }
 
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.remove();
-  }, 3000);
+  try {
+    const res = await fetchWithTimeout(`${CONFIG.API_URL}?action=test`, {}, 5000);
+    const data = await res.json();
+    if (data.success) {
+      CONFIG.IS_ONLINE = true;
+      status.textContent = '✅ Connected successfully';
+      status.className = 'connection-status online';
+      showToast('Backend connected!');
+      updateConnectionStatus();
+    } else {
+      throw new Error('Invalid response');
+    }
+  } catch(e) {
+    CONFIG.IS_ONLINE = false;
+    status.textContent = '❌ Connection failed — check URL and deployment';
+    status.className = 'connection-status offline';
+    showToast('Connection failed');
+  }
 }
+
+async function testConnectionSilent() {
+  if (!CONFIG.API_URL) return;
+  try {
+    const res = await fetchWithTimeout(`${CONFIG.API_URL}?action=test`, {}, 5000);
+    const data = await res.json();
+    CONFIG.IS_ONLINE = data.success === true;
+    updateConnectionStatus();
+  } catch(e) {
+    CONFIG.IS_ONLINE = false;
+    updateConnectionStatus();
+  }
+}
+
+function exportData() {
+  const data = {
+    inventory: getInventory(),
+    transactions: getTransactions(),
+    exported: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'gemcor-backup-' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Data exported');
+}
+
+function clearAllData() {
+  if (!confirm('Clear all local data? This cannot be undone.')) return;
+  try {
+    localStorage.removeItem('gemcor_inventory');
+    localStorage.removeItem('gemcor_transactions');
+    localStorage.removeItem('gemcor_queue');
+  } catch(e) {}
+  showToast('All local data cleared');
+  refreshInventory();
+  refreshTransactions();
+  updateDashboard();
+}
+
+// ===================== MODALS =====================
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function openTxModal() { openModal('txModal'); }
+
+// ===================== UTILITIES =====================
+function fetchWithTimeout(url, options = {}, timeout = 5000) {
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
+  ]);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function playSound(type) {
+  if (!document.getElementById('soundToggle').checked) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    if (type === 'success') { osc.frequency.value = 880; gain.gain.value = 0.1; }
+    else if (type === 'error') { osc.frequency.value = 220; gain.gain.value = 0.1; }
+    else { osc.frequency.value = 1200; gain.gain.value = 0.05; }
+    osc.start(); osc.stop(ctx.currentTime + 0.15);
+  } catch(e) {}
+}
+
+function vibrate() {
+  if (document.getElementById('vibeToggle').checked && navigator.vibrate) {
+    navigator.vibrate(50);
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Close modals on outside click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('active'); });
+});
+
+// Enter key on login
+document.getElementById('loginPass').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
 </script>
 </body>
 </html>
