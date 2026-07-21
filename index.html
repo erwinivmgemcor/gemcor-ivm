@@ -411,11 +411,12 @@ body.dark-mode ::-webkit-scrollbar-thumb { background: var(--gray-400); }
 <body>
 
 <!-- Loading Screen -->
-<div id="loading-screen">
+<div id="loading-screen" onclick="this.classList.add('hidden')" style="cursor:pointer;">
   <div class="loading-logo"><span class="material-icons">inventory_2</span></div>
   <div class="loading-text">GEMCOR IVM</div>
   <div class="loading-sub">Inventory Management System</div>
   <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+  <div style="color:rgba(255,255,255,0.6);font-size:12px;margin-top:16px;">Tap anywhere to skip</div>
 </div>
 
 <!-- Toast Container -->
@@ -655,23 +656,35 @@ const DEMO_TRANSACTIONS = [
 
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
-  initConfig();
-  initDarkMode();
-  initSettings();
+  try {
+    initConfig();
+    initDarkMode();
+    initSettings();
 
-  const savedUser = localStorage.getItem('gemcor_user');
-  if (savedUser) {
-    state.currentUser = JSON.parse(savedUser);
-    showApp();
-  } else {
+    const savedUser = localStorage.getItem('gemcor_user');
+    if (savedUser) {
+      try {
+        state.currentUser = JSON.parse(savedUser);
+        showApp();
+      } catch (e) {
+        showLogin();
+      }
+    } else {
+      showLogin();
+    }
+  } catch (err) {
+    console.error('Init error:', err);
     showLogin();
   }
 
+  // Always hide loading screen after max 3 seconds
   setTimeout(() => {
-    document.getElementById('loading-screen').classList.add('hidden');
-  }, 2000);
+    const loader = document.getElementById('loading-screen');
+    if (loader) loader.classList.add('hidden');
+  }, 2500);
 
-  document.getElementById('login-form').addEventListener('submit', handleLogin);
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) loginForm.addEventListener('submit', handleLogin);
 
   window.addEventListener('online', () => {
     showToast('Back online! Syncing...', 'success');
@@ -784,11 +797,15 @@ function logout() {
 }
 
 function showLogin() {
+  const loader = document.getElementById('loading-screen');
+  if (loader) loader.classList.add('hidden');
   document.getElementById('login-page').style.display = 'block';
   document.getElementById('app-content').style.display = 'none';
 }
 
 function showApp() {
+  const loader = document.getElementById('loading-screen');
+  if (loader) loader.classList.add('hidden');
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('app-content').style.display = 'block';
   document.getElementById('settings-user').textContent = state.currentUser ? state.currentUser.name + ' (' + state.currentUser.role + ')' : 'Not logged in';
