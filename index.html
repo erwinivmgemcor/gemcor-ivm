@@ -1,881 +1,776 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#0056D2">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="GEMCOR IVM - Inventory Management Web Application">
-  <title>GEMCOR IVM</title>
-
-  <!-- Bootstrap 5 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Material Icons -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- SweetAlert2 CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.1/dist/sweetalert2.min.css">
-
-  <style>
-    :root {
-      --primary: #0056D2; --primary-dark: #004494; --primary-light: #E8F0FE;
-      --cyan: #00BCD4; --cyan-light: #E0F7FA;
-      --success: #22C55E; --warning: #F59E0B; --danger: #EF4444;
-      --dark: #1E293B; --gray-100: #F8FAFC; --gray-200: #E2E8F0;
-      --gray-300: #CBD5E1; --gray-500: #64748B; --gray-700: #334155; --gray-900: #0F172A;
-      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 24px;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--gray-100); color: var(--gray-900);
-      height: 100%; overflow: hidden;
-      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-    }
-
-    /* Loading Screen */
-    .loading-screen {
-      position: fixed; inset: 0;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--cyan) 100%);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      z-index: 99999;
-      transition: opacity 0.6s ease, visibility 0.6s ease;
-    }
-    .loading-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-    .loading-logo {
-      width: 120px; height: 120px; background: white;
-      border-radius: var(--radius-xl);
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--shadow-xl);
-      animation: logoPulse 2s ease-in-out infinite;
-    }
-    .loading-logo .material-icons { font-size: 64px; color: var(--primary); }
-    .loading-title { margin-top: 24px; color: white; font-size: 28px; font-weight: 800; letter-spacing: 2px; }
-    .loading-subtitle { color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 4px; font-weight: 300; }
-    .loading-bar { width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 32px; overflow: hidden; }
-    .loading-bar-fill { height: 100%; background: white; border-radius: 2px; width: 0%; animation: loadingBar 2s ease-in-out forwards; }
-    @keyframes logoPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-    @keyframes loadingBar { 0% { width: 0%; } 50% { width: 70%; } 100% { width: 100%; } }
-
-    /* App Layout */
-    .app-container { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
-    .app-content { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 80px; position: relative; }
-    .app-content::-webkit-scrollbar { width: 4px; }
-    .app-content::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 2px; }
-
-    /* Bottom Nav */
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0; height: 70px;
-      background: white; border-top: 1px solid var(--gray-200);
-      display: flex; justify-content: space-around; align-items: center;
-      z-index: 1000; padding-bottom: env(safe-area-inset-bottom, 0);
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
-    }
-    .bottom-nav-item {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      flex: 1; height: 100%; color: var(--gray-500); text-decoration: none;
-      font-size: 10px; font-weight: 500; transition: var(--transition);
-      cursor: pointer; border: none; background: none; padding: 0;
-    }
-    .bottom-nav-item .material-icons { font-size: 24px; margin-bottom: 2px; transition: var(--transition); }
-    .bottom-nav-item.active { color: var(--primary); }
-    .bottom-nav-item.active .material-icons { transform: translateY(-2px); }
-    .bottom-nav-item:active { opacity: 0.7; }
-
-    /* Pages */
-    .page { display: none; animation: fadeIn 0.3s ease; min-height: 100%; }
-    .page.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Cards */
-    .gem-card { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); transition: var(--transition); overflow: hidden; }
-    .gem-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-    .gem-card-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; justify-content: space-between; }
-    .gem-card-body { padding: 20px; }
-
-    /* Home Cards */
-    .home-card { background: white; border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-md); border: 1px solid var(--gray-200); transition: var(--transition); cursor: pointer; position: relative; overflow: hidden; }
-    .home-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--primary), var(--cyan)); border-radius: var(--radius-xl) var(--radius-xl) 0 0; }
-    .home-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-xl); }
-    .home-card:active { transform: scale(0.98); }
-    .home-card-icon { width: 56px; height: 56px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
-    .home-card-icon .material-icons { font-size: 28px; }
-    .home-card-title { font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
-    .home-card-desc { font-size: 12px; color: var(--gray-500); line-height: 1.5; }
-
-    /* Scanner */
-    .scanner-container { position: relative; width: 100%; height: 60vh; background: #000; border-radius: var(--radius-lg); overflow: hidden; }
-    #reader { width: 100% !important; height: 100% !important; }
-    #reader video { object-fit: cover !important; }
-    .scanner-overlay { position: absolute; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; }
-    .scanner-frame { width: 250px; height: 250px; border: 2px solid rgba(255,255,255,0.5); border-radius: var(--radius-lg); position: relative; }
-    .scanner-frame::before, .scanner-frame::after { content: ''; position: absolute; width: 30px; height: 30px; border-color: var(--cyan); border-style: solid; }
-    .scanner-frame::before { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-radius: var(--radius-lg) 0 0 0; }
-    .scanner-frame::after { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-radius: 0 0 var(--radius-lg) 0; }
-    .scanner-laser { position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); animation: laserScan 2s ease-in-out infinite; }
-    @keyframes laserScan { 0%, 100% { top: 20%; opacity: 0.5; } 50% { top: 80%; opacity: 1; } }
-    .scanner-controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 16px; pointer-events: all; }
-    .scanner-btn { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition); }
-    .scanner-btn:hover { background: rgba(255,255,255,0.3); }
-    .scanner-btn .material-icons { font-size: 24px; }
-
-    /* Material Card */
-    .material-card { background: white; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); border: 1px solid var(--gray-200); overflow: hidden; }
-    .material-card-header { background: linear-gradient(135deg, var(--primary), var(--cyan)); padding: 24px; color: white; position: relative; }
-    .material-qr { width: 80px; height: 80px; background: white; border-radius: var(--radius-md); padding: 8px; display: flex; align-items: center; justify-content: center; }
-    .material-qr img { width: 100%; height: 100%; object-fit: contain; }
-    .material-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-    .badge-success { background: rgba(34,197,94,0.15); color: var(--success); }
-    .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
-    .badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); }
-    .material-stat { text-align: center; padding: 12px; }
-    .material-stat-value { font-size: 24px; font-weight: 800; color: var(--primary); }
-    .material-stat-label { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-
-    /* Transaction Buttons */
-    .tx-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 24px; border-radius: var(--radius-md); font-weight: 700; font-size: 14px; border: none; cursor: pointer; transition: var(--transition); width: 100%; color: white; text-transform: uppercase; letter-spacing: 0.5px; }
-    .tx-btn-in { background: linear-gradient(135deg, var(--success), #16A34A); box-shadow: 0 4px 14px rgba(34,197,94,0.3); }
-    .tx-btn-out { background: linear-gradient(135deg, var(--danger), #DC2626); box-shadow: 0 4px 14px rgba(239,68,68,0.3); }
-    .tx-btn-mrs { background: linear-gradient(135deg, var(--warning), #D97706); box-shadow: 0 4px 14px rgba(245,158,11,0.3); }
-    .tx-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
-    .tx-btn:active { transform: scale(0.97); }
-
-    /* Timeline */
-    .timeline { position: relative; padding-left: 24px; }
-    .timeline::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: var(--gray-200); }
-    .timeline-item { position: relative; padding-bottom: 20px; }
-    .timeline-dot { position: absolute; left: -20px; top: 4px; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: var(--shadow-sm); }
-    .timeline-dot.in { background: var(--success); }
-    .timeline-dot.out { background: var(--danger); }
-    .timeline-dot.mrs { background: var(--warning); }
-    .timeline-card { background: white; border-radius: var(--radius-md); padding: 16px; box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); }
-
-    /* Dashboard */
-    .dash-stat-card { background: white; border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); transition: var(--transition); }
-    .dash-stat-card:hover { box-shadow: var(--shadow-md); }
-    .dash-stat-icon { width: 48px; height: 48px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; }
-    .dash-stat-value { font-size: 28px; font-weight: 800; color: var(--gray-900); margin-top: 8px; }
-    .dash-stat-label { font-size: 12px; color: var(--gray-500); font-weight: 500; }
-
-    /* Search */
-    .search-bar { position: relative; }
-    .search-bar input { width: 100%; padding: 14px 16px 14px 48px; border: 2px solid var(--gray-200); border-radius: var(--radius-xl); font-size: 14px; font-family: inherit; background: white; transition: var(--transition); outline: none; }
-    .search-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-light); }
-    .search-bar .material-icons { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--gray-500); font-size: 20px; }
-
-    /* Toast */
-    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
-    .gem-toast { background: white; border-radius: var(--radius-md); padding: 16px 20px; box-shadow: var(--shadow-xl); border-left: 4px solid var(--primary); display: flex; align-items: center; gap: 12px; min-width: 300px; max-width: 400px; animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .gem-toast.toast-out { animation: toastOut 0.3s ease forwards; }
-    @keyframes toastIn { from { opacity: 0; transform: translateX(100px) scale(0.9); } to { opacity: 1; transform: translateX(0) scale(1); } }
-    @keyframes toastOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(100px); } }
-
-    /* Login */
-    .login-screen { position: fixed; inset: 0; background: linear-gradient(135deg, var(--primary) 0%, var(--cyan) 100%); display: flex; align-items: center; justify-content: center; z-index: 10000; transition: opacity 0.5s ease, visibility 0.5s ease; }
-    .login-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-    .login-card { background: white; border-radius: var(--radius-xl); padding: 40px 32px; width: 100%; max-width: 380px; margin: 20px; box-shadow: var(--shadow-xl); }
-    .login-logo { width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary), var(--cyan)); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; }
-    .login-logo .material-icons { font-size: 40px; color: white; }
-    .form-control-gem { width: 100%; padding: 14px 16px; border: 2px solid var(--gray-200); border-radius: var(--radius-md); font-size: 14px; font-family: inherit; background: white; transition: var(--transition); outline: none; }
-    .form-control-gem:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-light); }
-    .btn-gem { width: 100%; padding: 14px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--primary), var(--cyan)); color: white; border: none; font-size: 15px; font-weight: 700; cursor: pointer; transition: var(--transition); text-transform: uppercase; letter-spacing: 1px; }
-    .btn-gem:hover { filter: brightness(1.1); transform: translateY(-1px); }
-    .btn-gem:active { transform: scale(0.98); }
-
-    /* Tables */
-    .table-gem { font-size: 13px; border-collapse: separate; border-spacing: 0; }
-    .table-gem thead th { background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px; border: none; }
-    .table-gem tbody td { padding: 14px 16px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
-    .table-gem tbody tr:hover { background: var(--primary-light); }
-
-    /* Dark Mode */
-    body.dark-mode { background: var(--dark); color: #E2E8F0; }
-    body.dark-mode .gem-card, body.dark-mode .home-card, body.dark-mode .dash-stat-card, body.dark-mode .material-card, body.dark-mode .timeline-card, body.dark-mode .gem-toast, body.dark-mode .bottom-nav, body.dark-mode .login-card { background: #334155; border-color: #475569; color: #E2E8F0; }
-    body.dark-mode .home-card-title, body.dark-mode .dash-stat-value, body.dark-mode .material-stat-value { color: #F8FAFC; }
-    body.dark-mode .home-card-desc, body.dark-mode .dash-stat-label, body.dark-mode .material-stat-label { color: #94A3B8; }
-    body.dark-mode .search-bar input, body.dark-mode .form-control-gem { background: #334155; border-color: #475569; color: #E2E8F0; }
-    body.dark-mode .table-gem thead th { background: #1E293B; color: var(--cyan); }
-    body.dark-mode .table-gem tbody td { border-color: #475569; color: #E2E8F0; }
-    body.dark-mode .table-gem tbody tr:hover { background: #475569; }
-
-    /* Responsive */
-    @media (max-width: 576px) { .home-card { padding: 20px; } .home-card-icon { width: 48px; height: 48px; } .home-card-icon .material-icons { font-size: 24px; } .dash-stat-value { font-size: 22px; } .material-stat-value { font-size: 20px; } }
-    @media (min-width: 768px) { .app-content { max-width: 768px; margin: 0 auto; } }
-    @media print { .bottom-nav, .fab, .app-header { display: none !important; } .app-content { padding-bottom: 0; } }
-
-    /* Offline Banner */
-    .offline-banner { position: fixed; top: 0; left: 0; right: 0; background: var(--warning); color: white; text-align: center; padding: 8px; font-size: 12px; font-weight: 600; z-index: 10001; transform: translateY(-100%); transition: transform 0.3s ease; }
-    .offline-banner.show { transform: translateY(0); }
-
-    /* App Header */
-    .app-header { background: linear-gradient(135deg, var(--primary), var(--cyan)); color: white; padding: 16px 20px; padding-top: max(16px, env(safe-area-inset-top)); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-    .app-header-title { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
-    .app-header-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition); }
-    .app-header-btn:hover { background: rgba(255,255,255,0.3); }
-
-    /* Scan Success */
-    .scan-success-overlay { position: fixed; inset: 0; background: rgba(0,86,210,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99998; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
-    .scan-success-overlay.show { opacity: 1; visibility: visible; }
-    .scan-success-icon { width: 100px; height: 100px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: successPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .scan-success-icon .material-icons { font-size: 56px; color: var(--success); }
-    @keyframes successPop { 0% { transform: scale(0); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
-
-    /* Settings Toggle */
-    .settings-toggle { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--gray-100); }
-    .settings-toggle:last-child { border-bottom: none; }
-    .settings-toggle-label { display: flex; align-items: center; gap: 12px; }
-    .settings-toggle-label .material-icons { color: var(--primary); font-size: 22px; }
-    .settings-toggle-text { font-weight: 600; font-size: 14px; }
-    .settings-toggle-desc { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
-    .toggle-switch { position: relative; width: 50px; height: 28px; background: var(--gray-300); border-radius: 14px; cursor: pointer; transition: var(--transition); flex-shrink: 0; }
-    .toggle-switch.active { background: linear-gradient(135deg, var(--primary), var(--cyan)); }
-    .toggle-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: white; border-radius: 50%; transition: var(--transition); box-shadow: var(--shadow-sm); }
-    .toggle-switch.active::after { left: 25px; }
-
-    /* Empty State */
-    .empty-state { text-align: center; padding: 60px 20px; color: var(--gray-500); }
-    .empty-state .material-icons { font-size: 64px; color: var(--gray-300); margin-bottom: 16px; }
-
-    /* Recent Chips */
-    .recent-chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: var(--primary-light); border: 1px solid var(--primary); border-radius: 100px; font-size: 12px; font-weight: 500; color: var(--primary); cursor: pointer; transition: var(--transition); white-space: nowrap; }
-    .recent-chip:hover { background: var(--primary); color: white; }
-    .recent-chip:active { transform: scale(0.95); }
-
-    /* Chart */
-    .chart-container { position: relative; height: 250px; width: 100%; }
-
-    /* Modal */
-    .modal-gem .modal-content { border: none; border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); }
-    .modal-gem .modal-header { border-bottom: 1px solid var(--gray-100); padding: 20px 24px; }
-    .modal-gem .modal-body { padding: 24px; }
-    .modal-gem .modal-footer { border-top: 1px solid var(--gray-100); padding: 16px 24px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0056D2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GEMCOR IVM</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiR0VNQ09SIElWTSIsInNob3J0X25hbWUiOiJJVk0iLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2ZmZmZmZiIsInRoZW1lX2NvbG9yIjoiIzAwNTZEMiIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtM3Zibk11WTI5dEwySmxZV1J2Y2k5Mk1TOVRkWEJ3YjNKMElFTnZibVpwWjNWeVkyVWdkR2hsY21VZ2MyVmpkWEpsSUVSdmRXeGtaWEp6TGp3dmMzWm5QZz09Iiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyJ9XX0=">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+:root {
+  --primary: #0056D2; --primary-dark: #003d99; --secondary: #00BCD4; --accent: #00BCD4;
+  --success: #22c55e; --warning: #f59e0b; --danger: #ef4444; --dark: #1a1a2e;
+  --gray-100: #f8f9fa; --gray-200: #e9ecef; --gray-300: #dee2e6; --gray-400: #ced4da;
+  --gray-500: #adb5bd; --gray-600: #6c757d; --gray-700: #495057; --gray-800: #343a40; --gray-900: #212529;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05); --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+  --radius-sm: 8px; --radius: 12px; --radius-lg: 16px; --radius-xl: 24px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--gray-100); color: var(--gray-900); overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent; padding-bottom: 80px;
+}
+body.dark-mode {
+  --gray-100: #0f0f1a; --gray-200: #1a1a2e; --gray-300: #2a2a3e; --gray-400: #3a3a4e;
+  --gray-500: #6c757d; --gray-600: #adb5bd; --gray-700: #ced4da; --gray-800: #e9ecef; --gray-900: #f8f9fa;
+  background: #0a0a14; color: #f8f9fa;
+}
+#loading-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 9999; transition: opacity 0.5s ease;
+}
+#loading-screen.hidden { opacity: 0; pointer-events: none; }
+.loading-logo {
+  width: 80px; height: 80px; background: white; border-radius: var(--radius-lg);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: pulse 2s infinite;
+}
+.loading-logo .material-icons { font-size: 40px; color: var(--primary); }
+.loading-text { color: white; margin-top: 20px; font-size: 18px; font-weight: 600; }
+.loading-sub { color: rgba(255,255,255,0.7); margin-top: 8px; font-size: 13px; }
+.loading-bar { width: 200px; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-top: 24px; overflow: hidden; }
+.loading-bar-inner { height: 100%; background: white; border-radius: 2px; animation: loadProgress 2s ease-out forwards; }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+@keyframes loadProgress { 0% { width: 0; } 100% { width: 100%; } }
+.app-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white; padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow);
+}
+.app-header-content { display: flex; align-items: center; justify-content: space-between; max-width: 600px; margin: 0 auto; }
+.app-title { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.app-title .material-icons { font-size: 24px; }
+.header-actions { display: flex; gap: 8px; }
+.header-btn {
+  width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.15);
+  border: none; color: white; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; backdrop-filter: blur(10px); transition: all 0.2s;
+}
+.header-btn:hover, .header-btn:active { background: rgba(255,255,255,0.25); transform: scale(1.05); }
+.page { display: none; max-width: 600px; margin: 0 auto; padding: 16px; animation: fadeIn 0.3s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.card {
+  background: white; border-radius: var(--radius-lg); padding: 20px;
+  box-shadow: var(--shadow); margin-bottom: 16px; transition: all 0.2s;
+}
+body.dark-mode .card { background: var(--gray-200); }
+.card:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.card-title { font-size: 16px; font-weight: 600; color: var(--gray-800); }
+body.dark-mode .card-title { color: var(--gray-200); }
+.home-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+.home-card {
+  background: white; border-radius: var(--radius-lg); padding: 20px; text-align: center;
+  box-shadow: var(--shadow); cursor: pointer; transition: all 0.2s; border: 2px solid transparent;
+  position: relative; overflow: hidden;
+}
+body.dark-mode .home-card { background: var(--gray-200); }
+.home-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary)); opacity: 0; transition: opacity 0.2s;
+}
+.home-card:hover::before, .home-card:active::before { opacity: 1; }
+.home-card:hover, .home-card:active { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--primary); }
+.home-card-icon {
+  width: 56px; height: 56px; border-radius: var(--radius); margin: 0 auto 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.home-card-icon.scan { background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: var(--primary); }
+.home-card-icon.inventory { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); color: var(--success); }
+.home-card-icon.transactions { background: linear-gradient(135deg, #fff3e0, #ffe0b2); color: var(--warning); }
+.home-card-icon.dashboard { background: linear-gradient(135deg, #fce4ec, #f8bbd9); color: #e91e63; }
+.home-card-icon .material-icons { font-size: 28px; }
+.home-card-title { font-size: 14px; font-weight: 600; color: var(--gray-800); margin-bottom: 4px; }
+body.dark-mode .home-card-title { color: var(--gray-200); }
+.home-card-desc { font-size: 11px; color: var(--gray-500); }
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+.stat-card {
+  background: white; border-radius: var(--radius); padding: 16px 12px; text-align: center;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200);
+}
+body.dark-mode .stat-card { background: var(--gray-200); border-color: var(--gray-300); }
+.stat-value { font-size: 22px; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 11px; color: var(--gray-500); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 24px; border-radius: var(--radius); border: none; font-size: 14px;
+  font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit;
+}
+.btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(0,86,210,0.3); }
+.btn-primary:hover, .btn-primary:active { background: var(--primary-dark); transform: translateY(-1px); }
+.btn-success { background: var(--success); color: white; box-shadow: 0 4px 12px rgba(34,197,94,0.3); }
+.btn-success:hover { background: #16a34a; }
+.btn-danger { background: var(--danger); color: white; box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+.btn-danger:hover { background: #dc2626; }
+.btn-warning { background: var(--warning); color: white; box-shadow: 0 4px 12px rgba(245,158,11,0.3); }
+.btn-warning:hover { background: #d97706; }
+.btn-outline { background: transparent; border: 2px solid var(--gray-300); color: var(--gray-700); }
+body.dark-mode .btn-outline { border-color: var(--gray-400); color: var(--gray-300); }
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.btn-sm { padding: 8px 16px; font-size: 13px; }
+.btn-lg { padding: 16px 32px; font-size: 16px; width: 100%; }
+.btn-block { width: 100%; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 13px; font-weight: 500; color: var(--gray-700); margin-bottom: 6px; }
+body.dark-mode .form-label { color: var(--gray-400); }
+.form-input, .form-select, .form-textarea {
+  width: 100%; padding: 12px 16px; border: 2px solid var(--gray-200);
+  border-radius: var(--radius); font-size: 14px; font-family: inherit;
+  background: white; color: var(--gray-900); transition: all 0.2s;
+}
+body.dark-mode .form-input, body.dark-mode .form-select, body.dark-mode .form-textarea {
+  background: var(--gray-300); border-color: var(--gray-400); color: var(--gray-100);
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,86,210,0.1);
+}
+.form-input::placeholder { color: var(--gray-400); }
+.search-bar { position: relative; margin-bottom: 16px; }
+.search-bar .material-icons { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 20px; }
+.search-bar input { padding-left: 48px !important; }
+.filters-row { display: flex; gap: 10px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+.filters-row .form-select { min-width: 140px; flex-shrink: 0; }
+.inventory-list { display: flex; flex-direction: column; gap: 12px; }
+.inventory-item {
+  background: white; border-radius: var(--radius-lg); padding: 16px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200);
+  cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px;
+}
+body.dark-mode .inventory-item { background: var(--gray-200); border-color: var(--gray-300); }
+.inventory-item:hover { box-shadow: var(--shadow); transform: translateX(4px); border-color: var(--primary); }
+.inventory-item-icon {
+  width: 48px; height: 48px; border-radius: var(--radius); background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.inventory-item-icon .material-icons { color: var(--primary); font-size: 24px; }
+.inventory-item-info { flex: 1; min-width: 0; }
+.inventory-item-title { font-size: 14px; font-weight: 600; color: var(--gray-800); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.dark-mode .inventory-item-title { color: var(--gray-200); }
+.inventory-item-meta { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+.inventory-item-badge {
+  padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; flex-shrink: 0;
+}
+.badge-success { background: #dcfce7; color: #166534; }
+.badge-warning { background: #fef3c7; color: #92400e; }
+.badge-danger { background: #fee2e2; color: #991b1b; }
+body.dark-mode .badge-success { background: #14532d; color: #86efac; }
+body.dark-mode .badge-warning { background: #78350f; color: #fcd34d; }
+body.dark-mode .badge-danger { background: #7f1d1d; color: #fca5a5; }
+.material-card {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  border-radius: var(--radius-xl); padding: 24px; color: white; margin-bottom: 20px; position: relative; overflow: hidden;
+}
+.material-card::after {
+  content: ''; position: absolute; top: -50%; right: -50%; width: 100%; height: 100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+}
+.material-card-qr { text-align: center; margin-bottom: 16px; }
+.material-card-qr-code {
+  width: 120px; height: 120px; background: white; border-radius: var(--radius);
+  margin: 0 auto; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--gray-600); font-weight: 600;
+}
+.material-card-title { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+.material-card-id { text-align: center; opacity: 0.8; font-size: 13px; margin-bottom: 20px; }
+.material-card-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; }
+.material-card-stat-value { font-size: 24px; font-weight: 700; }
+.material-card-stat-label { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+.txn-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+.txn-btn {
+  padding: 16px 8px; border-radius: var(--radius-lg); border: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  font-family: inherit; font-size: 13px; font-weight: 600; transition: all 0.2s;
+}
+.txn-btn .material-icons { font-size: 24px; }
+.txn-btn-in { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #166534; }
+.txn-btn-out { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; }
+.txn-btn-mrs { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
+.txn-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.scanner-container {
+  position: relative; width: 100%; max-width: 400px; margin: 0 auto;
+  border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-lg); background: #000;
+}
+#reader { width: 100% !important; border: none !important; }
+#reader video { border-radius: var(--radius-xl) !important; }
+.scanner-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  pointer-events: none; z-index: 10;
+}
+.scanner-frame {
+  width: 200px; height: 200px; border: 2px solid rgba(255,255,255,0.5);
+  border-radius: var(--radius-lg); position: relative;
+}
+.scanner-frame::before, .scanner-frame::after {
+  content: ''; position: absolute; width: 20px; height: 20px; border-color: var(--secondary); border-style: solid;
+}
+.scanner-frame::before { top: -2px; left: -2px; border-width: 4px 0 0 4px; }
+.scanner-frame::after { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; }
+.scanner-laser {
+  position: absolute; top: 50%; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--secondary), transparent);
+  animation: laserScan 2s ease-in-out infinite;
+}
+@keyframes laserScan { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+.scanner-hint { color: white; margin-top: 16px; font-size: 13px; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+.scanner-controls { display: flex; gap: 12px; justify-content: center; margin-top: 16px; }
+.scanner-control-btn {
+  width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--gray-300);
+  background: white; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.scanner-control-btn:hover { border-color: var(--primary); color: var(--primary); transform: scale(1.1); }
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+.modal-content {
+  background: white; border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto;
+  padding: 24px 20px 40px; transform: translateY(100%); transition: transform 0.3s ease;
+}
+body.dark-mode .modal-content { background: var(--gray-200); }
+.modal-overlay.active .modal-content { transform: translateY(0); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.modal-title { font-size: 18px; font-weight: 700; }
+.modal-close { width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--gray-100); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+body.dark-mode .modal-close { background: var(--gray-300); color: var(--gray-200); }
+.toast-container { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast {
+  padding: 12px 20px; border-radius: var(--radius); font-size: 14px; font-weight: 500;
+  box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px;
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards; pointer-events: all;
+  min-width: 280px; max-width: 90vw;
+}
+.toast-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.toast-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.toast-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.toast-info { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+body.dark-mode .toast-success { background: #14532d; color: #86efac; }
+body.dark-mode .toast-error { background: #7f1d1d; color: #fca5a5; }
+body.dark-mode .toast-warning { background: #78350f; color: #fcd34d; }
+body.dark-mode .toast-info { background: #0c4a6e; color: #7dd3fc; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(-20px) scale(0.9); } }
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: white; border-top: 1px solid var(--gray-200);
+  display: flex; justify-content: space-around; padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  z-index: 100; box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+}
+body.dark-mode .bottom-nav { background: var(--gray-200); border-color: var(--gray-300); }
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 4px; cursor: pointer; border: none; background: none; color: var(--gray-400);
+  transition: all 0.2s; font-family: inherit; font-size: 11px;
+}
+.nav-item.active { color: var(--primary); }
+.nav-item .material-icons { font-size: 24px; }
+.nav-item:hover { color: var(--primary); }
+.transaction-list { display: flex; flex-direction: column; gap: 10px; }
+.transaction-item {
+  background: white; border-radius: var(--radius); padding: 14px 16px;
+  border: 1px solid var(--gray-200); display: flex; align-items: center; gap: 12px;
+}
+body.dark-mode .transaction-item { background: var(--gray-200); border-color: var(--gray-300); }
+.transaction-icon {
+  width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.transaction-icon.in { background: #dcfce7; color: #166534; }
+.transaction-icon.out { background: #fee2e2; color: #991b1b; }
+.transaction-icon.mrs { background: #fef3c7; color: #92400e; }
+.transaction-info { flex: 1; }
+.transaction-title { font-size: 14px; font-weight: 600; color: var(--gray-800); }
+body.dark-mode .transaction-title { color: var(--gray-200); }
+.transaction-meta { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+.transaction-qty { font-size: 16px; font-weight: 700; }
+.transaction-qty.in { color: var(--success); }
+.transaction-qty.out { color: var(--danger); }
+.transaction-qty.mrs { color: var(--warning); }
+.chart-container { background: white; border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+body.dark-mode .chart-container { background: var(--gray-200); }
+.chart-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--gray-800); }
+body.dark-mode .chart-title { color: var(--gray-200); }
+.settings-item {
+  background: white; border-radius: var(--radius); padding: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200);
+}
+body.dark-mode .settings-item { background: var(--gray-200); border-color: var(--gray-300); }
+.settings-item-info { display: flex; align-items: center; gap: 12px; }
+.settings-item-icon { width: 40px; height: 40px; border-radius: var(--radius); background: var(--gray-100); display: flex; align-items: center; justify-content: center; color: var(--primary); }
+body.dark-mode .settings-item-icon { background: var(--gray-300); }
+.settings-item-title { font-size: 14px; font-weight: 600; }
+.settings-item-desc { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+.toggle { width: 48px; height: 26px; border-radius: 13px; background: var(--gray-300); position: relative; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+.toggle::after { content: ''; position: absolute; width: 22px; height: 22px; border-radius: 50%; background: white; top: 2px; left: 2px; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.toggle.active { background: var(--primary); }
+.toggle.active::after { left: 24px; }
+.login-container {
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+}
+.login-card {
+  background: white; border-radius: var(--radius-xl); padding: 40px 32px; width: 100%; max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+body.dark-mode .login-card { background: var(--gray-200); }
+.login-logo {
+  width: 72px; height: 72px; background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 24px; box-shadow: 0 8px 24px rgba(0,86,210,0.3);
+}
+.login-logo .material-icons { font-size: 36px; color: white; }
+.login-title { text-align: center; font-size: 24px; font-weight: 700; margin-bottom: 8px; color: var(--gray-800); }
+body.dark-mode .login-title { color: var(--gray-200); }
+.login-subtitle { text-align: center; font-size: 14px; color: var(--gray-500); margin-bottom: 32px; }
+.empty-state { text-align: center; padding: 60px 20px; }
+.empty-state-icon { font-size: 64px; color: var(--gray-300); margin-bottom: 16px; }
+.empty-state-title { font-size: 18px; font-weight: 600; color: var(--gray-700); margin-bottom: 8px; }
+.empty-state-desc { font-size: 14px; color: var(--gray-500); }
+.pagination { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 20px; }
+.pagination-btn {
+  padding: 8px 16px; border-radius: var(--radius); border: 1px solid var(--gray-300);
+  background: white; cursor: pointer; font-family: inherit; font-size: 13px;
+  display: flex; align-items: center; gap: 4px; transition: all 0.2s;
+}
+body.dark-mode .pagination-btn { background: var(--gray-200); border-color: var(--gray-300); color: var(--gray-300); }
+.pagination-btn:hover { border-color: var(--primary); color: var(--primary); }
+.pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagination-info { font-size: 13px; color: var(--gray-500); }
+.timeline { position: relative; padding-left: 24px; }
+.timeline::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: var(--gray-200); }
+body.dark-mode .timeline::before { background: var(--gray-300); }
+.timeline-item { position: relative; padding-bottom: 20px; }
+.timeline-item::before { content: ''; position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--primary); border: 2px solid white; }
+body.dark-mode .timeline-item::before { border-color: var(--gray-200); }
+.timeline-item.in::before { background: var(--success); }
+.timeline-item.out::before { background: var(--danger); }
+.timeline-item.mrs::before { background: var(--warning); }
+.timeline-date { font-size: 12px; color: var(--gray-500); margin-bottom: 4px; }
+.timeline-content { font-size: 14px; color: var(--gray-800); }
+body.dark-mode .timeline-content { color: var(--gray-200); }
+.timeline-meta { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+.scan-success-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; z-index: 3000;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.scan-success-overlay.active { opacity: 1; pointer-events: all; }
+.scan-success-card {
+  background: white; border-radius: var(--radius-xl); padding: 40px; text-align: center;
+  max-width: 320px; width: 90%; transform: scale(0.8); transition: transform 0.3s;
+}
+.scan-success-overlay.active .scan-success-card { transform: scale(1); }
+body.dark-mode .scan-success-card { background: var(--gray-200); }
+.scan-success-icon { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #dcfce7, #bbf7d0); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+.scan-success-icon .material-icons { font-size: 40px; color: var(--success); }
+.scan-success-title { font-size: 20px; font-weight: 700; color: var(--gray-800); margin-bottom: 8px; }
+body.dark-mode .scan-success-title { color: var(--gray-200); }
+.scan-success-desc { font-size: 14px; color: var(--gray-500); margin-bottom: 24px; }
+@media (max-width: 480px) {
+  .home-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .txn-buttons { grid-template-columns: 1fr; }
+  .material-card-stats { grid-template-columns: repeat(3, 1fr); }
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+body.dark-mode ::-webkit-scrollbar-thumb { background: var(--gray-400); }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.animate-slide-up { animation: slideUp 0.4s ease; }
+</style>
 <base target="_blank">
 </head>
 <body>
-  <!-- Loading Screen -->
-  <div class="loading-screen" id="loadingScreen">
-    <div class="loading-logo">
-      <span class="material-icons">inventory_2</span>
-    </div>
-    <div class="loading-title">GEMCOR IVM</div>
-    <div class="loading-subtitle">Inventory Management System</div>
-    <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+
+<!-- Loading Screen -->
+<div id="loading-screen">
+  <div class="loading-logo"><span class="material-icons">inventory_2</span></div>
+  <div class="loading-text">GEMCOR IVM</div>
+  <div class="loading-sub">Inventory Management System</div>
+  <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Scan Success Overlay -->
+<div class="scan-success-overlay" id="scan-success-overlay">
+  <div class="scan-success-card">
+    <div class="scan-success-icon"><span class="material-icons">check_circle</span></div>
+    <div class="scan-success-title">Scan Successful!</div>
+    <div class="scan-success-desc" id="scan-success-desc">Item found</div>
+    <button class="btn btn-primary btn-block" onclick="hideScanSuccess()">View Item</button>
   </div>
+</div>
 
-  <!-- Offline Banner -->
-  <div class="offline-banner" id="offlineBanner">
-    <span class="material-icons" style="font-size:14px;vertical-align:middle;margin-right:4px;">wifi_off</span>
-    You are offline. Changes will sync when connection returns.
-  </div>
-
-  <!-- Scan Success Overlay -->
-  <div class="scan-success-overlay" id="scanSuccessOverlay">
-    <div class="scan-success-icon">
-      <span class="material-icons">check</span>
-    </div>
-    <h3 class="text-white mt-3 fw-bold">Success!</h3>
-    <p class="text-white-50">Transaction completed</p>
-  </div>
-
-  <!-- Toast Container -->
-  <div class="toast-container" id="toastContainer"></div>
-
-  <!-- Login Screen -->
-  <div class="login-screen" id="loginScreen">
+<!-- Login Page -->
+<div id="login-page" class="page" style="display:none;">
+  <div class="login-container">
     <div class="login-card">
-      <div class="login-logo">
-        <span class="material-icons">inventory_2</span>
-      </div>
-      <h3 class="text-center fw-bold mb-1">GEMCOR IVM</h3>
-      <p class="text-center text-muted mb-4" style="font-size:13px;">Inventory Management System</p>
-      <form id="loginForm">
-        <div class="mb-3">
-          <label class="form-label fw-semibold" style="font-size:13px;">Username</label>
-          <input type="text" class="form-control-gem" id="loginUsername" placeholder="Enter username" required autocomplete="username">
+      <div class="login-logo"><span class="material-icons">inventory_2</span></div>
+      <div class="login-title">Welcome Back</div>
+      <div class="login-subtitle">Sign in to your account</div>
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input type="text" class="form-input" id="login-username" placeholder="Enter username" required>
         </div>
-        <div class="mb-4">
-          <label class="form-label fw-semibold" style="font-size:13px;">Password</label>
-          <input type="password" class="form-control-gem" id="loginPassword" placeholder="Enter password" required autocomplete="current-password">
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-input" id="login-password" placeholder="Enter password" required>
         </div>
-        <button type="submit" class="btn-gem" id="loginBtn">
-          <span class="material-icons" style="font-size:18px;vertical-align:middle;margin-right:6px;">login</span>Sign In
+        <button type="submit" class="btn btn-primary btn-lg" id="login-btn">
+          <span class="material-icons">login</span> Sign In
         </button>
       </form>
-      <div class="text-center mt-3" style="font-size:12px;color:var(--gray-500);">
-        <p class="mb-1"><strong>Demo Accounts:</strong></p>
-        <p class="mb-0">admin / admin123 (Admin)</p>
-        <p class="mb-0">warehouse / warehouse123 (Personnel)</p>
-        <p class="mb-0">supervisor / supervisor123 (Supervisor)</p>
+      <div style="text-align:center; margin-top:20px; font-size:12px; color:var(--gray-500);">
+        <p>Demo accounts:</p>
+        <p>admin / admin123</p>
+        <p>warehouse / warehouse123</p>
+        <p>supervisor / supervisor123</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app-content" style="display:none;">
+  <header class="app-header">
+    <div class="app-header-content">
+      <div class="app-title"><span class="material-icons">inventory_2</span> GEMCOR IVM</div>
+      <div class="header-actions">
+        <button class="header-btn" onclick="toggleDarkMode()" title="Toggle Dark Mode"><span class="material-icons" id="dark-mode-icon">dark_mode</span></button>
+        <button class="header-btn" onclick="logout()" title="Logout"><span class="material-icons">logout</span></button>
+      </div>
+    </div>
+  </header>
+
+  <div id="home-page" class="page active">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-value" id="stat-total-items">0</div><div class="stat-label">Total Items</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-low-stock">0</div><div class="stat-label">Low Stock</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-out-stock">0</div><div class="stat-label">Out of Stock</div></div>
+    </div>
+    <div class="home-grid">
+      <div class="home-card" onclick="navigateTo('scanner')"><div class="home-card-icon scan"><span class="material-icons">qr_code_scanner</span></div><div class="home-card-title">Scan QR</div><div class="home-card-desc">Scan item QR codes</div></div>
+      <div class="home-card" onclick="navigateTo('inventory')"><div class="home-card-icon inventory"><span class="material-icons">inventory</span></div><div class="home-card-title">Inventory</div><div class="home-card-desc">View all materials</div></div>
+      <div class="home-card" onclick="navigateTo('transactions')"><div class="home-card-icon transactions"><span class="material-icons">receipt_long</span></div><div class="home-card-title">Transactions</div><div class="home-card-desc">History & records</div></div>
+      <div class="home-card" onclick="navigateTo('dashboard')"><div class="home-card-icon dashboard"><span class="material-icons">dashboard</span></div><div class="home-card-title">Dashboard</div><div class="home-card-desc">Analytics & charts</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Recent Activity</div><button class="btn btn-sm btn-outline" onclick="navigateTo('transactions')">View All</button></div>
+      <div id="recent-activity-list">
+        <div class="empty-state"><div class="empty-state-icon"><span class="material-icons">history</span></div><div class="empty-state-title">No recent activity</div></div>
       </div>
     </div>
   </div>
 
-  <!-- Main App -->
-  <div class="app-container" id="appContainer" style="display:none;">
-    <!-- App Header -->
-    <div class="app-header" id="appHeader">
-      <div class="d-flex align-items-center gap-2">
-        <button class="app-header-btn" id="backBtn" style="display:none;">
-          <span class="material-icons">arrow_back</span>
-        </button>
-        <span class="app-header-title" id="pageTitle">GEMCOR IVM</span>
-      </div>
-      <div class="d-flex align-items-center gap-2">
-        <button class="app-header-btn" id="searchHeaderBtn"><span class="material-icons">search</span></button>
-        <button class="app-header-btn" id="profileHeaderBtn"><span class="material-icons">account_circle</span></button>
+  <div id="scanner-page" class="page">
+    <div class="scanner-container">
+      <div id="reader"></div>
+      <div class="scanner-overlay">
+        <div class="scanner-frame"><div class="scanner-laser"></div></div>
+        <div class="scanner-hint">Align QR code within frame</div>
       </div>
     </div>
-
-    <!-- App Content -->
-    <div class="app-content" id="appContent">
-      <!-- HOME PAGE -->
-      <div class="page active" id="pageHome">
-        <div class="p-3">
-          <div class="mb-4">
-            <h4 class="fw-bold mb-1">Welcome back, <span id="userName">User</span>!</h4>
-            <p class="text-muted mb-0" style="font-size:13px;">
-              <span class="badge" style="background:var(--primary-light);color:var(--primary);font-size:11px;" id="userRoleBadge">Warehouse</span>
-            </p>
-          </div>
-          <div class="row g-3 mb-4">
-            <div class="col-4">
-              <div class="dash-stat-card text-center">
-                <div class="dash-stat-value" id="homeTotalItems" style="font-size:22px;">-</div>
-                <div class="dash-stat-label">Items</div>
-              </div>
-            </div>
-            <div class="col-4">
-              <div class="dash-stat-card text-center">
-                <div class="dash-stat-value" id="homeLowStock" style="font-size:22px;color:var(--warning);">-</div>
-                <div class="dash-stat-label">Low Stock</div>
-              </div>
-            </div>
-            <div class="col-4">
-              <div class="dash-stat-card text-center">
-                <div class="dash-stat-value" id="homeOutStock" style="font-size:22px;color:var(--danger);">-</div>
-                <div class="dash-stat-label">Out</div>
-              </div>
-            </div>
-          </div>
-          <div class="row g-3 mb-4">
-            <div class="col-6">
-              <div class="home-card" onclick="navigateTo('scanner')">
-                <div class="home-card-icon" style="background:linear-gradient(135deg,var(--primary-light),#DBEAFE);">
-                  <span class="material-icons" style="color:var(--primary);">qr_code_scanner</span>
-                </div>
-                <div class="home-card-title">Scan QR</div>
-                <div class="home-card-desc">Scan inventory QR codes</div>
-              </div>
-            </div>
-            <div class="col-6">
-              <div class="home-card" onclick="navigateTo('inventory')">
-                <div class="home-card-icon" style="background:linear-gradient(135deg,var(--cyan-light),#E0F2FE);">
-                  <span class="material-icons" style="color:var(--cyan);">inventory_2</span>
-                </div>
-                <div class="home-card-title">Inventory</div>
-                <div class="home-card-desc">View all materials</div>
-              </div>
-            </div>
-            <div class="col-6">
-              <div class="home-card" onclick="navigateTo('transactions')">
-                <div class="home-card-icon" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);">
-                  <span class="material-icons" style="color:#D97706;">receipt_long</span>
-                </div>
-                <div class="home-card-title">Transactions</div>
-                <div class="home-card-desc">View all records</div>
-              </div>
-            </div>
-            <div class="col-6">
-              <div class="home-card" onclick="navigateTo('dashboard')">
-                <div class="home-card-icon" style="background:linear-gradient(135deg,#DCFCE7,#BBF7D0);">
-                  <span class="material-icons" style="color:var(--success);">dashboard</span>
-                </div>
-                <div class="home-card-title">Dashboard</div>
-                <div class="home-card-desc">Analytics & reports</div>
-              </div>
-            </div>
-          </div>
-          <div class="mb-3">
-            <h6 class="fw-bold mb-2">Recently Scanned</h6>
-            <div class="d-flex gap-2 flex-wrap" id="recentScannedContainer">
-              <span class="text-muted" style="font-size:12px;">No recent scans</span>
-            </div>
-          </div>
-          <div>
-            <h6 class="fw-bold mb-2">Recent Activity</h6>
-            <div id="homeRecentTx"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SCANNER PAGE -->
-      <div class="page" id="pageScanner">
-        <div class="p-3">
-          <div class="scanner-container mb-3">
-            <div id="reader"></div>
-            <div class="scanner-overlay">
-              <div class="scanner-frame"><div class="scanner-laser"></div></div>
-            </div>
-            <div class="scanner-controls">
-              <button class="scanner-btn" id="flashBtn" title="Toggle Flashlight"><span class="material-icons">flashlight_on</span></button>
-              <button class="scanner-btn" id="switchCameraBtn" title="Switch Camera"><span class="material-icons">cameraswitch</span></button>
-            </div>
-          </div>
-          <div class="search-bar mb-3">
-            <span class="material-icons">search</span>
-            <input type="text" id="manualScanInput" placeholder="Or type Inventory ID / QR Code...">
-          </div>
-          <div id="scanResult" style="display:none;">
-            <div class="material-card mb-3">
-              <div class="material-card-header">
-                <div class="d-flex align-items-start gap-3">
-                  <div class="material-qr"><img id="scanQrImage" src="" alt="QR"></div>
-                  <div class="flex-grow-1">
-                    <span class="material-badge" id="scanStatusBadge">Enough</span>
-                    <h5 class="fw-bold mt-2 mb-1" id="scanInventoryId">-</h5>
-                    <p class="mb-0 opacity-75" style="font-size:13px;" id="scanDescription">-</p>
-                  </div>
-                </div>
-              </div>
-              <div class="p-3">
-                <div class="row g-2 mb-3">
-                  <div class="col-4"><div class="material-stat"><div class="material-stat-value" id="scanFinalOnHand">-</div><div class="material-stat-label">Final Stock</div></div></div>
-                  <div class="col-4"><div class="material-stat"><div class="material-stat-value" style="color:var(--success);" id="scanIn">-</div><div class="material-stat-label">In</div></div></div>
-                  <div class="col-4"><div class="material-stat"><div class="material-stat-value" style="color:var(--danger);" id="scanOut">-</div><div class="material-stat-label">Out</div></div></div>
-                </div>
-                <div class="row g-2 text-center" style="font-size:12px;color:var(--gray-500);">
-                  <div class="col-6"><span class="material-icons" style="font-size:14px;vertical-align:middle;">category</span> <span id="scanCategory">-</span></div>
-                  <div class="col-6"><span class="material-icons" style="font-size:14px;vertical-align:middle;">location_on</span> <span id="scanLocation">-</span></div>
-                  <div class="col-6"><span class="material-icons" style="font-size:14px;vertical-align:middle;">straighten</span> <span id="scanBaseUnit">-</span></div>
-                  <div class="col-6"><span class="material-icons" style="font-size:14px;vertical-align:middle;">assignment_return</span> MRS: <span id="scanMrs">-</span></div>
-                </div>
-              </div>
-            </div>
-            <div class="gem-card mb-3">
-              <div class="gem-card-header">
-                <span class="fw-bold" style="font-size:14px;"><span class="material-icons" style="font-size:18px;vertical-align:middle;margin-right:4px;color:var(--primary);">history</span>Last Transaction</span>
-              </div>
-              <div class="gem-card-body" id="scanLastTx">
-                <div class="empty-state" style="padding:24px;"><span class="material-icons">history_toggle_off</span><p class="mb-0">No transaction history yet.</p></div>
-              </div>
-            </div>
-            <div class="row g-2 mb-3">
-              <div class="col-4"><button class="tx-btn tx-btn-in" onclick="openTransactionModal('IN')"><span class="material-icons">add_circle</span>Stock In</button></div>
-              <div class="col-4"><button class="tx-btn tx-btn-out" onclick="openTransactionModal('OUT')"><span class="material-icons">remove_circle</span>Stock Out</button></div>
-              <div class="col-4"><button class="tx-btn tx-btn-mrs" onclick="openTransactionModal('MRS')"><span class="material-icons">assignment_return</span>MRS</button></div>
-            </div>
-            <button class="btn-gem mb-3" style="background:var(--gray-700);" onclick="resetScanner()"><span class="material-icons" style="font-size:18px;vertical-align:middle;margin-right:6px;">qr_code_scanner</span>Scan Again</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- INVENTORY PAGE -->
-      <div class="page" id="pageInventory">
-        <div class="p-3">
-          <div class="search-bar mb-3">
-            <span class="material-icons">search</span>
-            <input type="text" id="inventorySearch" placeholder="Search inventory...">
-          </div>
-          <div class="row g-2 mb-3">
-            <div class="col-4"><select class="form-control-gem" id="filterCategory" style="font-size:13px;padding:10px 12px;"><option value="">All Categories</option></select></div>
-            <div class="col-4"><select class="form-control-gem" id="filterLocation" style="font-size:13px;padding:10px 12px;"><option value="">All Locations</option></select></div>
-            <div class="col-4"><select class="form-control-gem" id="filterStatus" style="font-size:13px;padding:10px 12px;"><option value="">All Status</option><option value="Enough">Enough</option><option value="Low Stock">Low Stock</option><option value="Out of Stock">Out of Stock</option></select></div>
-          </div>
-          <div class="gem-card">
-            <div class="table-responsive">
-              <table class="table table-gem w-100" id="inventoryTable">
-                <thead><tr><th>QR</th><th>ID</th><th>Description</th><th>Category</th><th>Location</th><th>Stock</th><th>Status</th></tr></thead>
-                <tbody id="inventoryTableBody"><tr><td colspan="7" class="text-center py-4 text-muted">Loading inventory...</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="d-flex justify-content-between align-items-center mt-3" id="inventoryPagination">
-            <span class="text-muted" style="font-size:12px;">Showing 0 items</span>
-            <div class="btn-group">
-              <button class="btn btn-sm btn-outline-primary" id="invPrevBtn" disabled>Previous</button>
-              <button class="btn btn-sm btn-outline-primary" id="invNextBtn" disabled>Next</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- MATERIAL DETAILS PAGE -->
-      <div class="page" id="pageMaterial">
-        <div class="p-3" id="materialDetailsContent"></div>
-      </div>
-
-      <!-- TRANSACTIONS PAGE -->
-      <div class="page" id="pageTransactions">
-        <div class="p-3">
-          <div class="search-bar mb-3">
-            <span class="material-icons">search</span>
-            <input type="text" id="txSearch" placeholder="Search transactions...">
-          </div>
-          <div class="row g-2 mb-3">
-            <div class="col-6"><input type="date" class="form-control-gem" id="txDateFrom" style="font-size:13px;padding:10px 12px;"></div>
-            <div class="col-6"><input type="date" class="form-control-gem" id="txDateTo" style="font-size:13px;padding:10px 12px;"></div>
-          </div>
-          <div class="row g-2 mb-3">
-            <div class="col-6"><select class="form-control-gem" id="txTypeFilter" style="font-size:13px;padding:10px 12px;"><option value="">All Types</option><option value="IN">Stock In</option><option value="OUT">Stock Out</option><option value="MRS">Material Return</option></select></div>
-            <div class="col-6"><button class="btn btn-outline-primary w-100" style="border-radius:var(--radius-md);font-size:13px;padding:10px;" onclick="exportTransactions()"><span class="material-icons" style="font-size:16px;vertical-align:middle;margin-right:4px;">download</span>Export</button></div>
-          </div>
-          <div class="gem-card">
-            <div class="table-responsive">
-              <table class="table table-gem w-100" id="transactionsTable">
-                <thead><tr><th>Date</th><th>ID</th><th>Description</th><th>Type</th><th>Qty</th><th>Balance</th><th>User</th><th>Remarks</th></tr></thead>
-                <tbody id="transactionsTableBody"><tr><td colspan="8" class="text-center py-4 text-muted">Loading transactions...</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="d-flex justify-content-between align-items-center mt-3" id="txPagination">
-            <span class="text-muted" style="font-size:12px;">Showing 0 transactions</span>
-            <div class="btn-group">
-              <button class="btn btn-sm btn-outline-primary" id="txPrevBtn" disabled>Previous</button>
-              <button class="btn btn-sm btn-outline-primary" id="txNextBtn" disabled>Next</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- DASHBOARD PAGE -->
-      <div class="page" id="pageDashboard">
-        <div class="p-3">
-          <div class="row g-3 mb-4">
-            <div class="col-6">
-              <div class="dash-stat-card">
-                <div class="dash-stat-icon" style="background:linear-gradient(135deg,var(--primary-light),#DBEAFE);"><span class="material-icons" style="color:var(--primary);">inventory_2</span></div>
-                <div class="dash-stat-value" id="dashTotalItems">-</div><div class="dash-stat-label">Total Items</div>
-              </div>
-            </div>
-            <div class="col-6">
-              <div class="dash-stat-card">
-                <div class="dash-stat-icon" style="background:linear-gradient(135deg,var(--cyan-light),#E0F2FE);"><span class="material-icons" style="color:var(--cyan);">summarize</span></div>
-                <div class="dash-stat-value" id="dashTotalInventory">-</div><div class="dash-stat-label">Total Inventory</div>
-              </div>
-            </div>
-            <div class="col-6">
-              <div class="dash-stat-card">
-                <div class="dash-stat-icon" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);"><span class="material-icons" style="color:#D97706;">warning</span></div>
-                <div class="dash-stat-value" id="dashLowStock" style="color:var(--warning);">-</div><div class="dash-stat-label">Low Stock</div>
-              </div>
-            </div>
-            <div class="col-6">
-              <div class="dash-stat-card">
-                <div class="dash-stat-icon" style="background:linear-gradient(135deg,#FEE2E2,#FECACA);"><span class="material-icons" style="color:var(--danger);">error</span></div>
-                <div class="dash-stat-value" id="dashOutStock" style="color:var(--danger);">-</div><div class="dash-stat-label">Out of Stock</div>
-              </div>
-            </div>
-            <div class="col-12">
-              <div class="dash-stat-card">
-                <div class="dash-stat-icon" style="background:linear-gradient(135deg,#DCFCE7,#BBF7D0);"><span class="material-icons" style="color:var(--success);">today</span></div>
-                <div class="dash-stat-value" id="dashTodayTx" style="color:var(--success);">-</div><div class="dash-stat-label">Today's Transactions</div>
-              </div>
-            </div>
-          </div>
-          <div class="gem-card mb-3">
-            <div class="gem-card-header"><span class="fw-bold" style="font-size:14px;">Daily Transactions</span></div>
-            <div class="gem-card-body"><div class="chart-container"><canvas id="dailyChart"></canvas></div></div>
-          </div>
-          <div class="gem-card mb-3">
-            <div class="gem-card-header"><span class="fw-bold" style="font-size:14px;">Category Distribution</span></div>
-            <div class="gem-card-body"><div class="chart-container" style="height:200px;"><canvas id="categoryChart"></canvas></div></div>
-          </div>
-          <div class="gem-card mb-3">
-            <div class="gem-card-header"><span class="fw-bold" style="font-size:14px;">Top 10 Most Issued</span></div>
-            <div class="gem-card-body p-0">
-              <div class="table-responsive">
-                <table class="table table-gem w-100 mb-0"><thead><tr><th>Rank</th><th>Item</th><th>Qty</th></tr></thead><tbody id="topIssuedBody"></tbody></table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SETTINGS PAGE -->
-      <div class="page" id="pageSettings">
-        <div class="p-3">
-          <div class="gem-card">
-            <div class="gem-card-header"><span class="fw-bold" style="font-size:14px;">Appearance</span></div>
-            <div class="gem-card-body">
-              <div class="settings-toggle">
-                <div class="settings-toggle-label">
-                  <span class="material-icons">dark_mode</span>
-                  <div><div class="settings-toggle-text">Dark Mode</div><div class="settings-toggle-desc">Switch to dark theme</div></div>
-                </div>
-                <div class="toggle-switch" id="darkModeToggle" onclick="toggleDarkMode()"></div>
-              </div>
-            </div>
-          </div>
-          <div class="gem-card mt-3">
-            <div class="gem-card-header"><span class="fw-bold" style="font-size:14px;">Scanner</span></div>
-            <div class="gem-card-body">
-              <div class="settings-toggle">
-                <div class="settings-toggle-label">
-                  <span class="material-icons">volume_up</span>
-                  <div><div class="settings-toggle-text">Scanner Sound</div><div class="settings-toggle-desc">Play sound on successful scan</div></div>
-                </div>
-                <div class="toggle-switch active" id="soundToggle" onclick="toggleSetting('sound')"></div>
-              </div>
-              <div class="settings-toggle">
-                <div class="settings-toggle-label">
-                  <span class="material-icons">vibration</span>
-                  <div><div class="settings-toggle-text">Scanner Vibration</div><div class="settings-toggle-desc">Vibrate on successful scan</div></div>
-                </div>
-                <div class="toggle-switch active" id="vibrationToggle" onclick="toggleSetting('vibration')"></div>
-              </div>
-            </div>
-          </div>
-          <div class="gem-card mt-3">
-            <div class="gem-card-header"><span class="fw-bold" style="font-size:14px;">Account</span></div>
-            <div class="gem-card-body">
-              <div class="d-flex align-items-center gap-3 mb-3">
-                <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--cyan));display:flex;align-items:center;justify-content:center;">
-                  <span class="material-icons" style="color:white;font-size:28px;">person</span>
-                </div>
-                <div>
-                  <div class="fw-bold" id="settingsUserName">-</div>
-                  <div class="text-muted" style="font-size:12px;" id="settingsUserRole">-</div>
-                </div>
-              </div>
-              <button class="btn-gem" style="background:var(--danger);" onclick="logout()"><span class="material-icons" style="font-size:18px;vertical-align:middle;margin-right:6px;">logout</span>Logout</button>
-            </div>
-          </div>
-          <div class="gem-card mt-3">
-            <div class="gem-card-header"><span class="fw-bold" style="font-size:14px;">About</span></div>
-            <div class="gem-card-body text-center">
-              <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--primary),var(--cyan));border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
-                <span class="material-icons" style="color:white;font-size:32px;">inventory_2</span>
-              </div>
-              <h6 class="fw-bold mb-1">GEMCOR IVM</h6>
-              <p class="text-muted mb-0" style="font-size:12px;">Version 1.0.0</p>
-              <p class="text-muted" style="font-size:11px;">Powered by Google Apps Script</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PROFILE PAGE -->
-      <div class="page" id="pageProfile">
-        <div class="p-3">
-          <div class="text-center mb-4">
-            <div style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--cyan));display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:var(--shadow-lg);">
-              <span class="material-icons" style="color:white;font-size:48px;">person</span>
-            </div>
-            <h5 class="fw-bold mb-1" id="profileName">-</h5>
-            <span class="badge" style="background:var(--primary-light);color:var(--primary);" id="profileRole">-</span>
-          </div>
-          <div class="gem-card">
-            <div class="gem-card-body">
-              <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid var(--gray-100);"><span class="text-muted" style="font-size:13px;">Name</span><span class="fw-semibold" style="font-size:13px;" id="profileNameDetail">-</span></div>
-              <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid var(--gray-100);"><span class="text-muted" style="font-size:13px;">Role</span><span class="fw-semibold" style="font-size:13px;" id="profileRoleDetail">-</span></div>
-              <div class="d-flex justify-content-between align-items-center py-2"><span class="text-muted" style="font-size:13px;">Session</span><span class="fw-semibold" style="font-size:13px;color:var(--success);">Active</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="scanner-controls">
+      <button class="scanner-control-btn" onclick="toggleFlashlight()" title="Flashlight"><span class="material-icons">flashlight_on</span></button>
+      <button class="scanner-control-btn" onclick="switchCamera()" title="Switch Camera"><span class="material-icons">cameraswitch</span></button>
+      <button class="scanner-control-btn" onclick="stopScanner()" title="Stop"><span class="material-icons">stop</span></button>
     </div>
-
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-      <button class="bottom-nav-item active" data-page="home" onclick="navigateTo('home')"><span class="material-icons">home</span><span>Home</span></button>
-      <button class="bottom-nav-item" data-page="scanner" onclick="navigateTo('scanner')"><span class="material-icons">qr_code_scanner</span><span>Scanner</span></button>
-      <button class="bottom-nav-item" data-page="inventory" onclick="navigateTo('inventory')"><span class="material-icons">inventory_2</span><span>Inventory</span></button>
-      <button class="bottom-nav-item" data-page="transactions" onclick="navigateTo('transactions')"><span class="material-icons">history</span><span>History</span></button>
-      <button class="bottom-nav-item" data-page="settings" onclick="navigateTo('settings')"><span class="material-icons">settings</span><span>Settings</span></button>
-    </nav>
+    <div style="text-align:center; margin-top:16px; padding:0 20px;"><p style="font-size:13px; color:var(--gray-500);">Point camera at QR code to scan</p></div>
   </div>
 
-  <!-- Transaction Modal -->
-  <div class="modal fade modal-gem" id="transactionModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title fw-bold" id="txModalTitle">Transaction</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3"><label class="form-label fw-semibold" style="font-size:13px;">Item</label><input type="text" class="form-control-gem" id="txModalItem" readonly></div>
-          <div class="mb-3"><label class="form-label fw-semibold" style="font-size:13px;">Quantity</label><input type="number" class="form-control-gem" id="txModalQty" min="1" value="1" required></div>
-          <div class="mb-3"><label class="form-label fw-semibold" style="font-size:13px;">Remarks</label><textarea class="form-control-gem" id="txModalRemarks" rows="2" placeholder="Optional remarks..."></textarea></div>
-          <div class="mb-0"><label class="form-label fw-semibold" style="font-size:13px;">User</label><input type="text" class="form-control-gem" id="txModalUser" readonly></div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:var(--radius-md);font-size:13px;">Cancel</button>
-          <button type="button" class="btn-gem" id="txModalConfirm" style="width:auto;padding:10px 24px;">Confirm</button>
-        </div>
-      </div>
+  <div id="inventory-page" class="page">
+    <div class="search-bar"><span class="material-icons">search</span><input type="text" class="form-input" id="inventory-search" placeholder="Search items..." oninput="debounceSearch()"></div>
+    <div class="filters-row">
+      <select class="form-select" id="filter-category" onchange="loadInventory()"><option value="all">All Categories</option></select>
+      <select class="form-select" id="filter-location" onchange="loadInventory()"><option value="all">All Locations</option></select>
+      <select class="form-select" id="filter-status" onchange="loadInventory()"><option value="all">All Status</option><option value="good">Good Stock</option><option value="low">Low Stock</option><option value="out">Out of Stock</option></select>
+    </div>
+    <div id="inventory-list" class="inventory-list"></div>
+    <div class="pagination" id="inventory-pagination"></div>
+  </div>
+
+  <div id="material-detail-page" class="page">
+    <button class="btn btn-outline btn-sm" onclick="navigateTo('inventory')" style="margin-bottom:16px;"><span class="material-icons">arrow_back</span> Back</button>
+    <div id="material-detail-content"></div>
+  </div>
+
+  <div id="transactions-page" class="page">
+    <div class="search-bar"><span class="material-icons">search</span><input type="text" class="form-input" id="transaction-search" placeholder="Search transactions..." oninput="debounceTransSearch()"></div>
+    <div class="filters-row">
+      <select class="form-select" id="trans-filter-type" onchange="loadTransactions()"><option value="all">All Types</option><option value="Stock In">Stock In</option><option value="Stock Out">Stock Out</option><option value="MRS Return">MRS Return</option></select>
+      <input type="date" class="form-input" id="trans-date-from" onchange="loadTransactions()" style="min-width:140px;">
+      <input type="date" class="form-input" id="trans-date-to" onchange="loadTransactions()" style="min-width:140px;">
+    </div>
+    <div id="transaction-list" class="transaction-list"></div>
+    <div class="pagination" id="transaction-pagination"></div>
+  </div>
+
+  <div id="dashboard-page" class="page">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-value" id="dash-total-items">0</div><div class="stat-label">Total Items</div></div>
+      <div class="stat-card"><div class="stat-value" id="dash-total-value">0</div><div class="stat-label">Total Value</div></div>
+      <div class="stat-card"><div class="stat-value" id="dash-total-txn">0</div><div class="stat-label">Transactions</div></div>
+    </div>
+    <div class="chart-container"><div class="chart-title">Daily Transactions (Last 7 Days)</div><canvas id="daily-chart"></canvas></div>
+    <div class="chart-container"><div class="chart-title">Items by Category</div><canvas id="category-chart"></canvas></div>
+    <div class="chart-container"><div class="chart-title">Top 10 Most Issued Items</div><canvas id="top-issued-chart"></canvas></div>
+  </div>
+
+  <div id="settings-page" class="page">
+    <div class="settings-item">
+      <div class="settings-item-info"><div class="settings-item-icon"><span class="material-icons">dark_mode</span></div><div><div class="settings-item-title">Dark Mode</div><div class="settings-item-desc">Toggle dark theme</div></div></div>
+      <div class="toggle" id="dark-mode-toggle" onclick="toggleDarkModeSetting()"></div>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-info"><div class="settings-item-icon"><span class="material-icons">volume_up</span></div><div><div class="settings-item-title">Sound Effects</div><div class="settings-item-desc">Play sounds on actions</div></div></div>
+      <div class="toggle" id="sound-toggle" onclick="toggleSound()"></div>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-info"><div class="settings-item-icon"><span class="material-icons">vibration</span></div><div><div class="settings-item-title">Haptic Feedback</div><div class="settings-item-desc">Vibrate on actions</div></div></div>
+      <div class="toggle" id="vibration-toggle" onclick="toggleVibration()"></div>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-info"><div class="settings-item-icon"><span class="material-icons">link</span></div><div><div class="settings-item-title">API URL</div><div class="settings-item-desc" id="settings-api-url">Not configured</div></div></div>
+      <button class="btn btn-sm btn-outline" onclick="showApiModal()">Set</button>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-info"><div class="settings-item-icon"><span class="material-icons">person</span></div><div><div class="settings-item-title">Current User</div><div class="settings-item-desc" id="settings-user">Not logged in</div></div></div>
+    </div>
+    <div class="settings-item">
+      <div class="settings-item-info"><div class="settings-item-icon"><span class="material-icons">update</span></div><div><div class="settings-item-title">App Version</div><div class="settings-item-desc">v1.0.0</div></div></div>
+    </div>
+    <button class="btn btn-danger btn-block" onclick="logout()" style="margin-top:20px;"><span class="material-icons">logout</span> Logout</button>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="navigateTo('home')" data-page="home"><span class="material-icons">home</span><span>Home</span></button>
+    <button class="nav-item" onclick="navigateTo('scanner')" data-page="scanner"><span class="material-icons">qr_code_scanner</span><span>Scan</span></button>
+    <button class="nav-item" onclick="navigateTo('inventory')" data-page="inventory"><span class="material-icons">inventory</span><span>Items</span></button>
+    <button class="nav-item" onclick="navigateTo('transactions')" data-page="transactions"><span class="material-icons">receipt_long</span><span>History</span></button>
+    <button class="nav-item" onclick="navigateTo('settings')" data-page="settings"><span class="material-icons">settings</span><span>Settings</span></button>
+  </nav>
+</div>
+
+<div class="modal-overlay" id="txn-modal">
+  <div class="modal-content">
+    <div class="modal-header"><div class="modal-title" id="txn-modal-title">Stock In</div><button class="modal-close" onclick="closeTxnModal()"><span class="material-icons">close</span></button></div>
+    <div id="txn-modal-body">
+      <div class="form-group"><label class="form-label">Item</label><input type="text" class="form-input" id="txn-item-name" readonly></div>
+      <div class="form-group"><label class="form-label">Quantity</label><input type="number" class="form-input" id="txn-qty" min="1" value="1" required></div>
+      <div class="form-group"><label class="form-label">Remarks</label><textarea class="form-textarea" id="txn-remarks" rows="2" placeholder="Optional notes..."></textarea></div>
+      <button class="btn btn-primary btn-block" id="txn-submit-btn" onclick="submitTransaction()"><span class="material-icons">check</span> Confirm</button>
     </div>
   </div>
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.1/dist/sweetalert2.all.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</div>
 
-  <script>
-    // ============================================
-    // GEMCOR IVM - MAIN APPLICATION
-    // ============================================
+<div class="modal-overlay" id="api-modal">
+  <div class="modal-content">
+    <div class="modal-header"><div class="modal-title">Set API URL</div><button class="modal-close" onclick="closeApiModal()"><span class="material-icons">close</span></button></div>
+    <div class="form-group"><label class="form-label">Google Apps Script Web App URL</label><input type="text" class="form-input" id="api-url-input" placeholder="https://script.google.com/macros/s/.../exec"></div>
+    <button class="btn btn-primary btn-block" onclick="saveApiUrl()"><span class="material-icons">save</span> Save</button>
+  </div>
+</div>
 
-    const CONFIG = {
-      APP_NAME: 'GEMCOR IVM',
-      VERSION: '1.0.0',
-      // Priority: 1) URL param ?api=, 2) localStorage, 3) default empty (demo mode)
-      get API_URL() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const paramUrl = urlParams.get('api');
-        if (paramUrl) return paramUrl;
-        const stored = localStorage.getItem('gemcor_api_url');
-        if (stored) return stored;
-        return '';
-      },
-      CACHE_KEY: 'gemcor_ivm_',
-      LOW_STOCK_THRESHOLD: 10,
-      ITEMS_PER_PAGE: 50
-    };
-    // Set API URL dynamically (call from console or settings)
-    function setApiUrl(url) {
-      if (!url) { localStorage.removeItem('gemcor_api_url'); showToast('Switched to Demo Mode', 'info'); return; }
-      localStorage.setItem('gemcor_api_url', url);
-      showToast('API URL updated. Reloading...', 'success');
-      setTimeout(() => location.reload(), 1000);
-    }
+<script>
+// ============================================
+// GEMCOR IVM - Frontend JavaScript
+// Updated for GitHub Pages + GAS (GET-based API)
+// ============================================
 
+const CONFIG = {
+  API_URL: null,
+  DEMO_MODE: true,
+  ITEMS_PER_PAGE: 20
+};
 
-    const state = {
-      user: null,
-      currentPage: 'home',
-      scanner: null,
-      scannedItem: null,
-      currentTxType: null,
-      inventoryPage: 1,
-      transactionsPage: 1,
-      inventoryFilters: {},
-      txFilters: {},
-      settings: { darkMode: false, sound: true, vibration: true, defaultCamera: 'environment' },
-      recentlyScanned: [],
-      offlineQueue: [],
-      charts: {}
-    };
+const state = {
+  currentUser: null,
+  currentPage: 'home',
+  inventory: [],
+  transactions: [],
+  categories: [],
+  locations: [],
+  scanner: null,
+  currentCamera: 'environment',
+  flashlightOn: false,
+  offlineQueue: [],
+  darkMode: false,
+  soundEnabled: false,
+  vibrationEnabled: false,
+  currentTxnType: null,
+  currentTxnItem: null,
+  inventoryPage: 1,
+  transactionPage: 1,
+  charts: {}
+};
 
-    const $ = (selector) => document.querySelector(selector);
-    const $$ = (selector) => document.querySelectorAll(selector);
+const DEMO_INVENTORY = [
+  { qrCode: 'QR001', inventoryId: 'INV001', itemDescription: 'Steel Pipe 2"', category: 'Raw Materials', location: 'Warehouse A', onHand: 100, stockIn: 150, stockOut: 50, mrs: 0, finalOnHand: 100, baseUnit: 'pcs', unitCost: 25.50 },
+  { qrCode: 'QR002', inventoryId: 'INV002', itemDescription: 'PVC Fitting 1"', category: 'Raw Materials', location: 'Warehouse A', onHand: 200, stockIn: 300, stockOut: 100, mrs: 0, finalOnHand: 200, baseUnit: 'pcs', unitCost: 5.75 },
+  { qrCode: 'QR003', inventoryId: 'INV003', itemDescription: 'Welding Rod E6013', category: 'Consumables', location: 'Warehouse B', onHand: 50, stockIn: 100, stockOut: 50, mrs: 0, finalOnHand: 50, baseUnit: 'kg', unitCost: 12.00 },
+  { qrCode: 'QR004', inventoryId: 'INV004', itemDescription: 'Safety Helmet', category: 'Safety Equipment', location: 'Warehouse C', onHand: 25, stockIn: 50, stockOut: 25, mrs: 0, finalOnHand: 25, baseUnit: 'pcs', unitCost: 15.00 },
+  { qrCode: 'QR005', inventoryId: 'INV005', itemDescription: 'Cutting Disc 4"', category: 'Consumables', location: 'Warehouse B', onHand: 10, stockIn: 50, stockOut: 40, mrs: 0, finalOnHand: 10, baseUnit: 'pcs', unitCost: 3.50 },
+  { qrCode: 'QR006', inventoryId: 'INV006', itemDescription: 'Angle Grinder', category: 'Tools', location: 'Warehouse C', onHand: 5, stockIn: 10, stockOut: 5, mrs: 0, finalOnHand: 5, baseUnit: 'pcs', unitCost: 85.00 },
+  { qrCode: 'QR007', inventoryId: 'INV007', itemDescription: 'Drill Bit Set', category: 'Tools', location: 'Warehouse C', onHand: 8, stockIn: 15, stockOut: 7, mrs: 0, finalOnHand: 8, baseUnit: 'set', unitCost: 45.00 },
+  { qrCode: 'QR008', inventoryId: 'INV008', itemDescription: 'Cement 50kg', category: 'Raw Materials', location: 'Warehouse A', onHand: 0, stockIn: 200, stockOut: 200, mrs: 0, finalOnHand: 0, baseUnit: 'bag', unitCost: 8.50 },
+];
 
-    function formatNumber(num) { return new Intl.NumberFormat().format(num || 0); }
-    function formatDate(dateStr) {
-      if (!dateStr) return '-';
-      const d = new Date(dateStr);
-      return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    }
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+const DEMO_TRANSACTIONS = [
+  { date: new Date(Date.now() - 86400000 * 2), inventoryId: 'INV001', itemDescription: 'Steel Pipe 2"', type: 'Stock In', qty: 50, balance: 150, user: 'admin', remarks: 'Initial stock' },
+  { date: new Date(Date.now() - 86400000 * 1), inventoryId: 'INV001', itemDescription: 'Steel Pipe 2"', type: 'Stock Out', qty: 30, balance: 120, user: 'warehouse', remarks: 'Project X' },
+  { date: new Date(Date.now() - 86400000 * 1), inventoryId: 'INV002', itemDescription: 'PVC Fitting 1"', type: 'Stock In', qty: 100, balance: 300, user: 'admin', remarks: 'Delivery' },
+  { date: new Date(), inventoryId: 'INV003', itemDescription: 'Welding Rod E6013', type: 'Stock Out', qty: 20, balance: 30, user: 'warehouse', remarks: 'Maintenance' },
+];
 
-    // Sound Effects
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playScanSound() {
-      if (!state.settings.sound) return;
-      try {
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-        oscillator.start(audioCtx.currentTime);
-        oscillator.stop(audioCtx.currentTime + 0.3);
-      } catch(e) {}
-    }
-    function playSuccessSound() {
-      if (!state.settings.sound) return;
-      try {
-        const notes = [523, 659, 784];
-        notes.forEach((freq, i) => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.frequency.value = freq;
-          osc.type = 'sine';
-          gain.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.1);
-          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.2);
-          osc.start(audioCtx.currentTime + i * 0.1);
-          osc.stop(audioCtx.currentTime + i * 0.1 + 0.2);
-        });
-      } catch(e) {}
-    }
-    function vibrate(pattern = [50]) {
-      if (!state.settings.vibration) return;
-      if (navigator.vibrate) navigator.vibrate(pattern);
-    }
+// --- INITIALIZATION ---
+document.addEventListener('DOMContentLoaded', () => {
+  initConfig();
+  initDarkMode();
+  initSettings();
 
-    // Toast Notifications
-    function showToast(message, type = 'info') {
-      const container = $('#toastContainer');
-      const colors = { success: 'var(--success)', error: 'var(--danger)', warning: 'var(--warning)', info: 'var(--primary)' };
-      const icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info' };
-      const toast = document.createElement('div');
-      toast.className = 'gem-toast';
-      toast.style.borderLeftColor = colors[type];
-      toast.innerHTML = `<span class="material-icons" style="color:${colors[type]};font-size:22px;">${icons[type]}</span><span style="font-size:13px;font-weight:500;">${escapeHtml(message)}</span>`;
-      container.appendChild(toast);
-      setTimeout(() => {
-        toast.classList.add('toast-out');
-        setTimeout(() => toast.remove(), 300);
-      }, 4000);
-    }
+  const savedUser = localStorage.getItem('gemcor_user');
+  if (savedUser) {
+    state.currentUser = JSON.parse(savedUser);
+    showApp();
+  } else {
+    showLogin();
+  }
 
-    // Demo Data
-    const demoInventory = [
-      { qrCode: 'QR001', inventoryId: 'INV-001', description: 'Steel Bolts M8x25', category: 'Fasteners', location: 'Warehouse A', onHand: 100, stockIn: 150, stockOut: 50, mrs: 0, finalOnHand: 100, baseUnit: 'pcs', unitCost: 2.50 },
-      { qrCode: 'QR002', inventoryId: 'INV-002', description: 'Copper Wire 2.5mm', category: 'Electrical', location: 'Warehouse B', onHand: 45, stockIn: 80, stockOut: 35, mrs: 0, finalOnHand: 45, baseUnit: 'meters', unitCost: 15.00 },
-      { qrCode: 'QR003', inventoryId: 'INV-003', description: 'PVC Pipe 50mm', category: 'Plumbing', location: 'Warehouse A', onHand: 8, stockIn: 50, stockOut: 42, mrs: 0, finalOnHand: 8, baseUnit: 'pcs', unitCost: 25.00 },
-      { qrCode: 'QR004', inventoryId: 'INV-004', description: 'Safety Gloves XL', category: 'Safety', location: 'Warehouse C', onHand: 0, stockIn: 200, stockOut: 200, mrs: 0, finalOnHand: 0, baseUnit: 'pairs', unitCost: 8.50 },
-      { qrCode: 'QR005', inventoryId: 'INV-005', description: 'Welding Rod E7018', category: 'Welding', location: 'Warehouse B', onHand: 120, stockIn: 200, stockOut: 80, mrs: 0, finalOnHand: 120, baseUnit: 'kg', unitCost: 45.00 },
-      { qrCode: 'QR006', inventoryId: 'INV-006', description: 'Hydraulic Oil 20L', category: 'Lubricants', location: 'Warehouse A', onHand: 15, stockIn: 30, stockOut: 15, mrs: 0, finalOnHand: 15, baseUnit: 'drums', unitCost: 120.00 },
-      { qrCode: 'QR007', inventoryId: 'INV-007', description: 'Angle Grinder 4"', category: 'Tools', location: 'Warehouse C', onHand: 5, stockIn: 20, stockOut: 15, mrs: 0, finalOnHand: 5, baseUnit: 'pcs', unitCost: 85.00 },
-      { qrCode: 'QR008', inventoryId: 'INV-008', description: 'Drill Bit Set HSS', category: 'Tools', location: 'Warehouse B', onHand: 25, stockIn: 40, stockOut: 15, mrs: 0, finalOnHand: 25, baseUnit: 'sets', unitCost: 35.00 },
-      { qrCode: 'QR009', inventoryId: 'INV-009', description: 'Safety Helmet Yellow', category: 'Safety', location: 'Warehouse C', onHand: 3, stockIn: 100, stockOut: 97, mrs: 0, finalOnHand: 3, baseUnit: 'pcs', unitCost: 18.00 },
-      { qrCode: 'QR010', inventoryId: 'INV-010', description: 'Cable Tie 300mm Black', category: 'Electrical', location: 'Warehouse A', onHand: 500, stockIn: 1000, stockOut: 500, mrs: 0, finalOnHand: 500, baseUnit: 'pcs', unitCost: 0.50 },
-    ];
+  setTimeout(() => {
+    document.getElementById('loading-screen').classList.add('hidden');
+  }, 2000);
 
-    const demoTransactions = [
-      { date: new Date(Date.now() - 3600000).toISOString(), inventoryId: 'INV-001', description: 'Steel Bolts M8x25', type: 'OUT', qty: 10, balance: 100, user: 'warehouse', remarks: 'Production Line 1' },
-      { date: new Date(Date.now() - 7200000).toISOString(), inventoryId: 'INV-002', description: 'Copper Wire 2.5mm', type: 'IN', qty: 50, balance: 45, user: 'warehouse', remarks: 'New delivery' },
-      { date: new Date(Date.now() - 10800000).toISOString(), inventoryId: 'INV-003', description: 'PVC Pipe 50mm', type: 'OUT', qty: 5, balance: 8, user: 'warehouse', remarks: 'Maintenance' },
-      { date: new Date(Date.now() - 86400000).toISOString(), inventoryId: 'INV-005', description: 'Welding Rod E7018', type: 'IN', qty: 100, balance: 120, user: 'warehouse', remarks: 'Monthly restock' },
-      { date: new Date(Date.now() - 172800000).toISOString(), inventoryId: 'INV-004', description: 'Safety Gloves XL', type: 'OUT', qty: 50, balance: 0, user: 'warehouse', remarks: 'Distributed to workers' },
-      { date: new Date(Date.now() - 259200000).toISOString(), inventoryId: 'INV-001', description: 'Steel Bolts M8x25', type: 'IN', qty: 100, balance: 110, user: 'warehouse', remarks: 'Restock' },
-      { date: new Date(Date.now() - 345600000).toISOString(), inventoryId: 'INV-007', description: 'Angle Grinder 4"', type: 'OUT', qty: 3, balance: 5, user: 'warehouse', remarks: 'Loan to Site A' },
-    ];
+  document.getElementById('login-form').addEventListener('submit', handleLogin);
 
-    // API Simulation
-    async function apiCall(action, data = {}) {
-  // If offline, queue the request
+  window.addEventListener('online', () => {
+    showToast('Back online! Syncing...', 'success');
+    syncOfflineQueue();
+  });
+  window.addEventListener('offline', () => {
+    showToast('You are offline. Changes will be saved locally.', 'warning');
+  });
+});
+
+function initConfig() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const apiUrl = urlParams.get('api');
+  if (apiUrl) {
+    CONFIG.API_URL = apiUrl;
+    localStorage.setItem('gemcor_api_url', apiUrl);
+  } else {
+    const saved = localStorage.getItem('gemcor_api_url');
+    if (saved) CONFIG.API_URL = saved;
+  }
+  if (CONFIG.API_URL) CONFIG.DEMO_MODE = false;
+}
+
+function initDarkMode() {
+  const saved = localStorage.getItem('gemcor_dark_mode');
+  if (saved === 'true') {
+    state.darkMode = true;
+    document.body.classList.add('dark-mode');
+    document.getElementById('dark-mode-icon').textContent = 'light_mode';
+    document.getElementById('dark-mode-toggle').classList.add('active');
+  }
+}
+
+function initSettings() {
+  state.soundEnabled = localStorage.getItem('gemcor_sound') === 'true';
+  state.vibrationEnabled = localStorage.getItem('gemcor_vibration') === 'true';
+  if (state.soundEnabled) document.getElementById('sound-toggle').classList.add('active');
+  if (state.vibrationEnabled) document.getElementById('vibration-toggle').classList.add('active');
+}
+
+// --- AUTH ---
+async function handleLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('login-username').value;
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-icons">hourglass_top</span> Signing in...';
+
+  const result = await apiCall('login', { username, password });
+
+  if (result.success) {
+    state.currentUser = result.user;
+    localStorage.setItem('gemcor_user', JSON.stringify(result.user));
+    showToast('Welcome, ' + result.user.name + '!', 'success');
+    showApp();
+  } else {
+    showToast(result.error || 'Login failed', 'error');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span class="material-icons">login</span> Sign In';
+}
+
+function logout() {
+  state.currentUser = null;
+  localStorage.removeItem('gemcor_user');
+  showLogin();
+  showToast('Logged out successfully', 'info');
+}
+
+function showLogin() {
+  document.getElementById('login-page').style.display = 'block';
+  document.getElementById('app-content').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('app-content').style.display = 'block';
+  document.getElementById('settings-user').textContent = state.currentUser ? state.currentUser.name + ' (' + state.currentUser.role + ')' : 'Not logged in';
+  if (CONFIG.API_URL) {
+    document.getElementById('settings-api-url').textContent = CONFIG.API_URL.substring(0, 40) + '...';
+  }
+  loadHomeData();
+  loadFilters();
+}
+
+// --- API (GET-based for GitHub Pages + GAS) ---
+async function apiCall(action, data) {
   if (!navigator.onLine && action !== 'getInventory' && action !== 'getTransactions') {
     state.offlineQueue.push({ action, data });
     showToast('Saved offline. Will sync when online.', 'warning');
     return { success: true, offline: true };
   }
-  
+
   try {
-    // No API URL = demo mode
     if (!CONFIG.API_URL) return simulateApiResponse(action, data);
-    
-    // Build GET URL with query parameters (avoids CORS)
+
     const params = new URLSearchParams();
     params.append('action', action);
     for (const key in data) {
@@ -887,456 +782,608 @@
         }
       }
     }
-    
+
     const url = CONFIG.API_URL + '?' + params.toString();
     const response = await fetch(url, { method: 'GET' });
     return await response.json();
-    
+
   } catch (error) {
     console.error('API Error:', error);
-    showToast('Network error. Please try again.', 'error');
-    return { success: false, error: error.message };
+    showToast('Network error. Using demo data.', 'warning');
+    return simulateApiResponse(action, data);
   }
 }
 
-    function simulateApiResponse(action, data) {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          switch(action) {
-            case 'login':
-              const users = {
-                'admin': { name: 'Admin User', role: 'Admin', password: 'admin123' },
-                'warehouse': { name: 'Warehouse Staff', role: 'Warehouse Personnel', password: 'warehouse123' },
-                'supervisor': { name: 'Supervisor', role: 'Supervisor', password: 'supervisor123' }
-              };
-              const user = users[data.username];
-              if (user && user.password === data.password) {
-                resolve({ success: true, user: { name: user.name, role: user.role, token: 'demo-token-' + Date.now() } });
-              } else {
-                resolve({ success: false, error: 'Invalid credentials' });
-              }
-              break;
-            case 'getInventory':
-              let items = [...demoInventory];
-              if (data.filters) {
-                if (data.filters.search) {
-                  const s = data.filters.search.toLowerCase();
-                  items = items.filter(i => i.inventoryId.toLowerCase().includes(s) || i.description.toLowerCase().includes(s) || i.category.toLowerCase().includes(s));
-                }
-                if (data.filters.category) items = items.filter(i => i.category === data.filters.category);
-                if (data.filters.location) items = items.filter(i => i.location === data.filters.location);
-                if (data.filters.status) {
-                  items = items.filter(i => {
-                    if (i.finalOnHand <= 0) return data.filters.status === 'Out of Stock';
-                    if (i.finalOnHand <= CONFIG.LOW_STOCK_THRESHOLD) return data.filters.status === 'Low Stock';
-                    return data.filters.status === 'Enough';
-                  });
-                }
-              }
-              items.forEach(i => {
-                if (i.finalOnHand <= 0) { i.status = 'Out of Stock'; i.statusColor = 'danger'; }
-                else if (i.finalOnHand <= CONFIG.LOW_STOCK_THRESHOLD) { i.status = 'Low Stock'; i.statusColor = 'warning'; }
-                else { i.status = 'Enough'; i.statusColor = 'success'; }
-              });
-              const page = data.page || 1;
-              const limit = data.limit || 50;
-              const start = (page - 1) * limit;
-              resolve({ success: true, items: items.slice(start, start + limit), total: items.length, page, totalPages: Math.ceil(items.length / limit) });
-              break;
-            case 'getItemByQR':
-              const item = demoInventory.find(i => i.qrCode === data.qrCode || i.inventoryId === data.qrCode);
-              if (item) {
-                const lastTx = demoTransactions.filter(t => t.inventoryId === item.inventoryId).pop();
-                item.lastTransaction = lastTx || null;
-                resolve({ success: true, item });
-              } else {
-                resolve({ success: false, error: 'Item not found' });
-              }
-              break;
-            case 'searchItem':
-              const q = data.query.toLowerCase();
-              const results = demoInventory.filter(i => i.inventoryId.toLowerCase().includes(q) || i.description.toLowerCase().includes(q) || i.qrCode.toLowerCase().includes(q)).slice(0, 20).map(i => ({ qrCode: i.qrCode, inventoryId: i.inventoryId, description: i.description, category: i.category, location: i.location, finalOnHand: i.finalOnHand, baseUnit: i.baseUnit }));
-              resolve({ success: true, results });
-              break;
-            case 'stockIn':
-            case 'stockOut':
-            case 'materialReturn': {
-              const invItem = demoInventory.find(i => i.inventoryId === data.inventoryId);
-              if (!invItem) { resolve({ success: false, error: 'Item not found' }); break; }
-              const qty = Number(data.qty);
-              if (action === 'stockOut' && invItem.finalOnHand < qty) { resolve({ success: false, error: 'Insufficient Inventory' }); break; }
-              if (action === 'stockIn') { invItem.stockIn += qty; invItem.finalOnHand += qty; }
-              else if (action === 'stockOut') { invItem.stockOut += qty; invItem.finalOnHand -= qty; }
-              else { invItem.mrs += qty; invItem.finalOnHand += qty; }
-              const newTx = { date: new Date().toISOString(), inventoryId: data.inventoryId, description: invItem.description, type: action === 'stockIn' ? 'IN' : action === 'stockOut' ? 'OUT' : 'MRS', qty: qty, balance: invItem.finalOnHand, user: data.user || state.user?.name || 'Unknown', remarks: data.remarks || '' };
-              demoTransactions.push(newTx);
-              resolve({ success: true, message: 'Transaction successful', newBalance: invItem.finalOnHand });
-              break;
-            }
-            case 'getTransactions':
-              let txs = [...demoTransactions].reverse();
-              if (data.filters) {
-                if (data.filters.type) txs = txs.filter(t => t.type === data.filters.type);
-                if (data.filters.search) {
-                  const s = data.filters.search.toLowerCase();
-                  txs = txs.filter(t => t.inventoryId.toLowerCase().includes(s) || t.description.toLowerCase().includes(s));
-                }
-              }
-              const txPage = data.page || 1;
-              const txLimit = data.limit || 50;
-              const txStart = (txPage - 1) * txLimit;
-              resolve({ success: true, transactions: txs.slice(txStart, txStart + txLimit), total: txs.length, page: txPage, totalPages: Math.ceil(txs.length / txLimit) });
-              break;
-            case 'getMaterialHistory':
-              const history = demoTransactions.filter(t => t.inventoryId === data.inventoryId).reverse().slice(0, data.limit || 50);
-              resolve({ success: true, history });
-              break;
-            case 'getDashboard': {
-              const totalItems = demoInventory.length;
-              const totalInventory = demoInventory.reduce((sum, i) => sum + i.finalOnHand, 0);
-              const lowStock = demoInventory.filter(i => i.finalOnHand > 0 && i.finalOnHand <= CONFIG.LOW_STOCK_THRESHOLD).length;
-              const outOfStock = demoInventory.filter(i => i.finalOnHand <= 0).length;
-              const todayTx = demoTransactions.filter(t => { const d = new Date(t.date); const now = new Date(); return d.toDateString() === now.toDateString(); }).length;
-              const categories = {};
-              demoInventory.forEach(i => { categories[i.category] = (categories[i.category] || 0) + 1; });
-              const topIssued = {};
-              demoTransactions.filter(t => t.type === 'OUT').forEach(t => { topIssued[t.inventoryId] = (topIssued[t.inventoryId] || 0) + t.qty; });
-              const sortedTop = Object.entries(topIssued).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([id, qty]) => { const item = demoInventory.find(i => i.inventoryId === id); return { inventoryId: id, description: item ? item.description : id, qty }; });
-              const labels = []; const inData = []; const outData = []; const mrsData = [];
-              for (let d = 6; d >= 0; d--) {
-                const date = new Date(); date.setDate(date.getDate() - d);
-                labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-                const dayTxs = demoTransactions.filter(t => new Date(t.date).toDateString() === date.toDateString());
-                inData.push(dayTxs.filter(t => t.type === 'IN').reduce((s, t) => s + t.qty, 0));
-                outData.push(dayTxs.filter(t => t.type === 'OUT').reduce((s, t) => s + t.qty, 0));
-                mrsData.push(dayTxs.filter(t => t.type === 'MRS').reduce((s, t) => s + t.qty, 0));
-              }
-              resolve({ success: true, dashboard: { totalItems, totalInventory, lowStock, outOfStock, todayTransactions: todayTx, categoryDistribution: Object.entries(categories).map(([name, value]) => ({ name, value })), dailyChart: { labels, in: inData, out: outData, mrs: mrsData }, topIssued: sortedTop, recentTransactions: [...demoTransactions].reverse().slice(0, 10) } });
-              break;
-            }
-            case 'getCategories':
-              resolve({ success: true, categories: [...new Set(demoInventory.map(i => i.category))].sort() });
-              break;
-            case 'getLocations':
-              resolve({ success: true, locations: [...new Set(demoInventory.map(i => i.location))].sort() });
-              break;
-            case 'generateQR':
-              resolve({ success: true, qrUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(data.inventoryId), inventoryId: data.inventoryId });
-              break;
-            default:
-              resolve({ success: false, error: 'Unknown action' });
-          }
-        }, 300 + Math.random() * 400);
+function simulateApiResponse(action, data) {
+  switch (action) {
+    case 'login':
+      const users = {
+        'admin': { name: 'Admin', role: 'Admin', password: 'admin123' },
+        'warehouse': { name: 'Warehouse', role: 'Warehouse Personnel', password: 'warehouse123' },
+        'supervisor': { name: 'Supervisor', role: 'Supervisor', password: 'supervisor123' }
+      };
+      const u = users[data.username];
+      if (u && u.password === data.password) {
+        return { success: true, user: { name: u.name, role: u.role, username: data.username } };
+      }
+      return { success: false, error: 'Invalid username or password' };
+
+    case 'getInventory':
+      let items = [...DEMO_INVENTORY];
+      if (data.filters) {
+        if (data.filters.category && data.filters.category !== 'all') items = items.filter(i => i.category === data.filters.category);
+        if (data.filters.location && data.filters.location !== 'all') items = items.filter(i => i.location === data.filters.location);
+        if (data.filters.status && data.filters.status !== 'all') {
+          if (data.filters.status === 'low') items = items.filter(i => i.finalOnHand <= 10 && i.finalOnHand > 0);
+          if (data.filters.status === 'out') items = items.filter(i => i.finalOnHand === 0);
+          if (data.filters.status === 'good') items = items.filter(i => i.finalOnHand > 10);
+        }
+        if (data.filters.search) {
+          const s = data.filters.search.toLowerCase();
+          items = items.filter(i => i.itemDescription.toLowerCase().includes(s) || i.inventoryId.toLowerCase().includes(s) || i.qrCode.toLowerCase().includes(s));
+        }
+      }
+      const page = data.page || 1;
+      const limit = data.limit || 50;
+      const start = (page - 1) * limit;
+      return { success: true, data: items.slice(start, start + limit), pagination: { page: page, limit: limit, total: items.length, pages: Math.ceil(items.length / limit) } };
+
+    case 'getItemByQR':
+      const item = DEMO_INVENTORY.find(i => i.qrCode === data.qrCode || i.inventoryId === data.qrCode);
+      return item ? { success: true, data: item } : { success: false, error: 'Item not found' };
+
+    case 'searchItem':
+      const q = data.query.toLowerCase();
+      return { success: true, data: DEMO_INVENTORY.filter(i => i.itemDescription.toLowerCase().includes(q) || i.inventoryId.toLowerCase().includes(q)) };
+
+    case 'stockIn':
+    case 'stockOut':
+    case 'materialReturn':
+      const invItem = DEMO_INVENTORY.find(i => i.inventoryId === data.inventoryId);
+      if (!invItem) return { success: false, error: 'Item not found' };
+      const qty = parseInt(data.qty);
+      if (action === 'stockIn') {
+        invItem.stockIn += qty;
+        invItem.onHand += qty;
+        invItem.finalOnHand += qty;
+      } else if (action === 'stockOut') {
+        if (invItem.onHand < qty) return { success: false, error: 'Insufficient stock' };
+        invItem.stockOut += qty;
+        invItem.onHand -= qty;
+        invItem.finalOnHand -= qty;
+      } else {
+        invItem.mrs += qty;
+        invItem.onHand += qty;
+        invItem.finalOnHand += qty;
+      }
+      DEMO_TRANSACTIONS.unshift({
+        date: new Date(), inventoryId: data.inventoryId, itemDescription: invItem.itemDescription,
+        type: action === 'stockIn' ? 'Stock In' : action === 'stockOut' ? 'Stock Out' : 'MRS Return',
+        qty: qty, balance: invItem.finalOnHand, user: data.user || 'demo', remarks: data.remarks || ''
       });
-    }
+      return { success: true, message: action + ' successful' };
 
-    // Authentication
-    async function handleLogin(e) {
-      e.preventDefault();
-      const btn = $('#loginBtn');
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Signing in...';
-      btn.disabled = true;
-      const username = $('#loginUsername').value.trim();
-      const password = $('#loginPassword').value;
-      const result = await apiCall('login', { username, password });
-      if (result.success) {
-        state.user = result.user;
-        localStorage.setItem(CONFIG.CACHE_KEY + 'user', JSON.stringify(result.user));
-        $('#loginScreen').classList.add('hidden');
-        $('#appContainer').style.display = 'flex';
-        initApp();
-        showToast('Welcome back, ' + result.user.name + '!', 'success');
-      } else {
-        showToast(result.error || 'Login failed', 'error');
-        btn.innerHTML = '<span class="material-icons" style="font-size:18px;vertical-align:middle;margin-right:6px;">login</span>Sign In';
-        btn.disabled = false;
+    case 'getTransactions':
+      let trans = [...DEMO_TRANSACTIONS];
+      if (data.filters) {
+        if (data.filters.type && data.filters.type !== 'all') trans = trans.filter(t => t.type === data.filters.type);
+        if (data.filters.search) {
+          const s = data.filters.search.toLowerCase();
+          trans = trans.filter(t => t.itemDescription.toLowerCase().includes(s) || t.inventoryId.toLowerCase().includes(s));
+        }
       }
-    }
+      const tpage = data.page || 1;
+      const tlimit = data.limit || 50;
+      const tstart = (tpage - 1) * tlimit;
+      return { success: true, data: trans.slice(tstart, tstart + tlimit), pagination: { page: tpage, limit: tlimit, total: trans.length, pages: Math.ceil(trans.length / tlimit) } };
 
-    function logout() {
-      state.user = null;
-      localStorage.removeItem(CONFIG.CACHE_KEY + 'user');
-      $('#loginScreen').classList.remove('hidden');
-      $('#appContainer').style.display = 'none';
-      if (state.scanner) { state.scanner.stop().catch(() => {}); state.scanner = null; }
-      showToast('Logged out successfully', 'info');
-    }
+    case 'getMaterialHistory':
+      return { success: true, data: DEMO_TRANSACTIONS.filter(t => t.inventoryId === data.inventoryId).slice(0, data.limit || 50) };
 
-    // Navigation
-    function navigateTo(page) {
-      if (state.currentPage === 'scanner' && page !== 'scanner' && state.scanner) {
-        state.scanner.stop().catch(() => {});
-        state.scanner = null;
-      }
-      $$('.page').forEach(p => p.classList.remove('active'));
-      const pageEl = document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1));
-      if (pageEl) pageEl.classList.add('active');
-      $$('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
-      const navBtn = document.querySelector('.bottom-nav-item[data-page="' + page + '"]');
-      if (navBtn) navBtn.classList.add('active');
-      const titles = { home: 'GEMCOR IVM', scanner: 'QR Scanner', inventory: 'Inventory', transactions: 'Transactions', dashboard: 'Dashboard', settings: 'Settings', profile: 'Profile', material: 'Material Details' };
-      $('#pageTitle').textContent = titles[page] || 'GEMCOR IVM';
-      $('#backBtn').style.display = ['material', 'profile'].includes(page) ? 'flex' : 'none';
-      state.currentPage = page;
-      if (page === 'scanner') initScanner();
-      if (page === 'inventory') loadInventory();
-      if (page === 'transactions') loadTransactions();
-      if (page === 'dashboard') loadDashboard();
-      if (page === 'settings') loadSettings();
-      if (page === 'profile') loadProfile();
-      if (page === 'material') {
-        $('#backBtn').onclick = () => navigateTo('inventory');
-      } else {
-        $('#backBtn').onclick = () => navigateTo('home');
-      }
-      window.scrollTo(0, 0);
-    }
-
-    // Scanner
-    let lastScanTime = 0;
-    let lastScannedCode = '';
-
-    async function initScanner() {
-      if (state.scanner) return;
-      try {
-        const reader = $('#reader');
-        reader.innerHTML = '';
-        state.scanner = new Html5Qrcode('reader', { verbose: false, formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.CODE_128] });
-        const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0, disableFlip: false };
-        await state.scanner.start({ facingMode: state.settings.defaultCamera }, config, onScanSuccess, onScanFailure);
-      } catch (error) {
-        console.error('Scanner init error:', error);
-        showToast('Camera access denied or not available', 'warning');
-      }
-    }
-
-    function onScanSuccess(decodedText) {
-      const now = Date.now();
-      if (decodedText === lastScannedCode && now - lastScanTime < 3000) return;
-      lastScanTime = now;
-      lastScannedCode = decodedText;
-      playScanSound();
-      vibrate([50, 100, 50]);
-      handleScan(decodedText);
-    }
-
-    function onScanFailure(error) {}
-
-    async function handleScan(code) {
-      showToast('QR Code detected: ' + code, 'info');
-      const result = await apiCall('getItemByQR', { qrCode: code });
-      if (result.success) {
-        displayScannedItem(result.item);
-        addToRecentlyScanned(result.item);
-      } else {
-        showToast('Item not found: ' + code, 'error');
-      }
-    }
-
-    function displayScannedItem(item) {
-      state.scannedItem = item;
-      $('#scanQrImage').src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(item.qrCode);
-      $('#scanInventoryId').textContent = item.inventoryId;
-      $('#scanDescription').textContent = item.description;
-      $('#scanCategory').textContent = item.category;
-      $('#scanLocation').textContent = item.location;
-      $('#scanBaseUnit').textContent = item.baseUnit;
-      $('#scanFinalOnHand').textContent = formatNumber(item.finalOnHand);
-      $('#scanIn').textContent = formatNumber(item.stockIn);
-      $('#scanOut').textContent = formatNumber(item.stockOut);
-      $('#scanMrs').textContent = formatNumber(item.mrs);
-      const badge = $('#scanStatusBadge');
-      if (item.finalOnHand <= 0) { badge.className = 'material-badge badge-danger'; badge.textContent = 'Out of Stock'; }
-      else if (item.finalOnHand <= CONFIG.LOW_STOCK_THRESHOLD) { badge.className = 'material-badge badge-warning'; badge.textContent = 'Low Stock'; }
-      else { badge.className = 'material-badge badge-success'; badge.textContent = 'Enough'; }
-      const txContainer = $('#scanLastTx');
-      if (item.lastTransaction) {
-        const tx = item.lastTransaction;
-        const txColors = { IN: 'var(--success)', OUT: 'var(--danger)', MRS: 'var(--warning)' };
-        txContainer.innerHTML = '<div class="d-flex justify-content-between align-items-center"><div><span class="badge fw-semibold" style="background:' + txColors[tx.type] + '15;color:' + txColors[tx.type] + ';font-size:11px;">' + tx.type + '</span><div class="fw-semibold mt-1" style="font-size:14px;">' + formatNumber(tx.qty) + ' ' + item.baseUnit + '</div><div class="text-muted" style="font-size:12px;">Balance: ' + formatNumber(tx.balance) + '</div></div><div class="text-end"><div style="font-size:12px;color:var(--gray-500);">' + formatDate(tx.date) + '</div><div style="font-size:12px;color:var(--gray-500);">by ' + escapeHtml(tx.user) + '</div></div></div>' + (tx.remarks ? '<div class="mt-2 p-2 rounded-2" style="background:var(--gray-100);font-size:12px;"><span class="text-muted">Remarks:</span> ' + escapeHtml(tx.remarks) + '</div>' : '');
-      } else {
-        txContainer.innerHTML = '<div class="empty-state" style="padding:24px;"><span class="material-icons">history_toggle_off</span><p class="mb-0">No transaction history yet.</p></div>';
-      }
-      $('#scanResult').style.display = 'block';
-      $('#scanResult').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function resetScanner() {
-      state.scannedItem = null;
-      $('#scanResult').style.display = 'none';
-      lastScannedCode = '';
-      lastScanTime = 0;
-    }
-
-    function addToRecentlyScanned(item) {
-      state.recentlyScanned = state.recentlyScanned.filter(r => r.inventoryId !== item.inventoryId);
-      state.recentlyScanned.unshift({ inventoryId: item.inventoryId, description: item.description });
-      if (state.recentlyScanned.length > 10) state.recentlyScanned.pop();
-      localStorage.setItem(CONFIG.CACHE_KEY + 'recent', JSON.stringify(state.recentlyScanned));
-      updateRecentlyScannedUI();
-    }
-
-    function updateRecentlyScannedUI() {
-      const container = $('#recentScannedContainer');
-      if (state.recentlyScanned.length === 0) {
-        container.innerHTML = '<span class="text-muted" style="font-size:12px;">No recent scans</span>';
-        return;
-      }
-      container.innerHTML = state.recentlyScanned.map(r => '<span class="recent-chip" onclick="handleScan('' + r.inventoryId + '');navigateTo('scanner');"><span class="material-icons" style="font-size:14px;">qr_code</span>' + escapeHtml(r.inventoryId) + '</span>').join('');
-    }
-
-    // Transaction Modal
-    function openTransactionModal(type) {
-      if (!state.scannedItem) { showToast('Please scan an item first', 'warning'); return; }
-      if (type === 'OUT' && state.scannedItem.finalOnHand <= 0) { showToast('Cannot stock out: Item is out of stock', 'error'); return; }
-      state.currentTxType = type;
-      const titles = { IN: 'Stock In', OUT: 'Stock Out', MRS: 'Material Return Slip' };
-      const colors = { IN: 'var(--success)', OUT: 'var(--danger)', MRS: 'var(--warning)' };
-      $('#txModalTitle').textContent = titles[type];
-      $('#txModalTitle').style.color = colors[type];
-      $('#txModalItem').value = state.scannedItem.description;
-      $('#txModalQty').value = 1;
-      $('#txModalRemarks').value = '';
-      $('#txModalUser').value = state.user?.name || 'Unknown';
-      const confirmBtn = $('#txModalConfirm');
-      confirmBtn.style.background = 'linear-gradient(135deg, ' + colors[type] + ', ' + (type === 'IN' ? '#16A34A' : type === 'OUT' ? '#DC2626' : '#D97706') + ')';
-      confirmBtn.onclick = () => confirmTransaction(type);
-      const modal = new bootstrap.Modal($('#transactionModal'));
-      modal.show();
-    }
-
-    async function confirmTransaction(type) {
-      const qty = parseInt($('#txModalQty').value);
-      const remarks = $('#txModalRemarks').value;
-      if (!qty || qty <= 0) { showToast('Please enter a valid quantity', 'warning'); return; }
-      const actions = { IN: 'stockIn', OUT: 'stockOut', MRS: 'materialReturn' };
-      const result = await apiCall(actions[type], { inventoryId: state.scannedItem.inventoryId, qty: qty, user: state.user?.name || 'Unknown', remarks: remarks });
-      if (result.success) {
-        bootstrap.Modal.getInstance($('#transactionModal')).hide();
-        playSuccessSound();
-        vibrate([100, 50, 100]);
-        const overlay = $('#scanSuccessOverlay');
-        overlay.classList.add('show');
-        setTimeout(() => overlay.classList.remove('show'), 1500);
-        showToast(result.message, 'success');
-        const refresh = await apiCall('getItemByQR', { qrCode: state.scannedItem.qrCode });
-        if (refresh.success) displayScannedItem(refresh.item);
-        loadHomeStats();
-      } else {
-        showToast(result.error || 'Transaction failed', 'error');
-      }
-    }
-
-    // Inventory
-    async function loadInventory(page) {
-      page = page || 1;
-      state.inventoryPage = page;
-      const filters = { search: $('#inventorySearch').value, category: $('#filterCategory').value, location: $('#filterLocation').value, status: $('#filterStatus').value };
-      state.inventoryFilters = filters;
-      const result = await apiCall('getInventory', { page, limit: CONFIG.ITEMS_PER_PAGE, filters });
-      if (result.success) {
-        renderInventoryTable(result.items);
-        updatePagination('inventory', result.page, result.totalPages, result.total);
-      }
-    }
-
-    function renderInventoryTable(items) {
-      const tbody = $('#inventoryTableBody');
-      if (items.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No items found</td></tr>'; return; }
-      const statusColors = { 'Enough': 'success', 'Low Stock': 'warning', 'Out of Stock': 'danger' };
-      tbody.innerHTML = items.map(item => '<tr style="cursor:pointer;" onclick="openMaterialDetails('' + item.inventoryId + '')"><td><span class="material-icons" style="font-size:18px;color:var(--primary);">qr_code</span></td><td class="fw-semibold" style="font-size:12px;">' + item.inventoryId + '</td><td>' + escapeHtml(item.description) + '</td><td><span class="badge" style="background:var(--primary-light);color:var(--primary);font-size:10px;">' + escapeHtml(item.category) + '</span></td><td style="font-size:12px;"><span class="material-icons" style="font-size:14px;vertical-align:middle;color:var(--gray-500);">location_on</span> ' + escapeHtml(item.location) + '</td><td class="fw-bold" style="font-size:13px;">' + formatNumber(item.finalOnHand) + '</td><td><span class="badge badge-' + statusColors[item.status] + '" style="font-size:10px;">' + item.status + '</span></td></tr>').join('');
-    }
-
-    function updatePagination(type, page, totalPages, total) {
-      const prefix = type === 'inventory' ? 'inv' : 'tx';
-      $('#' + prefix + 'PrevBtn').disabled = page <= 1;
-      $('#' + prefix + 'NextBtn').disabled = page >= totalPages;
-      $('#' + prefix + 'PrevBtn').onclick = () => type === 'inventory' ? loadInventory(page - 1) : loadTransactions(page - 1);
-      $('#' + prefix + 'NextBtn').onclick = () => type === 'inventory' ? loadInventory(page + 1) : loadTransactions(page + 1);
-      const label = type === 'inventory' ? 'items' : 'transactions';
-      const container = type === 'inventory' ? $('#inventoryPagination') : $('#txPagination');
-      container.querySelector('span').textContent = 'Page ' + page + ' of ' + totalPages + ' (' + total + ' ' + label + ')';
-    }
-
-    async function openMaterialDetails(inventoryId) {
-      const result = await apiCall('getItemByQR', { qrCode: inventoryId });
-      if (!result.success) { showToast('Item not found', 'error'); return; }
-      const item = result.item;
-      const content = $('#materialDetailsContent');
-      const statusBadge = item.finalOnHand <= 0 ? 'badge-danger' : item.finalOnHand <= CONFIG.LOW_STOCK_THRESHOLD ? 'badge-warning' : 'badge-success';
-      const statusText = item.finalOnHand <= 0 ? 'Out of Stock' : item.finalOnHand <= CONFIG.LOW_STOCK_THRESHOLD ? 'Low Stock' : 'Enough';
-      content.innerHTML = '<div class="material-card mb-3"><div class="material-card-header"><div class="d-flex align-items-start gap-3"><div class="material-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(item.qrCode) + '" alt="QR"></div><div class="flex-grow-1"><span class="material-badge ' + statusBadge + '">' + statusText + '</span><h5 class="fw-bold mt-2 mb-1">' + item.inventoryId + '</h5><p class="mb-0 opacity-75" style="font-size:13px;">' + escapeHtml(item.description) + '</p></div></div></div><div class="p-3"><div class="row g-2 mb-3"><div class="col-3"><div class="material-stat"><div class="material-stat-value">' + formatNumber(item.onHand) + '</div><div class="material-stat-label">On-Hand</div></div></div><div class="col-3"><div class="material-stat"><div class="material-stat-value" style="color:var(--success);">' + formatNumber(item.stockIn) + '</div><div class="material-stat-label">In</div></div></div><div class="col-3"><div class="material-stat"><div class="material-stat-value" style="color:var(--danger);">' + formatNumber(item.stockOut) + '</div><div class="material-stat-label">Out</div></div></div><div class="col-3"><div class="material-stat"><div class="material-stat-value" style="color:var(--warning);">' + formatNumber(item.mrs) + '</div><div class="material-stat-label">MRS</div></div></div></div><div class="row g-2 text-center" style="font-size:12px;color:var(--gray-500);"><div class="col-6"><span class="material-icons" style="font-size:14px;vertical-align:middle;">category</span> ' + escapeHtml(item.category) + '</div><div class="col-6"><span class="material-icons" style="font-size:14px;vertical-align:middle;">location_on</span> ' + escapeHtml(item.location) + '</div><div class="col-6"><span class="material-icons" style="font-size:14px;vertical-align:middle;">straighten</span> ' + item.baseUnit + '</div><div class="col-6"><span class="material-icons" style="font-size:14px;vertical-align:middle;">summarize</span> Final: <strong>' + formatNumber(item.finalOnHand) + '</strong></div></div></div></div><div class="row g-2 mb-3"><div class="col-4"><button class="tx-btn tx-btn-in" onclick="quickTx('' + item.inventoryId + '', 'IN')"><span class="material-icons">add_circle</span>Stock In</button></div><div class="col-4"><button class="tx-btn tx-btn-out" onclick="quickTx('' + item.inventoryId + '', 'OUT')"><span class="material-icons">remove_circle</span>Stock Out</button></div><div class="col-4"><button class="tx-btn tx-btn-mrs" onclick="quickTx('' + item.inventoryId + '', 'MRS')"><span class="material-icons">assignment_return</span>MRS</button></div></div><div class="gem-card mb-3"><div class="gem-card-header"><span class="fw-bold" style="font-size:14px;"><span class="material-icons" style="font-size:18px;vertical-align:middle;margin-right:4px;color:var(--primary);">history</span>Transaction History</span></div><div class="gem-card-body"><div id="materialHistory"></div></div></div>';
-      navigateTo('material');
-      loadMaterialHistory(inventoryId);
-    }
-
-    async function loadMaterialHistory(inventoryId) {
-      const result = await apiCall('getMaterialHistory', { inventoryId, limit: 50 });
-      const container = $('#materialHistory');
-      if (!result.success || result.history.length === 0) {
-        container.innerHTML = '<div class="empty-state" style="padding:24px;"><span class="material-icons">history_toggle_off</span><p class="mb-0">No transaction history yet.</p></div>';
-        return;
-      }
-      container.innerHTML = '<div class="timeline">' + result.history.map(tx => '<div class="timeline-item"><div class="timeline-dot ' + tx.type.toLowerCase() + '"></div><div class="timeline-card"><div class="d-flex justify-content-between align-items-start"><div><span class="badge fw-semibold" style="background:' + (tx.type === 'IN' ? 'rgba(34,197,94,0.15)' : tx.type === 'OUT' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)') + ';color:' + (tx.type === 'IN' ? 'var(--success)' : tx.type === 'OUT' ? 'var(--danger)' : 'var(--warning)') + ';font-size:10px;">' + tx.type + '</span><div class="fw-bold mt-1" style="font-size:14px;">' + formatNumber(tx.qty) + ' units</div><div class="text-muted" style="font-size:12px;">Balance: ' + formatNumber(tx.balance) + '</div></div><div class="text-end" style="font-size:12px;color:var(--gray-500);"><div>' + formatDate(tx.date) + '</div><div>by ' + escapeHtml(tx.user) + '</div></div></div>' + (tx.remarks ? '<div class="mt-2 p-2 rounded-2" style="background:var(--gray-100);font-size:11px;">' + escapeHtml(tx.remarks) + '</div>' : '') + '</div></div>').join('') + '</div>';
-    }
-
-    function quickTx(inventoryId, type) {
-      apiCall('getItemByQR', { qrCode: inventoryId }).then(result => {
-        if (result.success) { state.scannedItem = result.item; openTransactionModal(type); }
+    case 'getDashboard':
+      const cats = {};
+      const locs = {};
+      let totalVal = 0;
+      let low = 0;
+      let out = 0;
+      DEMO_INVENTORY.forEach(i => {
+        cats[i.category] = (cats[i.category] || 0) + 1;
+        locs[i.location] = (locs[i.location] || 0) + 1;
+        totalVal += i.finalOnHand * i.unitCost;
+        if (i.finalOnHand <= 10 && i.finalOnHand > 0) low++;
+        if (i.finalOnHand === 0) out++;
       });
-    }
-
-    // Transactions
-    async function loadTransactions(page) {
-      page = page || 1;
-      state.transactionsPage = page;
-      const filters = { search: $('#txSearch').value, dateFrom: $('#txDateFrom').value, dateTo: $('#txDateTo').value, type: $('#txTypeFilter').value };
-      state.txFilters = filters;
-      const result = await apiCall('getTransactions', { page, limit: CONFIG.ITEMS_PER_PAGE, filters });
-      if (result.success) {
-        renderTransactionsTable(result.transactions);
-        updatePagination('transactions', result.page, result.totalPages, result.total);
+      const daily = {};
+      const now = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        daily[d.toISOString().split('T')[0]] = { stockIn: 0, stockOut: 0, mrs: 0 };
       }
-    }
-
-    function renderTransactionsTable(transactions) {
-      const tbody = $('#transactionsTableBody');
-      if (transactions.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">No transactions found</td></tr>'; return; }
-      const colors = { IN: 'var(--success)', OUT: 'var(--danger)', MRS: 'var(--warning)' };
-      tbody.innerHTML = transactions.map(tx => '<tr><td style="font-size:12px;white-space:nowrap;">' + formatDate(tx.date) + '</td><td class="fw-semibold" style="font-size:12px;">' + tx.inventoryId + '</td><td>' + escapeHtml(tx.description) + '</td><td><span class="badge fw-semibold" style="background:' + colors[tx.type] + '15;color:' + colors[tx.type] + ';font-size:10px;">' + tx.type + '</span></td><td class="fw-bold">' + formatNumber(tx.qty) + '</td><td>' + formatNumber(tx.balance) + '</td><td style="font-size:12px;">' + escapeHtml(tx.user) + '</td><td style="font-size:12px;max-width:150px;" class="text-truncate">' + escapeHtml(tx.remarks || '-') + '</td></tr>').join('');
-    }
-
-    function exportTransactions() {
-      showToast('Export feature requires backend connection', 'info');
-    }
-
-    // Dashboard
-    async function loadDashboard() {
-      const result = await apiCall('getDashboard');
-      if (!result.success) return;
-      const d = result.dashboard;
-      $('#dashTotalItems').textContent = formatNumber(d.totalItems);
-      $('#dashTotalInventory').textContent = formatNumber(d.totalInventory);
-      $('#dashLowStock').textContent = formatNumber(d.lowStock);
-      $('#dashOutStock').textContent = formatNumber(d.outOfStock);
-      $('#dashTodayTx').textContent = formatNumber(d.todayTransactions);
-      const dailyCtx = $('#dailyChart').getContext('2d');
-      if (state.charts.daily) state.charts.daily.destroy();
-      state.charts.daily = new Chart(dailyCtx, {
-        type: 'bar',
-        data: { labels: d.dailyChart.labels, datasets: [
-          { label: 'Stock In', data: d.dailyChart.in, backgroundColor: 'var(--success)', borderRadius: 4 },
-          { label: 'Stock Out', data: d.dailyChart.out, backgroundColor: 'var(--danger)', borderRadius: 4 },
-          { label: 'MRS', data: d.dailyChart.mrs, backgroundColor: 'var(--warning)', borderRadius: 4 }
-        ]},
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
+      const issued = {};
+      DEMO_TRANSACTIONS.forEach(t => {
+        const dk = new Date(t.date).toISOString().split('T')[0];
+        if (daily[dk]) {
+          if (t.type === 'Stock In') daily[dk].stockIn += t.qty;
+          else if (t.type === 'Stock Out') daily[dk].stockOut += t.qty;
+          else if (t.type === 'MRS Return') daily[dk].mrs += t.qty;
+        }
+        if (t.type === 'Stock Out') {
+          const k = t.inventoryId + '|' + t.itemDescription;
+          issued[k] = (issued[k] || 0) + t.qty;
+        }
       });
-      const catCtx = $('#categoryChart').getContext('2d');
-      if (state.charts.category) state.charts.category.destroy();
-      state.charts.category = new Chart(catCtx, {
-        type: 'doughnut',
-        data: { labels: d.categoryDistribution.map(c => c.name), datasets: [{ data: d.categoryDistribution.map(c => c.value), backgroundColor: ['#0056D2', '#00BCD4', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+      const topIssued = Object.entries(issued).sort((a,b) => b[1]-a[1]).slice(0,10).map(([k,v]) => {
+        const [id,desc] = k.split('|');
+        return { inventoryId: id, itemDescription: desc, qty: v };
       });
-      $('#topIssuedBody').innerHTML = d.topIssued.map((item, i) => '<tr><td style="font-size:12px;"><span class="badge" style="background:var(--primary-light);color:var(--primary);">#' + (i + 1) + '</span></td><td style="font-size:13px;">' + escapeHtml(item.description) + '</td><td class="fw-bold" style="font-size:13px;">' + formatNumber(item.qty) + '</td></tr>').join('');
+      return {
+        success: true,
+        data: {
+          stats: { totalItems: DEMO_INVENTORY.length, totalValue: totalVal.toFixed(2), lowStock: low, outOfStock: out, totalTransactions: DEMO_TRANSACTIONS.length },
+          categories: Object.entries(cats).map(([n,c]) => ({ name: n, count: c })),
+          locations: Object.entries(locs).map(([n,c]) => ({ name: n, count: c })),
+          dailyTransactions: Object.entries(daily).map(([d,v]) => ({ date: d, ...v })),
+          topIssued: topIssued
+        }
+      };
+
+    case 'getCategories':
+      return { success: true, data: [...new Set(DEMO_INVENTORY.map(i => i.category))].sort() };
+
+    case 'getLocations':
+      return { success: true, data: [...new Set(DEMO_INVENTORY.map(i => i.location))].sort() };
+
+    case 'generateQR':
+      return { success: true, qrUrl: 'https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=' + encodeURIComponent(data.inventoryId), inventoryId: data.inventoryId };
+
+    default:
+      return { success: false, error: 'Unknown action' };
+  }
+}
+
+function syncOfflineQueue() {
+  if (state.offlineQueue.length === 0) return;
+  showToast('Syncing ' + state.offlineQueue.length + ' offline changes...', 'info');
+  state.offlineQueue.forEach(async (req) => {
+    await apiCall(req.action, req.data);
+  });
+  state.offlineQueue = [];
+  showToast('Sync complete!', 'success');
+}
+
+// --- NAVIGATION ---
+function navigateTo(page) {
+  if (state.currentPage === page) return;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(page + '-page').classList.add('active');
+
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navItem = document.querySelector('.nav-item[data-page="' + page + '"]');
+  if (navItem) navItem.classList.add('active');
+
+  state.currentPage = page;
+
+  if (page === 'home') loadHomeData();
+  if (page === 'inventory') { state.inventoryPage = 1; loadInventory(); }
+  if (page === 'transactions') { state.transactionPage = 1; loadTransactions(); }
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'scanner') startScanner();
+  else stopScanner();
+}
+
+// --- HOME ---
+async function loadHomeData() {
+  const result = await apiCall('getDashboard');
+  if (result.success) {
+    const stats = result.data.stats;
+    document.getElementById('stat-total-items').textContent = stats.totalItems;
+    document.getElementById('stat-low-stock').textContent = stats.lowStock;
+    document.getElementById('stat-out-stock').textContent = stats.outOfStock;
+
+    const recentList = document.getElementById('recent-activity-list');
+    const trans = await apiCall('getTransactions', { page: 1, limit: 5 });
+    if (trans.success && trans.data.length > 0) {
+      recentList.innerHTML = trans.data.map(t => `
+        <div class="transaction-item">
+          <div class="transaction-icon ${t.type === 'Stock In' ? 'in' : t.type === 'Stock Out' ? 'out' : 'mrs'}"><span class="material-icons">${t.type === 'Stock In' ? 'arrow_downward' : t.type === 'Stock Out' ? 'arrow_upward' : 'refresh'}</span></div>
+          <div class="transaction-info"><div class="transaction-title">${t.itemDescription}</div><div class="transaction-meta">${t.type} by ${t.user}</div></div>
+          <div class="transaction-qty ${t.type === 'Stock In' ? 'in' : t.type === 'Stock Out' ? 'out' : 'mrs'}">${t.type === 'Stock Out' ? '-' : '+'}${t.qty}</div>
+        </div>
+      `).join('');
     }
+  }
+}
+
+// --- INVENTORY ---
+async function loadInventory() {
+  const search = document.getElementById('inventory-search').value;
+  const category = document.getElementById('filter-category').value;
+  const location = document.getElementById('filter-location').value;
+  const status = document.getElementById('filter-status').value;
+
+  const result = await apiCall('getInventory', {
+    page: state.inventoryPage,
+    limit: CONFIG.ITEMS_PER_PAGE,
+    filters: JSON.stringify({ search, category, location, status })
+  });
+
+  const list = document.getElementById('inventory-list');
+  if (result.success) {
+    if (result.data.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><span class="material-icons">inventory_2</span></div><div class="empty-state-title">No items found</div></div>';
+    } else {
+      list.innerHTML = result.data.map(item => `
+        <div class="inventory-item" onclick="showMaterialDetail('${item.inventoryId}')">
+          <div class="inventory-item-icon"><span class="material-icons">inventory</span></div>
+          <div class="inventory-item-info">
+            <div class="inventory-item-title">${item.itemDescription}</div>
+            <div class="inventory-item-meta">${item.inventoryId} | ${item.category} | ${item.location}</div>
+          </div>
+          <div class="inventory-item-badge ${item.finalOnHand === 0 ? 'badge-danger' : item.finalOnHand <= 10 ? 'badge-warning' : 'badge-success'}">${item.finalOnHand} ${item.baseUnit}</div>
+        </div>
+      `).join('');
+    }
+
+    const p = result.pagination;
+    document.getElementById('inventory-pagination').innerHTML = `
+      <button class="pagination-btn" onclick="changeInventoryPage(${p.page - 1})" ${p.page <= 1 ? 'disabled' : ''}><span class="material-icons">chevron_left</span></button>
+      <span class="pagination-info">Page ${p.page} of ${p.pages}</span>
+      <button class="pagination-btn" onclick="changeInventoryPage(${p.page + 1})" ${p.page >= p.pages ? 'disabled' : ''}><span class="material-icons">chevron_right</span></button>
+    `;
+  }
+}
+
+function changeInventoryPage(page) {
+  state.inventoryPage = page;
+  loadInventory();
+}
+
+let searchTimeout;
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => { state.inventoryPage = 1; loadInventory(); }, 300);
+}
+
+async function showMaterialDetail(inventoryId) {
+  const result = await apiCall('getItemByQR', { qrCode: inventoryId });
+  if (!result.success) {
+    showToast(result.error, 'error');
+    return;
+  }
+
+  const item = result.data;
+  const history = await apiCall('getMaterialHistory', { inventoryId: item.inventoryId, limit: 10 });
+
+  document.getElementById('material-detail-content').innerHTML = `
+    <div class="material-card">
+      <div class="material-card-qr"><div class="material-card-qr-code">${item.qrCode}</div></div>
+      <div class="material-card-title">${item.itemDescription}</div>
+      <div class="material-card-id">${item.inventoryId} | ${item.category}</div>
+      <div class="material-card-stats">
+        <div><div class="material-card-stat-value">${item.finalOnHand}</div><div class="material-card-stat-label">On Hand</div></div>
+        <div><div class="material-card-stat-value">${item.stockIn}</div><div class="material-card-stat-label">Stock In</div></div>
+        <div><div class="material-card-stat-value">${item.stockOut}</div><div class="material-card-stat-label">Stock Out</div></div>
+      </div>
+    </div>
+    <div class="txn-buttons">
+      <button class="txn-btn txn-btn-in" onclick="openTxnModal('stockIn', '${item.inventoryId}', '${item.itemDescription}')"><span class="material-icons">arrow_downward</span>Stock In</button>
+      <button class="txn-btn txn-btn-out" onclick="openTxnModal('stockOut', '${item.inventoryId}', '${item.itemDescription}')"><span class="material-icons">arrow_upward</span>Stock Out</button>
+      <button class="txn-btn txn-btn-mrs" onclick="openTxnModal('materialReturn', '${item.inventoryId}', '${item.itemDescription}')"><span class="material-icons">refresh</span>MRS</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Transaction History</div></div>
+      <div class="timeline">
+        ${history.success && history.data.length > 0 ? history.data.map(t => `
+          <div class="timeline-item ${t.type === 'Stock In' ? 'in' : t.type === 'Stock Out' ? 'out' : 'mrs'}">
+            <div class="timeline-date">${new Date(t.date).toLocaleString()}</div>
+            <div class="timeline-content">${t.type} - ${t.qty} ${item.baseUnit}</div>
+            <div class="timeline-meta">Balance: ${t.balance} | ${t.user}</div>
+          </div>
+        `).join('') : '<div style="color:var(--gray-500); font-size:13px;">No history found</div>'}
+      </div>
+    </div>
+  `;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('material-detail-page').classList.add('active');
+}
+
+// --- TRANSACTIONS ---
+async function loadTransactions() {
+  const search = document.getElementById('transaction-search').value;
+  const type = document.getElementById('trans-filter-type').value;
+  const dateFrom = document.getElementById('trans-date-from').value;
+  const dateTo = document.getElementById('trans-date-to').value;
+
+  const result = await apiCall('getTransactions', {
+    page: state.transactionPage,
+    limit: CONFIG.ITEMS_PER_PAGE,
+    filters: JSON.stringify({ search, type, dateFrom, dateTo })
+  });
+
+  const list = document.getElementById('transaction-list');
+  if (result.success) {
+    if (result.data.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><span class="material-icons">receipt_long</span></div><div class="empty-state-title">No transactions found</div></div>';
+    } else {
+      list.innerHTML = result.data.map(t => `
+        <div class="transaction-item">
+          <div class="transaction-icon ${t.type === 'Stock In' ? 'in' : t.type === 'Stock Out' ? 'out' : 'mrs'}"><span class="material-icons">${t.type === 'Stock In' ? 'arrow_downward' : t.type === 'Stock Out' ? 'arrow_upward' : 'refresh'}</span></div>
+          <div class="transaction-info">
+            <div class="transaction-title">${t.itemDescription}</div>
+            <div class="transaction-meta">${new Date(t.date).toLocaleString()} | ${t.user}</div>
+          </div>
+          <div class="transaction-qty ${t.type === 'Stock In' ? 'in' : t.type === 'Stock Out' ? 'out' : 'mrs'}">${t.type === 'Stock Out' ? '-' : '+'}${t.qty}</div>
+        </div>
+      `).join('');
+    }
+
+    const p = result.pagination;
+    document.getElementById('transaction-pagination').innerHTML = `
+      <button class="pagination-btn" onclick="changeTransactionPage(${p.page - 1})" ${p.page <= 1 ? 'disabled' : ''}><span class="material-icons">chevron_left</span></button>
+      <span class="pagination-info">Page ${p.page} of ${p.pages}</span>
+      <button class="pagination-btn" onclick="changeTransactionPage(${p.page + 1})" ${p.page >= p.pages ? 'disabled' : ''}><span class="material-icons">chevron_right</span></button>
+    `;
+  }
+}
+
+function changeTransactionPage(page) {
+  state.transactionPage = page;
+  loadTransactions();
+}
+
+let transSearchTimeout;
+function debounceTransSearch() {
+  clearTimeout(transSearchTimeout);
+  transSearchTimeout = setTimeout(() => { state.transactionPage = 1; loadTransactions(); }, 300);
+}
+
+// --- DASHBOARD ---
+async function loadDashboard() {
+  const result = await apiCall('getDashboard');
+  if (!result.success) return;
+
+  const data = result.data;
+  document.getElementById('dash-total-items').textContent = data.stats.totalItems;
+  document.getElementById('dash-total-value').textContent = '$' + parseFloat(data.stats.totalValue).toLocaleString();
+  document.getElementById('dash-total-txn').textContent = data.stats.totalTransactions;
+
+  // Destroy old charts
+  Object.values(state.charts).forEach(c => c.destroy());
+  state.charts = {};
+
+  // Daily chart
+  const dailyCtx = document.getElementById('daily-chart').getContext('2d');
+  state.charts.daily = new Chart(dailyCtx, {
+    type: 'bar',
+    data: {
+      labels: data.dailyTransactions.map(d => d.date.slice(5)),
+      datasets: [
+        { label: 'Stock In', data: data.dailyTransactions.map(d => d.stockIn), backgroundColor: '#22c55e', borderRadius: 4 },
+        { label: 'Stock Out', data: data.dailyTransactions.map(d => d.stockOut), backgroundColor: '#ef4444', borderRadius: 4 },
+        { label: 'MRS', data: data.dailyTransactions.map(d => d.mrs), backgroundColor: '#f59e0b', borderRadius: 4 }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  // Category chart
+  const catCtx = document.getElementById('category-chart').getContext('2d');
+  state.charts.category = new Chart(catCtx, {
+    type: 'doughnut',
+    data: {
+      labels: data.categories.map(c => c.name),
+      datasets: [{ data: data.categories.map(c => c.count), backgroundColor: ['#0056D2', '#00BCD4', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'] }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // Top issued chart
+  const topCtx = document.getElementById('top-issued-chart').getContext('2d');
+  state.charts.top = new Chart(topCtx, {
+    type: 'bar',
+    data: {
+      labels: data.topIssued.map(i => i.itemDescription.length > 15 ? i.itemDescription.slice(0, 15) + '...' : i.itemDescription),
+      datasets: [{ label: 'Qty Issued', data: data.topIssued.map(i => i.qty), backgroundColor: '#0056D2', borderRadius: 4 }]
+    },
+    options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+  });
+}
+
+// --- SCANNER ---
+function startScanner() {
+  if (state.scanner) return;
+
+  const reader = document.getElementById('reader');
+  reader.innerHTML = '';
+
+  state.scanner = new Html5Qrcode('reader');
+  state.scanner.start(
+    { facingMode: state.currentCamera },
+    { fps: 10, qrbox: { width: 200, height: 200 } },
+    onScanSuccess,
+    onScanFailure
+  ).catch(err => {
+    console.error('Scanner error:', err);
+    showToast('Camera access denied. Please allow camera permissions.', 'error');
+  });
+}
+
+function stopScanner() {
+  if (state.scanner) {
+    state.scanner.stop().then(() => {
+      state.scanner = null;
+    }).catch(err => console.error('Stop error:', err));
+  }
+}
+
+function onScanSuccess(decodedText) {
+  if (state.vibrationEnabled && navigator.vibrate) navigator.vibrate(200);
+
+  document.getElementById('scan-success-desc').textContent = 'QR Code: ' + decodedText;
+  document.getElementById('scan-success-overlay').classList.add('active');
+
+  // Store scanned code for viewing
+  state.lastScannedCode = decodedText;
+
+  stopScanner();
+}
+
+function hideScanSuccess() {
+  document.getElementById('scan-success-overlay').classList.remove('active');
+  if (state.lastScannedCode) {
+    showMaterialDetail(state.lastScannedCode);
+  }
+}
+
+function onScanFailure(error) {
+  // console.warn('Scan failure:', error);
+}
+
+function switchCamera() {
+  state.currentCamera = state.currentCamera === 'environment' ? 'user' : 'environment';
+  stopScanner();
+  setTimeout(startScanner, 300);
+}
+
+function toggleFlashlight() {
+  state.flashlightOn = !state.flashlightOn;
+  showToast('Flashlight ' + (state.flashlightOn ? 'on' : 'off') + ' (simulated)', 'info');
+}
+
+// --- TRANSACTION MODAL ---
+function openTxnModal(type, inventoryId, itemName) {
+  state.currentTxnType = type;
+  state.currentTxnItem = inventoryId;
+
+  const titles = { stockIn: 'Stock In', stockOut: 'Stock Out', materialReturn: 'MRS Return' };
+  document.getElementById('txn-modal-title').textContent = titles[type];
+  document.getElementById('txn-item-name').value = itemName;
+  document.getElementById('txn-qty').value = 1;
+  document.getElementById('txn-remarks').value = '';
+
+  document.getElementById('txn-modal').classList.add('active');
+}
+
+function closeTxnModal() {
+  document.getElementById('txn-modal').classList.remove('active');
+}
+
+async function submitTransaction() {
+  const qty = parseInt(document.getElementById('txn-qty').value);
+  const remarks = document.getElementById('txn-remarks').value;
+
+  if (!qty || qty < 1) {
+    showToast('Please enter a valid quantity', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('txn-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-icons">hourglass_top</span> Processing...';
+
+  const result = await apiCall(state.currentTxnType, {
+    inventoryId: state.currentTxnItem,
+    qty: qty,
+    user: state.currentUser ? state.currentUser.name : 'demo',
+    remarks: remarks
+  });
+
+  if (result.success) {
+    showToast(result.message || 'Transaction successful!', 'success');
+    closeTxnModal();
+    if (state.currentPage === 'inventory') loadInventory();
+    if (state.currentPage === 'material-detail') showMaterialDetail(state.currentTxnItem);
+  } else {
+    showToast(result.error || 'Transaction failed', 'error');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span class="material-icons">check</span> Confirm';
+}
+
+// --- FILTERS ---
+async function loadFilters() {
+  const cats = await apiCall('getCategories');
+  const locs = await apiCall('getLocations');
+
+  if (cats.success) {
+    const select = document.getElementById('filter-category');
+    select.innerHTML = '<option value="all">All Categories</option>' + cats.data.map(c => '<option value="' + c + '">' + c + '</option>').join('');
+  }
+  if (locs.success) {
+    const select = document.getElementById('filter-location');
+    select.innerHTML = '<option value="all">All Locations</option>' + locs.data.map(l => '<option value="' + l + '">' + l + '</option>').join('');
+  }
+}
+
+// --- SETTINGS ---
+function toggleDarkMode() {
+  state.darkMode = !state.darkMode;
+  document.body.classList.toggle('dark-mode');
+  document.getElementById('dark-mode-icon').textContent = state.darkMode ? 'light_mode' : 'dark_mode';
+  document.getElementById('dark-mode-toggle').classList.toggle('active');
+  localStorage.setItem('gemcor_dark_mode', state.darkMode);
+}
+
+function toggleDarkModeSetting() {
+  toggleDarkMode();
+}
+
+function toggleSound() {
+  state.soundEnabled = !state.soundEnabled;
+  document.getElementById('sound-toggle').classList.toggle('active');
+  localStorage.setItem('gemcor_sound', state.soundEnabled);
+  showToast('Sound ' + (state.soundEnabled ? 'enabled' : 'disabled'), 'info');
+}
+
+function toggleVibration() {
+  state.vibrationEnabled = !state.vibrationEnabled;
+  document.getElementById('vibration-toggle').classList.toggle('active');
+  localStorage.setItem('gemcor_vibration', state.vibrationEnabled);
+  if (state.vibrationEnabled && navigator.vibrate) navigator.vibrate(50);
+  showToast('Haptic feedback ' + (state.vibrationEnabled ? 'enabled' : 'disabled'), 'info');
+}
+
+function showApiModal() {
+  document.getElementById('api-url-input').value = CONFIG.API_URL || '';
+  document.getElementById('api-modal').classList.add('active');
+}
+
+function closeApiModal() {
+  document.getElementById('api-modal').classList.remove('active');
+}
+
+function saveApiUrl() {
+  const url = document.getElementById('api-url-input').value.trim();
+  if (url) {
+    CONFIG.API_URL = url;
+    CONFIG.DEMO_MODE = false;
+    localStorage.setItem('gemcor_api_url', url);
+    document.getElementById('settings-api-url').textContent = url.substring(0, 40) + '...';
+    showToast('API URL saved!', 'success');
+    closeApiModal();
+  } else {
+    showToast('Please enter a valid URL', 'error');
+  }
+}
+
+// --- TOAST ---
+function showToast(message, type) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+
+  const icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info' };
+  toast.innerHTML = '<span class="material-icons">' + icons[type] + '</span>' + message;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+</script>
+</body>
+</html>
