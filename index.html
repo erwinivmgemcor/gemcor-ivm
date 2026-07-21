@@ -4,1205 +4,513 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1a237e">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>GEMCOR IVM - Inventory Management</title>
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192x192.png">
+<title>GEMCOR IVM</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  :root { --primary:#1a237e; --primary-light:#3949ab; --accent:#ff6f00; --success:#2e7d32; --danger:#c62828; --warning:#f9a825; --bg:#f5f5f5; --card:#fff; --text:#212121; --text-light:#757575; --border:#e0e0e0; }
-  body.dark { --bg:#121212; --card:#1e1e1e; --text:#eee; --text-light:#aaa; --border:#333; }
-  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
-  #loadingScreen { position:fixed; inset:0; background:var(--primary); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999; transition:opacity .5s; }
-  #loadingScreen.hidden { opacity:0; pointer-events:none; }
-  .loader { width:60px; height:60px; border:4px solid rgba(255,255,255,.2); border-top-color:#fff; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:20px; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  #loadingScreen h2 { color:#fff; font-size:1.3rem; margin-bottom:10px; }
-  #loadingScreen p { color:rgba(255,255,255,.7); font-size:.9rem; }
-  #loadingScreen .skip-btn { margin-top:20px; padding:10px 24px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:8px; cursor:pointer; font-size:.9rem; }
-  #loginScreen { display:none; position:fixed; inset:0; background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%); align-items:center; justify-content:center; z-index:100; padding:20px; }
-  #loginScreen.active { display:flex; }
-  .login-card { background:var(--card); border-radius:16px; padding:32px 24px; width:100%; max-width:380px; box-shadow:0 20px 60px rgba(0,0,0,.3); }
-  .login-logo { text-align:center; margin-bottom:24px; }
-  .login-logo h1 { font-size:1.5rem; color:var(--primary); margin-bottom:4px; }
-  .login-logo p { font-size:.85rem; color:var(--text-light); }
-  .form-group { margin-bottom:16px; }
-  .form-group label { display:block; font-size:.85rem; font-weight:600; color:var(--text-light); margin-bottom:6px; }
-  .form-group input { width:100%; padding:12px 14px; border:2px solid var(--border); border-radius:10px; font-size:1rem; background:var(--card); color:var(--text); transition:border-color .2s; }
-  .form-group input:focus { outline:none; border-color:var(--primary); }
-  .btn { width:100%; padding:14px; border:none; border-radius:10px; font-size:1rem; font-weight:600; cursor:pointer; transition:all .2s; }
-  .btn-primary { background:var(--primary); color:#fff; }
-  .btn-primary:active { transform:scale(.98); }
-  .btn-secondary { background:var(--border); color:var(--text); margin-top:10px; }
-  .error-msg { color:var(--danger); font-size:.85rem; margin-top:8px; text-align:center; display:none; }
-  .error-msg.show { display:block; }
-  .connection-status { text-align:center; font-size:.8rem; color:var(--text-light); margin-top:12px; padding:8px; border-radius:6px; background:var(--bg); }
-  .connection-status.online { color:var(--success); background:#e8f5e9; }
-  .connection-status.offline { color:var(--danger); background:#ffebee; }
-  #app { display:none; }
-  #app.active { display:block; }
-  .header { background:var(--primary); color:#fff; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
-  .header h1 { font-size:1.1rem; }
-  .header .user-info { display:flex; align-items:center; gap:10px; font-size:.85rem; }
-  .nav { display:flex; overflow-x:auto; background:var(--card); border-bottom:1px solid var(--border); padding:4px; gap:4px; position:sticky; top:56px; z-index:40; }
-  .nav-btn { flex:1; min-width:80px; padding:10px 8px; border:none; background:transparent; color:var(--text-light); font-size:.8rem; font-weight:500; border-radius:8px; cursor:pointer; white-space:nowrap; }
-  .nav-btn.active { background:var(--primary); color:#fff; }
-  .page { display:none; padding:16px; padding-bottom:80px; }
-  .page.active { display:block; }
-  .card { background:var(--card); border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
-  .card-title { font-size:1rem; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
-  .search-bar { display:flex; gap:8px; margin-bottom:12px; }
-  .search-bar input { flex:1; padding:10px 14px; border:2px solid var(--border); border-radius:10px; font-size:.9rem; background:var(--card); color:var(--text); }
-  .search-bar button { padding:10px 16px; background:var(--primary); color:#fff; border:none; border-radius:10px; cursor:pointer; }
-  .item-row { display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border); cursor:pointer; transition:background .2s; }
-  .item-row:hover { background:rgba(0,0,0,.03); }
-  .item-row:last-child { border-bottom:none; }
-  .item-info h4 { font-size:.95rem; margin-bottom:2px; }
-  .item-info p { font-size:.8rem; color:var(--text-light); }
-  .item-qty { text-align:right; }
-  .item-qty .qty { font-size:1.1rem; font-weight:700; color:var(--primary); }
-  .item-qty .unit { font-size:.75rem; color:var(--text-light); }
-  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; }
-  .badge-success { background:#e8f5e9; color:var(--success); }
-  .badge-danger { background:#ffebee; color:var(--danger); }
-  .badge-warning { background:#fff8e1; color:var(--warning); }
-  .badge-info { background:#e3f2fd; color:#1565c0; }
-  .fab { position:fixed; bottom:20px; right:20px; width:56px; height:56px; border-radius:50%; background:var(--accent); color:#fff; border:none; font-size:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(255,111,0,.4); cursor:pointer; z-index:30; }
-  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; align-items:center; justify-content:center; padding:20px; }
-  .modal-overlay.active { display:flex; }
-  .modal { background:var(--card); border-radius:16px; width:100%; max-width:420px; max-height:90vh; overflow-y:auto; }
-  .modal-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
-  .modal-header h3 { font-size:1.1rem; }
-  .modal-close { background:none; border:none; font-size:1.5rem; color:var(--text-light); cursor:pointer; }
-  .modal-body { padding:20px; }
-  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .scan-area { width:100%; aspect-ratio:1; background:#000; border-radius:12px; overflow:hidden; margin-bottom:12px; position:relative; }
-  .scan-laser { position:absolute; top:50%; left:10%; right:10%; height:2px; background:#00ff00; box-shadow:0 0 8px #00ff00; animation:scan 2s ease-in-out infinite; z-index:10; }
-  @keyframes scan { 0%,100% { opacity:0; } 50% { opacity:1; } }
-  .tx-type { display:flex; gap:8px; margin-bottom:16px; }
-  .tx-type-btn { flex:1; padding:12px; border:2px solid var(--border); border-radius:10px; background:var(--card); text-align:center; cursor:pointer; font-size:.9rem; font-weight:600; }
-  .tx-type-btn.active { border-color:var(--primary); background:#e8eaf6; color:var(--primary); }
-  .tx-type-btn.in { border-color:var(--success); color:var(--success); }
-  .tx-type-btn.in.active { background:#e8f5e9; }
-  .tx-type-btn.out { border-color:var(--danger); color:var(--danger); }
-  .tx-type-btn.out.active { background:#ffebee; }
-  .tx-type-btn.mrs { border-color:var(--warning); color:var(--warning); }
-  .tx-type-btn.mrs.active { background:#fff8e1; }
-  .stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:16px; }
-  .stat-card { background:var(--card); border-radius:12px; padding:16px; text-align:center; }
-  .stat-value { font-size:1.8rem; font-weight:700; color:var(--primary); }
-  .stat-label { font-size:.8rem; color:var(--text-light); margin-top:4px; }
-  .chart-container { position:relative; height:250px; margin-top:12px; }
-  .empty-state { text-align:center; padding:40px 20px; color:var(--text-light); }
-  .empty-state svg { width:64px; height:64px; margin-bottom:16px; opacity:.5; }
-  .toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(100px); background:#333; color:#fff; padding:12px 24px; border-radius:8px; font-size:.9rem; z-index:300; opacity:0; transition:all .3s; }
-  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
-  .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); }
-  .toggle-row:last-child { border-bottom:none; }
-  .switch { position:relative; width:48px; height:26px; }
-  .switch input { opacity:0; width:0; height:0; }
-  .slider { position:absolute; cursor:pointer; inset:0; background:var(--border); border-radius:26px; transition:.3s; }
-  .slider:before { position:absolute; content:""; height:20px; width:20px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; }
-  input:checked+.slider { background:var(--primary); }
-  input:checked+.slider:before { transform:translateX(22px); }
-  .tx-row { display:flex; align-items:center; justify-content:space-between; padding:12px; border-bottom:1px solid var(--border); }
-  .tx-row .tx-info h4 { font-size:.9rem; }
-  .tx-row .tx-info p { font-size:.8rem; color:var(--text-light); }
-  .tx-row .tx-qty { font-weight:700; font-size:1rem; }
-  .tx-row .tx-qty.positive { color:var(--success); }
-  .tx-row .tx-qty.negative { color:var(--danger); }
-  .filter-row { display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; }
-  .filter-btn { padding:6px 14px; border:1px solid var(--border); border-radius:20px; background:var(--card); font-size:.8rem; cursor:pointer; white-space:nowrap; }
-  .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
-  .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .detail-item { background:var(--bg); padding:10px; border-radius:8px; }
-  .detail-item label { font-size:.75rem; color:var(--text-light); display:block; margin-bottom:2px; }
-  .detail-item value { font-size:.95rem; font-weight:600; }
-  .offline-badge { position:fixed; top:60px; right:10px; background:var(--danger); color:#fff; padding:4px 10px; border-radius:20px; font-size:.75rem; z-index:60; display:none; }
-  .offline-badge.show { display:block; }
-  .queue-count { position:fixed; bottom:80px; left:20px; background:var(--warning); color:#fff; padding:8px 14px; border-radius:20px; font-size:.8rem; z-index:30; display:none; cursor:pointer; }
-  .queue-count.show { display:block; }
-  @media(min-width:768px) { .nav { justify-content:center; } .stats-grid { grid-template-columns:repeat(4,1fr); } }
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--p:#1a237e;--pl:#3949ab;--a:#ff6f00;--s:#2e7d32;--d:#c62828;--w:#f9a825;--bg:#f5f5f5;--c:#fff;--t:#212121;--tl:#757575;--b:#e0e0e0}
+body.dark{--bg:#121212;--c:#1e1e1e;--t:#eee;--tl:#aaa;--b:#333}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
+#loader{position:fixed;inset:0;background:var(--p);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s}
+#loader.hide{opacity:0;pointer-events:none}
+.spin{width:50px;height:50px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp 1s linear infinite;margin-bottom:15px}
+@keyframes sp{to{transform:rotate(360deg)}}
+#loader h2{color:#fff;font-size:1.3rem}#loader p{color:rgba(255,255,255,.6);font-size:.85rem;margin-top:5px}
+#login{display:none;position:fixed;inset:0;background:linear-gradient(135deg,var(--p) 0%,var(--pl) 100%);align-items:center;justify-content:center;padding:20px}
+#login.on{display:flex}
+.lc{background:var(--c);border-radius:16px;padding:30px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.lc h1{text-align:center;color:var(--p);font-size:1.4rem;margin-bottom:4px}
+.lc .sub{text-align:center;color:var(--tl);font-size:.85rem;margin-bottom:20px}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:.8rem;font-weight:600;color:var(--tl);margin-bottom:5px}
+.fg input{width:100%;padding:12px 14px;border:2px solid var(--b);border-radius:10px;font-size:1rem;background:var(--c);color:var(--t)}
+.fg input:focus{outline:none;border-color:var(--p)}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px}
+.bp{background:var(--p);color:#fff}
+.bs{background:var(--b);color:var(--t)}
+.err{color:var(--d);font-size:.85rem;text-align:center;margin-top:8px;min-height:20px}
+.st{text-align:center;font-size:.8rem;color:var(--tl);margin-top:12px;padding:8px;border-radius:6px;background:var(--bg)}
+.st.ok{color:var(--s);background:#e8f5e9}
+.st.bad{color:var(--d);background:#ffebee}
+#app{display:none}
+#app.on{display:block}
+.hd{background:var(--p);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.hd h1{font-size:1rem}.hd span{font-size:.8rem}
+.nav{display:flex;overflow-x:auto;background:var(--c);border-bottom:1px solid var(--b);padding:4px;gap:4px;position:sticky;top:50px;z-index:40}
+.nb{flex:1;min-width:70px;padding:10px 6px;border:none;background:transparent;color:var(--tl);font-size:.75rem;font-weight:500;border-radius:8px;cursor:pointer;white-space:nowrap}
+.nb.on{background:var(--p);color:#fff}
+.pg{display:none;padding:16px;padding-bottom:80px}
+.pg.on{display:block}
+.cd{background:var(--c);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.cd h3{font-size:1rem;margin-bottom:12px}
+.sb{display:flex;gap:8px;margin-bottom:12px}
+.sb input{flex:1;padding:10px 14px;border:2px solid var(--b);border-radius:10px;font-size:.9rem;background:var(--c);color:var(--t)}
+.sb button{padding:10px 16px;background:var(--p);color:#fff;border:none;border-radius:10px;cursor:pointer}
+.ir{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid var(--b);cursor:pointer}
+.ir:hover{background:rgba(0,0,0,.03)}
+.ir:last-child{border-bottom:none}
+.ir h4{font-size:.9rem}.ir p{font-size:.8rem;color:var(--tl)}
+.iq{text-align:right}.iq .q{font-size:1.1rem;font-weight:700;color:var(--p)}.iq .u{font-size:.75rem;color:var(--tl)}
+.bd{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600}
+.bdg-s{background:#e8f5e9;color:var(--s)}.bdg-d{background:#ffebee;color:var(--d)}.bdg-w{background:#fff8e1;color:var(--w)}.bdg-i{background:#e3f2fd;color:#1565c0}
+.fab{position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:var(--a);color:#fff;border:none;font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(255,111,0,.4);cursor:pointer;z-index:30}
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.mo.on{display:flex}
+.md{background:var(--c);border-radius:16px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto}
+.mh{padding:16px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between}
+.mh h3{font-size:1.1rem}.mc{background:none;border:none;font-size:1.5rem;color:var(--tl);cursor:pointer}
+.mb{padding:20px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sa{width:100%;aspect-ratio:1;background:#000;border-radius:12px;overflow:hidden;margin-bottom:12px;position:relative}
+.tt{display:flex;gap:8px;margin-bottom:16px}
+.ttb{flex:1;padding:12px;border:2px solid var(--b);border-radius:10px;background:var(--c);text-align:center;cursor:pointer;font-size:.85rem;font-weight:600}
+.ttb.on{border-color:var(--p);background:#e8eaf6;color:var(--p)}
+.ttb.i{border-color:var(--s);color:var(--s)}.ttb.i.on{background:#e8f5e9}
+.ttb.o{border-color:var(--d);color:var(--d)}.ttb.o.on{background:#ffebee}
+.ttb.m{border-color:var(--w);color:var(--w)}.ttb.m.on{background:#fff8e1}
+.sg{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+.sc{background:var(--c);border-radius:12px;padding:16px;text-align:center}
+.sv{font-size:1.6rem;font-weight:700;color:var(--p)}.sl{font-size:.75rem;color:var(--tl);margin-top:4px}
+.cc{position:relative;height:220px;margin-top:12px}
+.es{text-align:center;padding:40px 20px;color:var(--tl)}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:#333;color:#fff;padding:12px 24px;border-radius:8px;font-size:.9rem;z-index:300;opacity:0;transition:all .3s}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.tr{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid var(--b)}
+.tr h4{font-size:.85rem}.tr p{font-size:.75rem;color:var(--tl)}
+.tq{font-weight:700}.tq.pos{color:var(--s)}.tq.neg{color:var(--d)}
+.fw{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto}
+.fb{padding:6px 14px;border:1px solid var(--b);border-radius:20px;background:var(--c);font-size:.75rem;cursor:pointer;white-space:nowrap}
+.fb.on{background:var(--p);color:#fff;border-color:var(--p)}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.di{background:var(--bg);padding:10px;border-radius:8px}
+.di label{font-size:.7rem;color:var(--tl);display:block;margin-bottom:2px}
+.di v{font-size:.9rem;font-weight:600}
+.ob{position:fixed;top:55px;right:10px;background:var(--d);color:#fff;padding:4px 10px;border-radius:20px;font-size:.75rem;z-index:60;display:none}
+.ob.on{display:block}
+.qb{position:fixed;bottom:80px;left:20px;background:var(--w);color:#fff;padding:8px 14px;border-radius:20px;font-size:.8rem;z-index:30;display:none;cursor:pointer}
+.qb.on{display:block}
+.trw{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--b)}
+.trw:last-child{border-bottom:none}
+.sw{position:relative;width:44px;height:24px}
+.sw input{opacity:0;width:0;height:0}
+.sld{position:absolute;cursor:pointer;inset:0;background:var(--b);border-radius:24px;transition:.3s}
+.sld:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+input:checked+.sld{background:var(--p)}
+input:checked+.sld:before{transform:translateX(20px)}
+@media(min-width:768px){.sg{grid-template-columns:repeat(4,1fr)}}
 </style>
 <base target="_blank">
 </head>
 <body>
 
-<!-- Loading Screen -->
-<div id="loadingScreen">
-  <div class="loader"></div>
+<div id="loader">
+  <div class="spin"></div>
   <h2>GEMCOR IVM</h2>
-  <p id="loadingText">Initializing...</p>
-  <button class="skip-btn" onclick="forceShowLogin()">Tap to Skip</button>
-  <p style="color:rgba(255,255,255,.5);margin-top:8px;font-size:.75rem;">Auto-hiding in 2 seconds...</p>
+  <p>Loading...</p>
 </div>
 
-<!-- Offline Badge -->
-<div class="offline-badge" id="offlineBadge">OFFLINE MODE</div>
-
-<!-- Queue Count -->
-<div class="queue-count" id="queueCount" onclick="showQueueModal()">0 pending</div>
-
-<!-- Login Screen -->
-<div id="loginScreen">
-  <div class="login-card">
-    <div class="login-logo">
-      <h1>🔧 GEMCOR IVM</h1>
-      <p>Inventory Management System</p>
-    </div>
-    <div class="form-group">
-      <label>Username</label>
-      <input type="text" id="loginUser" placeholder="Enter username" autocomplete="username">
-    </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password">
-    </div>
-    <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
-    <button class="btn btn-secondary" onclick="demoLogin()">Demo Mode</button>
-    <div class="error-msg" id="loginError"></div>
-    <div class="connection-status offline" id="connStatus">
-      ⚠️ Backend not connected — Demo mode only
-    </div>
-    <p style="text-align:center;margin-top:12px;font-size:.75rem;color:var(--text-light);">
-      Demo: <b>admin</b> / <b>admin123</b>
-    </p>
-  </div>
-</div>
-
-<!-- App -->
-<div id="app">
-  <div class="header">
+<div id="login">
+  <div class="lc">
     <h1>🔧 GEMCOR IVM</h1>
-    <div class="user-info">
-      <span id="userName">User</span>
-      <span class="badge badge-info" id="userRole">Role</span>
-      <button onclick="logout()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">⏻</button>
+    <p class="sub">Inventory Management</p>
+    <div class="fg"><label>Username</label><input type="text" id="lu" placeholder="Enter username" autocomplete="username"></div>
+    <div class="fg"><label>Password</label><input type="password" id="lp" placeholder="Enter password" autocomplete="current-password"></div>
+    <button class="btn bp" onclick="login()">Sign In</button>
+    <button class="btn bs" onclick="demo()">Demo Mode</button>
+    <div class="err" id="le"></div>
+    <div class="st bad" id="ls">⚠️ No backend connected</div>
+    <p style="text-align:center;margin-top:10px;font-size:.75rem;color:var(--tl)">Demo: admin / admin123</p>
+  </div>
+</div>
+
+<div class="ob" id="ob">OFFLINE</div>
+<div class="qb" id="qb" onclick="showQueue()">0 pending</div>
+
+<div id="app">
+  <div class="hd">
+    <h1>🔧 GEMCOR IVM</h1>
+    <div>
+      <span id="un">User</span>
+      <span class="bd bdg-i" id="ur">Role</span>
+      <button onclick="logout()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;margin-left:8px">⏻</button>
     </div>
   </div>
-  <nav class="nav" id="mainNav">
-    <button class="nav-btn active" onclick="showPage('dashboard')">📊 Dashboard</button>
-    <button class="nav-btn" onclick="showPage('inventory')">📦 Inventory</button>
-    <button class="nav-btn" onclick="showPage('transactions')">📝 Transactions</button>
-    <button class="nav-btn" onclick="showPage('scan')">📷 Scan</button>
-    <button class="nav-btn" onclick="showPage('settings')">⚙️ Settings</button>
+  <nav class="nav">
+    <button class="nb on" onclick="page('dash')">📊 Dash</button>
+    <button class="nb" onclick="page('inv')">📦 Inv</button>
+    <button class="nb" onclick="page('tx')">📝 Tx</button>
+    <button class="nb" onclick="page('scan')">📷 Scan</button>
+    <button class="nb" onclick="page('set')">⚙️ Set</button>
   </nav>
 
-  <!-- Dashboard -->
-  <div class="page active" id="page-dashboard">
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-value" id="statTotal">0</div>
-        <div class="stat-label">Total Items</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="statLow">0</div>
-        <div class="stat-label">Low Stock</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="statToday">0</div>
-        <div class="stat-label">Today Tx</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="statValue">0</div>
-        <div class="stat-label">Total Value</div>
-      </div>
+  <div class="pg on" id="pg-dash">
+    <div class="sg">
+      <div class="sc"><div class="sv" id="st">0</div><div class="sl">Total Items</div></div>
+      <div class="sc"><div class="sv" id="sl">0</div><div class="sl">Low Stock</div></div>
+      <div class="sc"><div class="sv" id="sd">0</div><div class="sl">Today Tx</div></div>
+      <div class="sc"><div class="sv" id="sv">0</div><div class="sl">Value</div></div>
     </div>
-    <div class="card">
-      <div class="card-title">📈 Daily Transactions</div>
-      <div class="chart-container"><canvas id="chartDaily"></canvas></div>
+    <div class="cd"><h3>📈 Daily</h3><div class="cc"><canvas id="ch1"></canvas></div></div>
+    <div class="cd"><h3>🥧 Category</h3><div class="cc"><canvas id="ch2"></canvas></div></div>
+    <div class="cd"><h3>🔥 Top Issued</h3><div id="top"></div></div>
+  </div>
+
+  <div class="pg" id="pg-inv">
+    <div class="sb"><input type="text" id="is" placeholder="Search..." oninput="fInv()"><button onclick="rInv()">🔄</button></div>
+    <div class="fw">
+      <button class="fb on" onclick="fCat('all')">All</button>
+      <button class="fb" onclick="fCat('Consumables')">Consumables</button>
+      <button class="fb" onclick="fCat('Tools')">Tools</button>
+      <button class="fb" onclick="fCat('Equipment')">Equipment</button>
     </div>
-    <div class="card">
-      <div class="card-title">🥧 By Category</div>
-      <div class="chart-container"><canvas id="chartCategory"></canvas></div>
+    <div id="il"></div>
+  </div>
+
+  <div class="pg" id="pg-tx">
+    <div class="sb"><input type="text" id="ts" placeholder="Search..." oninput="fTx()"><button onclick="rTx()">🔄</button></div>
+    <div class="fw">
+      <button class="fb on" onclick="fTt('all')">All</button>
+      <button class="fb" onclick="fTt('Stock In')">In</button>
+      <button class="fb" onclick="fTt('Stock Out')">Out</button>
+      <button class="fb" onclick="fTt('MRS Return')">MRS</button>
     </div>
-    <div class="card">
-      <div class="card-title">🔥 Top Issued Items</div>
-      <div id="topItemsList"></div>
+    <div id="tl"></div>
+  </div>
+
+  <div class="pg" id="pg-scan">
+    <div class="cd">
+      <h3>📷 QR Scanner</h3>
+      <div class="sa" id="sr"><div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff">Camera off</div></div>
+      <div class="tt">
+        <button class="ttb i on" onclick="setT('Stock In')">📥 In</button>
+        <button class="ttb o" onclick="setT('Stock Out')">📤 Out</button>
+        <button class="ttb m" onclick="setT('MRS Return')">↩️ MRS</button>
+      </div>
+      <div class="fg"><label>Item</label><input type="text" id="sdsc" placeholder="Item name..."></div>
+      <div class="fr">
+        <div class="fg"><label>Qty</label><input type="number" id="sq" placeholder="0" min="1"></div>
+        <div class="fg"><label>Location</label><input type="text" id="slc" placeholder="Location..."></div>
+      </div>
+      <div class="fg"><label>Remarks</label><input type="text" id="srk" placeholder="Remarks..."></div>
+      <button class="btn bp" onclick="subTx()">Submit</button>
     </div>
   </div>
 
-  <!-- Inventory -->
-  <div class="page" id="page-inventory">
-    <div class="search-bar">
-      <input type="text" id="invSearch" placeholder="Search items..." oninput="filterInventory()">
-      <button onclick="refreshInventory()">🔄</button>
+  <div class="pg" id="pg-set">
+    <div class="cd">
+      <h3>⚙️ Preferences</h3>
+      <div class="trw"><span>🌙 Dark</span><label class="sw"><input type="checkbox" id="dt" onchange="tDark()"><span class="sld"></span></label></div>
+      <div class="trw"><span>🔊 Sound</span><label class="sw"><input type="checkbox" id="stg" checked><span class="sld"></span></label></div>
+      <div class="trw"><span>📳 Vibrate</span><label class="sw"><input type="checkbox" id="vt" checked><span class="sld"></span></label></div>
     </div>
-    <div class="filter-row">
-      <button class="filter-btn active" onclick="setCategoryFilter('all')">All</button>
-      <button class="filter-btn" onclick="setCategoryFilter('Consumables')">Consumables</button>
-      <button class="filter-btn" onclick="setCategoryFilter('Tools')">Tools</button>
-      <button class="filter-btn" onclick="setCategoryFilter('Equipment')">Equipment</button>
+    <div class="cd">
+      <h3>🔌 Connection</h3>
+      <div class="fg"><label>API URL</label><input type="text" id="au" placeholder="https://script.google.com/..."></div>
+      <button class="btn bp" onclick="sApi()">Save URL</button>
+      <button class="btn bs" onclick="tCon()">Test</button>
+      <div class="st" id="tc">Not tested</div>
     </div>
-    <div id="inventoryList"></div>
-  </div>
-
-  <!-- Transactions -->
-  <div class="page" id="page-transactions">
-    <div class="search-bar">
-      <input type="text" id="txSearch" placeholder="Search transactions..." oninput="filterTransactions()">
-      <button onclick="refreshTransactions()">🔄</button>
-    </div>
-    <div class="filter-row">
-      <button class="filter-btn active" onclick="setTxFilter('all')">All</button>
-      <button class="filter-btn" onclick="setTxFilter('Stock In')">Stock In</button>
-      <button class="filter-btn" onclick="setTxFilter('Stock Out')">Stock Out</button>
-      <button class="filter-btn" onclick="setTxFilter('MRS Return')">MRS Return</button>
-    </div>
-    <div id="transactionList"></div>
-  </div>
-
-  <!-- Scan -->
-  <div class="page" id="page-scan">
-    <div class="card">
-      <div class="card-title">📷 QR Scanner</div>
-      <div class="scan-area" id="scannerArea">
-        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;">Camera not started</div>
-      </div>
-      <div class="tx-type">
-        <button class="tx-type-btn in active" onclick="setTxType('Stock In')">📥 Stock In</button>
-        <button class="tx-type-btn out" onclick="setTxType('Stock Out')">📤 Stock Out</button>
-        <button class="tx-type-btn mrs" onclick="setTxType('MRS Return')">↩️ MRS</button>
-      </div>
-      <div class="form-group">
-        <label>Item Description</label>
-        <input type="text" id="scanDesc" placeholder="Scan or type item...">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Quantity</label>
-          <input type="number" id="scanQty" placeholder="0" min="1">
-        </div>
-        <div class="form-group">
-          <label>Location</label>
-          <input type="text" id="scanLoc" placeholder="Location">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Remarks</label>
-        <input type="text" id="scanRemarks" placeholder="Optional remarks...">
-      </div>
-      <button class="btn btn-primary" onclick="submitTransaction()">Submit Transaction</button>
-    </div>
-  </div>
-
-  <!-- Settings -->
-  <div class="page" id="page-settings">
-    <div class="card">
-      <div class="card-title">⚙️ Preferences</div>
-      <div class="toggle-row">
-        <span>🌙 Dark Mode</span>
-        <label class="switch"><input type="checkbox" id="darkToggle" onchange="toggleDark()"><span class="slider"></span></label>
-      </div>
-      <div class="toggle-row">
-        <span>🔊 Sound Effects</span>
-        <label class="switch"><input type="checkbox" id="soundToggle" checked><span class="slider"></span></label>
-      </div>
-      <div class="toggle-row">
-        <span>📳 Vibration</span>
-        <label class="switch"><input type="checkbox" id="vibeToggle" checked><span class="slider"></span></label>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">🔌 Connection</div>
-      <div class="form-group">
-        <label>API URL</label>
-        <input type="text" id="apiUrlInput" placeholder="https://script.google.com/...">
-      </div>
-      <button class="btn btn-primary" onclick="saveApiUrl()">Save API URL</button>
-      <button class="btn btn-secondary" onclick="testConnection()">Test Connection</button>
-      <div class="connection-status" id="testStatus" style="margin-top:10px;">Not tested</div>
-    </div>
-    <div class="card">
-      <div class="card-title">💾 Data</div>
-      <button class="btn btn-secondary" onclick="exportData()">📥 Export Data</button>
-      <button class="btn btn-secondary" onclick="clearAllData()" style="margin-top:8px;">🗑️ Clear All Data</button>
-    </div>
-    <div class="card">
-      <div class="card-title">ℹ️ About</div>
-      <p style="font-size:.9rem;color:var(--text-light);">GEMCOR IVM v2.1<br>Inventory Management System<br>Built with ❤️ for GEMCOR</p>
+    <div class="cd">
+      <h3>💾 Data</h3>
+      <button class="btn bs" onclick="exp()">📥 Export</button>
+      <button class="btn bs" onclick="clr()" style="margin-top:8px">🗑️ Clear</button>
     </div>
   </div>
 </div>
 
-<!-- Transaction Modal -->
-<div class="modal-overlay" id="txModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>📝 New Transaction</h3>
-      <button class="modal-close" onclick="closeModal('txModal')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="tx-type">
-        <button class="tx-type-btn in active" onclick="setTxType('Stock In')">📥 Stock In</button>
-        <button class="tx-type-btn out" onclick="setTxType('Stock Out')">📤 Stock Out</button>
-        <button class="tx-type-btn mrs" onclick="setTxType('MRS Return')">↩️ MRS</button>
+<div class="mo" id="m-tx">
+  <div class="md">
+    <div class="mh"><h3>📝 Transaction</h3><button class="mc" onclick="cm('m-tx')">&times;</button></div>
+    <div class="mb">
+      <div class="tt">
+        <button class="ttb i on" onclick="setT('Stock In')">📥 In</button>
+        <button class="ttb o" onclick="setT('Stock Out')">📤 Out</button>
+        <button class="ttb m" onclick="setT('MRS Return')">↩️ MRS</button>
       </div>
-      <div class="form-group">
-        <label>Item Description</label>
-        <input type="text" id="txDesc" placeholder="Search or select item...">
+      <div class="fg"><label>Item</label><input type="text" id="mtd" placeholder="Item..."></div>
+      <div class="fr">
+        <div class="fg"><label>Qty</label><input type="number" id="mtq" placeholder="0" min="1"></div>
+        <div class="fg"><label>Location</label><input type="text" id="mtl" placeholder="Location..."></div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Quantity</label>
-          <input type="number" id="txQty" placeholder="0" min="1">
-        </div>
-        <div class="form-group">
-          <label>Location</label>
-          <input type="text" id="txLoc" placeholder="Location">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Remarks</label>
-        <input type="text" id="txRemarks" placeholder="Optional remarks...">
-      </div>
-      <button class="btn btn-primary" onclick="submitModalTx()">Submit</button>
+      <div class="fg"><label>Remarks</label><input type="text" id="mtr" placeholder="Remarks..."></div>
+      <button class="btn bp" onclick="subModal()">Submit</button>
     </div>
   </div>
 </div>
 
-<!-- Item Detail Modal -->
-<div class="modal-overlay" id="itemModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="itemModalTitle">Item Details</h3>
-      <button class="modal-close" onclick="closeModal('itemModal')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="detail-grid" id="itemDetailGrid"></div>
-      <button class="btn btn-primary" onclick="openTxFromItem()" style="margin-top:16px;">📝 New Transaction</button>
+<div class="mo" id="m-it">
+  <div class="md">
+    <div class="mh"><h3 id="mti">Details</h3><button class="mc" onclick="cm('m-it')">&times;</button></div>
+    <div class="mb">
+      <div class="dg" id="mid"></div>
+      <button class="btn bp" onclick="txFromIt()" style="margin-top:16px">📝 New Tx</button>
     </div>
   </div>
 </div>
 
-<!-- Queue Modal -->
-<div class="modal-overlay" id="queueModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>📤 Pending Sync</h3>
-      <button class="modal-close" onclick="closeModal('queueModal')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div id="queueList"></div>
-      <button class="btn btn-primary" onclick="syncQueue()" style="margin-top:16px;">🔄 Sync Now</button>
-    </div>
+<div class="mo" id="m-q">
+  <div class="md">
+    <div class="mh"><h3>📤 Pending</h3><button class="mc" onclick="cm('m-q')">&times;</button></div>
+    <div class="mb"><div id="ql"></div><button class="btn bp" onclick="syncQ()" style="margin-top:16px">🔄 Sync</button></div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
-<button class="fab" id="fabBtn" onclick="openTxModal()">+</button>
+<button class="fab" onclick="om('m-tx')">+</button>
 
 <script>
-// ===================== CONFIG =====================
-const CONFIG = {
-  API_URL: null,
-  DEMO_MODE: false,
-  CURRENT_USER: null,
-  TX_TYPE: 'Stock In',
-  SELECTED_ITEM: null,
-  CATEGORY_FILTER: 'all',
-  TX_FILTER: 'all',
-  SCANNER: null,
-  IS_ONLINE: false,
-  CHARTS: {}
+// ====== CONFIG ======
+var C={api:null,demo:false,user:null,tt:'Stock In',si:null,cf:'all',tf:'all',sc:null,on:false,cht:{}};
+
+// ====== DEMO DATA ======
+var D_INV=[
+  {id:1,d:"Welding Rod 6013 3.2mm",cat:"Consumables",loc:"WH A",oh:150,inn:200,out:45,mrs:5,foh:160,unit:"kg",cost:85},
+  {id:2,d:"Grinding Disc 4"",cat:"Consumables",loc:"WH A",oh:80,inn:120,out:35,mrs:5,foh:90,unit:"pcs",cost:45},
+  {id:3,d:"Safety Helmet",cat:"Equipment",loc:"WH B",oh:25,inn:30,out:5,mrs:0,foh:25,unit:"pcs",cost:350},
+  {id:4,d:"Cutting Torch",cat:"Tools",loc:"WH A",oh:8,inn:10,out:2,mrs:0,foh:8,unit:"pcs",cost:1200},
+  {id:5,d:"Oxygen Cylinder",cat:"Consumables",loc:"Yard",oh:12,inn:20,out:8,mrs:0,foh:12,unit:"pcs",cost:2500},
+  {id:6,d:"Welding Machine 500A",cat:"Equipment",loc:"WH B",oh:3,inn:5,out:2,mrs:0,foh:3,unit:"pcs",cost:45000},
+  {id:7,d:"Wire Brush",cat:"Tools",loc:"WH A",oh:45,inn:60,out:15,mrs:0,foh:45,unit:"pcs",cost:25},
+  {id:8,d:"Acetylene Regulator",cat:"Equipment",loc:"Yard",oh:6,inn:8,out:2,mrs:0,foh:6,unit:"pcs",cost:1800}
+];
+var D_TX=[
+  {id:1,date:"2026-07-21",d:"Welding Rod 6013 3.2mm",t:"Stock In",q:50,u:"Erwin",r:"Delivery"},
+  {id:2,date:"2026-07-21",d:"Grinding Disc 4"",t:"Stock Out",q:10,u:"Erwin",r:"Project A"},
+  {id:3,date:"2026-07-20",d:"Safety Helmet",t:"Stock In",q:5,u:"admin",r:"New batch"},
+  {id:4,date:"2026-07-20",d:"Welding Rod 6013 3.2mm",t:"Stock Out",q:20,u:"warehouse",r:"Daily"},
+  {id:5,date:"2026-07-19",d:"Oxygen Cylinder",t:"MRS Return",q:2,u:"supervisor",r:"Returned"}
+];
+var D_U=[{n:"admin",p:"admin123",r:"Admin"},{n:"warehouse",p:"warehouse123",r:"WH"},{n:"supervisor",p:"supervisor123",r:"Supervisor"},{n:"Erwin",p:"erwin123",r:"WH"}];
+
+// ====== INIT - NEVER BLOCKS ======
+window.onload=function(){
+  try{C.api=localStorage.getItem('ga');}catch(e){}
+  if(!C.api){
+    var p=new URLSearchParams(location.search);
+    C.api=p.get('api');
+    if(C.api)try{localStorage.setItem('ga',C.api);}catch(e){}
+  }
+  if(C.api)document.getElementById('au').value=C.api;
+  try{if(localStorage.getItem('dm')==='true'){document.body.classList.add('dark');document.getElementById('dt').checked=true;}}catch(e){}
+
+  // ALWAYS show login after 1.5s, no matter what
+  setTimeout(function(){
+    document.getElementById('loader').classList.add('hide');
+    setTimeout(function(){document.getElementById('loader').style.display='none';},500);
+    document.getElementById('login').classList.add('on');
+    updSt();
+  },1500);
+
+  // Try backend in background
+  if(C.api)tCon(true);
 };
 
-// ===================== DEMO DATA =====================
-const DEMO_INVENTORY = [
-  { id:1, description:"Welding Rod 6013 3.2mm", category:"Consumables", location:"Warehouse A", onHand:150, inQty:200, outQty:45, mrsQty:5, finalOnHand:160, baseUnit:"kg", unitCost:85 },
-  { id:2, description:"Grinding Disc 4"", category:"Consumables", location:"Warehouse A", onHand:80, inQty:120, outQty:35, mrsQty:5, finalOnHand:90, baseUnit:"pcs", unitCost:45 },
-  { id:3, description:"Safety Helmet", category:"Equipment", location:"Warehouse B", onHand:25, inQty:30, outQty:5, mrsQty:0, finalOnHand:25, baseUnit:"pcs", unitCost:350 },
-  { id:4, description:"Cutting Torch", category:"Tools", location:"Warehouse A", onHand:8, inQty:10, outQty:2, mrsQty:0, finalOnHand:8, baseUnit:"pcs", unitCost:1200 },
-  { id:5, description:"Oxygen Cylinder", category:"Consumables", location:"Yard", onHand:12, inQty:20, outQty:8, mrsQty:0, finalOnHand:12, baseUnit:"pcs", unitCost:2500 },
-  { id:6, description:"Welding Machine 500A", category:"Equipment", location:"Warehouse B", onHand:3, inQty:5, outQty:2, mrsQty:0, finalOnHand:3, baseUnit:"pcs", unitCost:45000 },
-  { id:7, description:"Wire Brush", category:"Tools", location:"Warehouse A", onHand:45, inQty:60, outQty:15, mrsQty:0, finalOnHand:45, baseUnit:"pcs", unitCost:25 },
-  { id:8, description:"Acetylene Regulator", category:"Equipment", location:"Yard", onHand:6, inQty:8, outQty:2, mrsQty:0, finalOnHand:6, baseUnit:"pcs", unitCost:1800 }
-];
+function updSt(){
+  var s=document.getElementById('ls');
+  if(!s)return;
+  if(C.api&&C.on){s.textContent='✅ Connected';s.className='st ok';}
+  else if(C.api){s.textContent='⚠️ URL set but unreachable';s.className='st bad';}
+  else{s.textContent='⚠️ No backend — Demo only';s.className='st bad';}
+}
 
-const DEMO_TRANSACTIONS = [
-  { id:1, date:"2026-07-21", inventoryId:1, description:"Welding Rod 6013 3.2mm", type:"Stock In", qty:50, user:"Erwin", remarks:"Delivery #1234" },
-  { id:2, date:"2026-07-21", inventoryId:2, description:"Grinding Disc 4"", type:"Stock Out", qty:10, user:"Erwin", remarks:"Project Alpha" },
-  { id:3, date:"2026-07-20", inventoryId:3, description:"Safety Helmet", type:"Stock In", qty:5, user:"admin", remarks:"New batch" },
-  { id:4, date:"2026-07-20", inventoryId:1, description:"Welding Rod 6013 3.2mm", type:"Stock Out", qty:20, user:"warehouse", remarks:"Daily use" },
-  { id:5, date:"2026-07-19", inventoryId:5, description:"Oxygen Cylinder", type:"MRS Return", qty:2, user:"supervisor", remarks:"Returned empty" }
-];
+// ====== AUTH ======
+function login(){
+  var u=document.getElementById('lu').value.trim(),p=document.getElementById('lp').value,e=document.getElementById('le');
+  if(!u||!p){e.textContent='Enter username and password';return;}
 
-const DEMO_USERS = [
-  { name:"admin", password:"admin123", role:"Admin" },
-  { name:"warehouse", password:"warehouse123", role:"Warehouse Personnel" },
-  { name:"supervisor", password:"supervisor123", role:"Supervisor" },
-  { name:"Erwin", password:"erwin123", role:"Warehouse Personnel" }
-];
+  // Try backend first
+  if(C.api&&C.on){
+    ft(C.api+'?action=login&user='+enc(u)+'&pass='+enc(p),{},5000)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.success){C.user={n:u,r:d.role};showApp();}
+      else{tryDemo(u,p);}
+    }).catch(function(){tryDemo(u,p);});
+  }else{tryDemo(u,p);}
+}
 
-// ===================== INIT =====================
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('GEMCOR IVM initializing...');
+function tryDemo(u,p){
+  var du=D_U.find(function(x){return x.n.toLowerCase()===u.toLowerCase()&&x.p===p;});
+  if(du){C.user={n:du.n,r:du.r};C.demo=true;showApp();toast('Demo Mode');}
+  else{document.getElementById('le').textContent='Invalid credentials';}
+}
 
-  // Load API URL
-  try {
-    CONFIG.API_URL = localStorage.getItem('gemcor_api_url');
-    if (!CONFIG.API_URL) {
-      const params = new URLSearchParams(window.location.search);
-      CONFIG.API_URL = params.get('api');
-      if (CONFIG.API_URL) localStorage.setItem('gemcor_api_url', CONFIG.API_URL);
-    }
-  } catch(e) { console.log('localStorage not available'); }
+function demo(){C.user={n:'admin',r:'Admin'};C.demo=true;showApp();toast('Demo Mode');}
 
-  // Load preferences
-  try {
-    if (localStorage.getItem('darkMode') === 'true') {
-      document.body.classList.add('dark');
-      document.getElementById('darkToggle').checked = true;
-    }
-  } catch(e) {}
+function showApp(){
+  document.getElementById('login').classList.remove('on');
+  document.getElementById('app').classList.add('on');
+  document.getElementById('un').textContent=C.user.n;
+  document.getElementById('ur').textContent=C.user.r;
+  rInv();rTx();dash();
+}
 
-  // Update UI
-  if (CONFIG.API_URL) {
-    document.getElementById('apiUrlInput').value = CONFIG.API_URL;
+function logout(){C.user=null;C.demo=false;document.getElementById('app').classList.remove('on');document.getElementById('login').classList.add('on');document.getElementById('lu').value='';document.getElementById('lp').value='';document.getElementById('le').textContent='';}
+
+// ====== NAV ======
+function page(id){
+  document.querySelectorAll('.pg').forEach(function(x){x.classList.remove('on');});
+  document.querySelectorAll('.nb').forEach(function(x){x.classList.remove('on');});
+  document.getElementById('pg-'+id).classList.add('on');
+  event.target.classList.add('on');
+  if(id==='dash')dash();
+  if(id==='inv')rInv();
+  if(id==='tx')rTx();
+  if(id==='scan')startSc();else stopSc();
+}
+
+// ====== INVENTORY ======
+function gInv(){try{var d=localStorage.getItem('gi');if(d)return JSON.parse(d);}catch(e){}return JSON.parse(JSON.stringify(D_INV));}
+function sInv(d){try{localStorage.setItem('gi',JSON.stringify(d));}catch(e){}}
+
+function rInv(){
+  var list=document.getElementById('il'),items=gInv(),s=(document.getElementById('is').value||'').toLowerCase(),cat=C.cf;
+  var f=items.filter(function(i){return(!s||i.d.toLowerCase().includes(s))&&(cat==='all'||i.cat===cat);});
+  list.innerHTML=f.length?f.map(function(i){return'<div class="ir" onclick="shIt('+i.id+')"><div><h4>'+esc(i.d)+'</h4><p>'+i.cat+' • '+i.loc+'</p></div><div class="iq"><div class="q">'+i.foh+'</div><div class="u">'+i.unit+'</div></div></div>';}).join(''):'<div class="es">📦 No items</div>';
+}
+function fInv(){rInv();}
+function fCat(c){C.cf=c;document.querySelectorAll('#pg-inv .fb').forEach(function(x){x.classList.remove('on');});event.target.classList.add('on');rInv();}
+
+function shIt(id){
+  var i=gInv().find(function(x){return x.id===id;});
+  if(!i)return;C.si=i;
+  document.getElementById('mti').textContent=esc(i.d);
+  document.getElementById('mid').innerHTML='<div class="di"><label>Category</label><v>'+i.cat+'</v></div><div class="di"><label>Location</label><v>'+i.loc+'</v></div><div class="di"><label>On-Hand</label><v>'+i.oh+' '+i.unit+'</v></div><div class="di"><label>IN</label><v style="color:var(--s)">+'+i.inn+'</v></div><div class="di"><label>OUT</label><v style="color:var(--d)">-'+i.out+'</v></div><div class="di"><label>MRS</label><v style="color:var(--w)">+'+i.mrs+'</v></div><div class="di"><label style="color:var(--p);font-size:.8rem">FINAL ON-HAND</label><v style="color:var(--p);font-size:1.1rem">'+i.foh+' '+i.unit+'</v></div><div class="di"><label>Unit Cost</label><v>₱'+i.cost.toLocaleString()+'</v></div>';
+  om('m-it');
+}
+function txFromIt(){cm('m-it');document.getElementById('mtd').value=C.si.d;document.getElementById('mtl').value=C.si.loc;om('m-tx');}
+
+// ====== TRANSACTIONS ======
+function gTx(){try{var d=localStorage.getItem('gt');if(d)return JSON.parse(d);}catch(e){}return JSON.parse(JSON.stringify(D_TX));}
+function sTx(d){try{localStorage.setItem('gt',JSON.stringify(d));}catch(e){}}
+
+function rTx(){
+  var list=document.getElementById('tl'),txs=gTx().sort(function(a,b){return new Date(b.date)-new Date(a.date);}),s=(document.getElementById('ts').value||'').toLowerCase(),t=C.tf;
+  var f=txs.filter(function(x){return(!s||x.d.toLowerCase().includes(s))&&(t==='all'||x.t===t);});
+  list.innerHTML=f.length?f.map(function(x){return'<div class="tr"><div><h4>'+esc(x.d)+'</h4><p>'+x.date+' • '+x.u+'</p></div><div style="text-align:right"><span class="bd '+(x.t==='Stock In'?'bdg-s':x.t==='Stock Out'?'bdg-d':'bdg-w')+'">'+x.t+'</span><div class="tq '+(x.t==='Stock Out'?'neg':'pos')+'">'+(x.t==='Stock Out'?'-':'+')+x.q+'</div></div></div>';}).join(''):'<div class="es">📝 No transactions</div>';
+}
+function fTx(){rTx();}
+function fTt(t){C.tf=t;document.querySelectorAll('#pg-tx .fb').forEach(function(x){x.classList.remove('on');});event.target.classList.add('on');rTx();}
+
+// ====== TRANSACTION SUBMIT ======
+function setT(t){C.tt=t;document.querySelectorAll('.ttb').forEach(function(b){b.classList.remove('on');if((t==='Stock In'&&b.textContent.includes('In'))||(t==='Stock Out'&&b.textContent.includes('Out'))||(t==='MRS Return'&&b.textContent.includes('MRS')))b.classList.add('on');});}
+
+function subTx(){
+  var d=document.getElementById('sdsc').value.trim(),q=parseInt(document.getElementById('sq').value),l=document.getElementById('slc').value.trim(),r=document.getElementById('srk').value.trim();
+  if(!d||!q||q<1){toast('Enter item and quantity');return;}
+  proc(d,q,l,r);
+  document.getElementById('sdsc').value='';document.getElementById('sq').value='';document.getElementById('slc').value='';document.getElementById('srk').value='';
+}
+function subModal(){
+  var d=document.getElementById('mtd').value.trim(),q=parseInt(document.getElementById('mtq').value),l=document.getElementById('mtl').value.trim(),r=document.getElementById('mtr').value.trim();
+  if(!d||!q||q<1){toast('Enter item and quantity');return;}
+  proc(d,q,l,r);cm('m-tx');
+  document.getElementById('mtd').value='';document.getElementById('mtq').value='';document.getElementById('mtl').value='';document.getElementById('mtr').value='';
+}
+
+function proc(desc,qty,loc,remarks){
+  var items=gInv(),it=items.find(function(i){return i.d.toLowerCase()===desc.toLowerCase();});
+  if(!it){
+    it={id:items.length?Math.max.apply(null,items.map(function(i){return i.id;}))+1:1,d:desc,cat:"Uncategorized",loc:loc||"Unassigned",oh:0,inn:0,out:0,mrs:0,foh:0,unit:"pcs",cost:0};
+    items.push(it);
   }
 
-  // Auto-hide loading after 2 seconds, always show login
-  setTimeout(() => {
-    forceShowLogin();
-  }, 2000);
+  // KEY RULE: ON-HAND (oh) is NEVER touched by transactions
+  // Only IN, OUT, MRS columns update
+  // FINAL ON-HAND is computed locally as: oh + inn - out + mrs
+  // In the Google Sheet, column I (FINAL ON-HAND) must have formula: =D+E-F+G
 
-  // Try to connect in background
-  if (CONFIG.API_URL) {
-    testConnectionSilent();
-  }
-});
-
-function forceShowLogin() {
-  const loader = document.getElementById('loadingScreen');
-  if (loader) {
-    loader.classList.add('hidden');
-    setTimeout(() => { if (loader.parentNode) loader.style.display = 'none'; }, 500);
+  if(C.tt==='Stock In'){
+    it.inn+=qty;
+  }else if(C.tt==='Stock Out'){
+    if(it.foh<qty){toast('Insufficient stock! Have: '+it.foh);return;}
+    it.out+=qty;
+  }else if(C.tt==='MRS Return'){
+    it.mrs+=qty;
   }
 
-  const login = document.getElementById('loginScreen');
-  if (login) login.classList.add('active');
+  // Recalculate final on-hand
+  it.foh=it.oh+it.inn-it.out+it.mrs;
+  sInv(items);
 
-  updateConnectionStatus();
-}
+  var txs=gTx();
+  txs.unshift({id:txs.length?Math.max.apply(null,txs.map(function(t){return t.id;}))+1:1,date:new Date().toISOString().split('T')[0],d:desc,t:C.tt,q:qty,u:C.user?C.user.n:'?',r:remarks||''});
+  sTx(txs);
 
-function updateConnectionStatus() {
-  const status = document.getElementById('connStatus');
-  if (!status) return;
-
-  if (CONFIG.API_URL && CONFIG.IS_ONLINE) {
-    status.textContent = '✅ Connected to backend';
-    status.className = 'connection-status online';
-  } else if (CONFIG.API_URL) {
-    status.textContent = '⚠️ Backend URL set but unreachable — Demo mode available';
-    status.className = 'connection-status offline';
-  } else {
-    status.textContent = '⚠️ No backend connected — Demo mode only';
-    status.className = 'connection-status offline';
-  }
-}
-
-// ===================== AUTH =====================
-async function doLogin() {
-  const user = document.getElementById('loginUser').value.trim();
-  const pass = document.getElementById('loginPass').value;
-  const errorEl = document.getElementById('loginError');
-
-  if (!user || !pass) {
-    errorEl.textContent = 'Please enter username and password';
-    errorEl.classList.add('show');
-    return;
+  if(C.api&&C.on&&!C.demo){
+    syncB({action:'transaction',type:C.tt,description:desc,quantity:qty,location:loc||it.loc,remarks:remarks||'',user:C.user.n,date:new Date().toISOString().split('T')[0]});
+  }else{
+    qTx({type:C.tt,description:desc,quantity:qty,location:loc||it.loc,remarks:remarks||'',user:C.user?C.user.n:'?',date:new Date().toISOString().split('T')[0]});
   }
 
-  // Try backend first if connected
-  if (CONFIG.API_URL && CONFIG.IS_ONLINE) {
-    try {
-      const res = await fetchWithTimeout(`${CONFIG.API_URL}?action=login&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`, {}, 5000);
-      const data = await res.json();
-      if (data.success) {
-        CONFIG.CURRENT_USER = { name: user, role: data.role };
-        showApp();
-        return;
-      }
-    } catch(e) {
-      console.log('Backend login failed, trying demo');
-    }
-  }
-
-  // Demo fallback
-  const demoUser = DEMO_USERS.find(u => u.name.toLowerCase() === user.toLowerCase() && u.password === pass);
-  if (demoUser) {
-    CONFIG.CURRENT_USER = { name: demoUser.name, role: demoUser.role };
-    CONFIG.DEMO_MODE = true;
-    showApp();
-    showToast('Logged in (Demo Mode)');
-  } else {
-    errorEl.textContent = 'Invalid username or password';
-    errorEl.classList.add('show');
-    playSound('error');
-  }
+  toast(C.tt+': '+desc+' ('+qty+')');snd('ok');vib();
+  rInv();rTx();dash();updQB();
 }
 
-function demoLogin() {
-  CONFIG.CURRENT_USER = { name: 'admin', role: 'Admin' };
-  CONFIG.DEMO_MODE = true;
-  showApp();
-  showToast('Demo Mode — All changes are local only');
+// ====== QUEUE ======
+function qTx(tx){try{var q=JSON.parse(localStorage.getItem('gq')||'[]');q.push(tx);localStorage.setItem('gq',JSON.stringify(q));}catch(e){}updQB();}
+function gQ(){try{return JSON.parse(localStorage.getItem('gq')||'[]');}catch(e){return[];}}
+function updQB(){var q=gQ(),b=document.getElementById('qb');if(q.length){b.textContent=q.length+' pending';b.classList.add('on');}else{b.classList.remove('on');}}
+function showQueue(){var q=gQ(),l=document.getElementById('ql');l.innerHTML=q.length?q.map(function(x){return'<div class="tr"><div><h4>'+esc(x.description)+'</h4><p>'+x.type+' • '+x.date+'</p></div><div class="tq '+(x.type==='Stock Out'?'neg':'pos')+'">'+(x.type==='Stock Out'?'-':'+')+x.quantity+'</div></div>';}).join(''):'<div class="es">No pending</div>';om('m-q');}
+function syncQ(){if(!C.api||!C.on){toast('No backend');return;}var q=gQ();if(!q.length){toast('Nothing to sync');return;}toast('Syncing...');var ok=0;q.forEach(function(tx){syncB(tx).then(function(r){if(r)ok++;});});if(ok){localStorage.setItem('gq',JSON.stringify(q.slice(ok)));updQB();toast('Synced '+ok);rInv();}else{toast('Sync failed');}cm('m-q');}
+function syncB(tx){return ft(C.api+'?action=transaction&type='+enc(tx.type)+'&description='+enc(tx.description)+'&quantity='+tx.quantity+'&location='+enc(tx.location||'')+'&remarks='+enc(tx.remarks||'')+'&user='+enc(tx.user)+'&date='+enc(tx.date),{},8000).then(function(r){return r.json();}).then(function(d){return d.success;}).catch(function(){return false;});}
+
+// ====== DASHBOARD ======
+function dash(){
+  var items=gInv(),txs=gTx(),td=new Date().toISOString().split('T')[0];
+  document.getElementById('st').textContent=items.length;
+  document.getElementById('sl').textContent=items.filter(function(i){return i.foh<10;}).length;
+  document.getElementById('sd').textContent=txs.filter(function(t){return t.date===td;}).length;
+  document.getElementById('sv').textContent='₱'+Math.round(items.reduce(function(s,i){return s+(i.foh*i.cost);},0)/1000)+'K';
+
+  var d7=[];for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);d7.push(d.toISOString().split('T')[0]);}
+  var dd=d7.map(function(dt){return{inn:txs.filter(function(t){return t.date===dt&&t.t==='Stock In';}).reduce(function(s,t){return s+t.q;},0),out:txs.filter(function(t){return t.date===dt&&t.t==='Stock Out';}).reduce(function(s,t){return s+t.q;},0)};});
+
+  if(C.cht.d)C.cht.d.destroy();
+  C.cht.d=new Chart(document.getElementById('ch1'),{type:'bar',data:{labels:d7.map(function(d){return d.slice(5);}),datasets:[{label:'In',data:dd.map(function(x){return x.inn;}),backgroundColor:'#2e7d32'},{label:'Out',data:dd.map(function(x){return x.out;}),backgroundColor:'#c62828'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+
+  var cats={};items.forEach(function(i){cats[i.cat]=(cats[i.cat]||0)+i.foh;});
+  if(C.cht.c)C.cht.c.destroy();
+  C.cht.c=new Chart(document.getElementById('ch2'),{type:'doughnut',data:{labels:Object.keys(cats),datasets:[{data:Object.values(cats),backgroundColor:['#1a237e','#ff6f00','#2e7d32','#c62828']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+
+  var out=txs.filter(function(t){return t.t==='Stock Out';}),tot={};
+  out.forEach(function(t){tot[t.d]=(tot[t.d]||0)+t.q;});
+  var top=Object.entries(tot).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+  document.getElementById('top').innerHTML=top.length?top.map(function(x,i){return'<div class="ir"><div><h4>'+(i+1)+'. '+esc(x[0])+'</h4></div><div class="iq"><div class="q">'+x[1]+'</div></div></div>';}).join(''):'<div class="es">No data</div>';
 }
 
-function showApp() {
-  document.getElementById('loginScreen').classList.remove('active');
-  document.getElementById('app').classList.add('active');
-  document.getElementById('userName').textContent = CONFIG.CURRENT_USER.name;
-  document.getElementById('userRole').textContent = CONFIG.CURRENT_USER.role;
+// ====== SCANNER ======
+function startSc(){if(C.sc)return;var a=document.getElementById('sr');a.innerHTML='<div id="rd" style="width:100%;height:100%"></div>';try{C.sc=new Html5Qrcode('rd');Html5Qrcode.getCameras().then(function(cams){if(cams.length)C.sc.start(cams[0].id,{fps:10,qrbox:{width:200,height:200}},function(txt){document.getElementById('sdsc').value=txt;snd('beep');vib();},function(){});});}catch(e){a.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;flex-direction:column;padding:20px"><div style="font-size:2rem">📷</div><p>Type manually</p></div>';}}
+function stopSc(){if(C.sc){C.sc.stop().catch(function(){});C.sc=null;}}
 
-  refreshInventory();
-  refreshTransactions();
-  updateDashboard();
-  updateQueueBadge();
+// ====== SETTINGS ======
+function tDark(){document.body.classList.toggle('dark');try{localStorage.setItem('dm',document.body.classList.contains('dark'));}catch(e){}}
+function sApi(){var u=document.getElementById('au').value.trim();if(u){C.api=u;try{localStorage.setItem('ga',u);}catch(e){}toast('URL saved');tCon();}}
+function tCon(silent){
+  var st=document.getElementById('tc');if(!silent){st.textContent='Testing...';st.className='st';}
+  if(!C.api){if(!silent){st.textContent='❌ No URL';st.className='st bad';}return;}
+  ft(C.api+'?action=test',{},5000).then(function(r){return r.json();}).then(function(d){if(d.success){C.on=true;if(!silent){st.textContent='✅ Connected';st.className='st ok';toast('Connected!');}updSt();}else{throw new Error('bad');}}).catch(function(e){C.on=false;if(!silent){st.textContent='❌ Failed';st.className='st bad';}updSt();});
 }
-
-function logout() {
-  CONFIG.CURRENT_USER = null;
-  CONFIG.DEMO_MODE = false;
-  document.getElementById('app').classList.remove('active');
-  document.getElementById('loginScreen').classList.add('active');
-  document.getElementById('loginUser').value = '';
-  document.getElementById('loginPass').value = '';
-  document.getElementById('loginError').classList.remove('show');
-}
-
-// ===================== NAVIGATION =====================
-function showPage(pageId) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + pageId).classList.add('active');
-  event.target.classList.add('active');
-
-  if (pageId === 'dashboard') updateDashboard();
-  if (pageId === 'inventory') refreshInventory();
-  if (pageId === 'transactions') refreshTransactions();
-  if (pageId === 'scan') startScanner();
-  else stopScanner();
-}
-
-// ===================== INVENTORY =====================
-function getInventory() {
-  try {
-    const data = localStorage.getItem('gemcor_inventory');
-    if (data) return JSON.parse(data);
-  } catch(e) {}
-  return [...DEMO_INVENTORY];
-}
-
-function saveInventory(data) {
-  try { localStorage.setItem('gemcor_inventory', JSON.stringify(data)); } catch(e) {}
-}
-
-function refreshInventory() {
-  const list = document.getElementById('inventoryList');
-  const items = getInventory();
-  const search = (document.getElementById('invSearch').value || '').toLowerCase();
-  const cat = CONFIG.CATEGORY_FILTER;
-
-  let filtered = items;
-  if (search) filtered = filtered.filter(i => i.description.toLowerCase().includes(search));
-  if (cat !== 'all') filtered = filtered.filter(i => i.category === cat);
-
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty-state"><div>📦</div><p>No items found</p></div>';
-    return;
-  }
-
-  list.innerHTML = filtered.map(item => `
-    <div class="item-row" onclick="showItemDetail(${item.id})">
-      <div class="item-info">
-        <h4>${escapeHtml(item.description)}</h4>
-        <p>${item.category} • ${item.location}</p>
-      </div>
-      <div class="item-qty">
-        <div class="qty">${item.finalOnHand}</div>
-        <div class="unit">${item.baseUnit}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function filterInventory() { refreshInventory(); }
-
-function setCategoryFilter(cat) {
-  CONFIG.CATEGORY_FILTER = cat;
-  document.querySelectorAll('#page-inventory .filter-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  refreshInventory();
-}
-
-function showItemDetail(id) {
-  const items = getInventory();
-  const item = items.find(i => i.id === id);
-  if (!item) return;
-  CONFIG.SELECTED_ITEM = item;
-
-  document.getElementById('itemModalTitle').textContent = escapeHtml(item.description);
-  document.getElementById('itemDetailGrid').innerHTML = `
-    <div class="detail-item"><label>Category</label><value>${item.category}</value></div>
-    <div class="detail-item"><label>Location</label><value>${item.location}</value></div>
-    <div class="detail-item"><label>On-Hand</label><value>${item.onHand} ${item.baseUnit}</value></div>
-    <div class="detail-item"><label>Stock In</label><value style="color:var(--success)">+${item.inQty}</value></div>
-    <div class="detail-item"><label>Stock Out</label><value style="color:var(--danger)">-${item.outQty}</value></div>
-    <div class="detail-item"><label>MRS</label><value style="color:var(--warning)">+${item.mrsQty}</value></div>
-    <div class="detail-item"><label>Final On-Hand</label><value style="color:var(--primary);font-size:1.2rem">${item.finalOnHand} ${item.baseUnit}</value></div>
-    <div class="detail-item"><label>Unit Cost</label><value>₱${item.unitCost.toLocaleString()}</value></div>
-  `;
-  openModal('itemModal');
-}
-
-function openTxFromItem() {
-  closeModal('itemModal');
-  document.getElementById('txDesc').value = CONFIG.SELECTED_ITEM.description;
-  document.getElementById('txLoc').value = CONFIG.SELECTED_ITEM.location;
-  openModal('txModal');
-}
-
-// ===================== TRANSACTIONS =====================
-function getTransactions() {
-  try {
-    const data = localStorage.getItem('gemcor_transactions');
-    if (data) return JSON.parse(data);
-  } catch(e) {}
-  return [...DEMO_TRANSACTIONS];
-}
-
-function saveTransactions(data) {
-  try { localStorage.setItem('gemcor_transactions', JSON.stringify(data)); } catch(e) {}
-}
-
-function refreshTransactions() {
-  const list = document.getElementById('transactionList');
-  const txs = getTransactions();
-  const search = (document.getElementById('txSearch').value || '').toLowerCase();
-  const typeFilter = CONFIG.TX_FILTER;
-
-  let filtered = txs.sort((a,b) => new Date(b.date) - new Date(a.date));
-  if (search) filtered = filtered.filter(t => t.description.toLowerCase().includes(search));
-  if (typeFilter !== 'all') filtered = filtered.filter(t => t.type === typeFilter);
-
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty-state"><div>📝</div><p>No transactions found</p></div>';
-    return;
-  }
-
-  list.innerHTML = filtered.map(tx => `
-    <div class="tx-row">
-      <div class="tx-info">
-        <h4>${escapeHtml(tx.description)}</h4>
-        <p>${tx.date} • ${tx.user} • ${tx.remarks || '-'}</p>
-      </div>
-      <div style="text-align:right;">
-        <span class="badge ${tx.type === 'Stock In' ? 'badge-success' : tx.type === 'Stock Out' ? 'badge-danger' : 'badge-warning'}">${tx.type}</span>
-        <div class="tx-qty ${tx.type === 'Stock Out' ? 'negative' : 'positive'}">${tx.type === 'Stock Out' ? '-' : '+'}${tx.qty}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function filterTransactions() { refreshTransactions(); }
-
-function setTxFilter(type) {
-  CONFIG.TX_FILTER = type;
-  document.querySelectorAll('#page-transactions .filter-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  refreshTransactions();
-}
-
-// ===================== TRANSACTION SUBMISSION =====================
-function setTxType(type) {
-  CONFIG.TX_TYPE = type;
-  document.querySelectorAll('.tx-type-btn').forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.textContent.includes(type === 'Stock In' ? 'Stock In' : type === 'Stock Out' ? 'Stock Out' : 'MRS')) {
-      btn.classList.add('active');
-    }
-  });
-}
-
-function submitTransaction() {
-  const desc = document.getElementById('scanDesc').value.trim();
-  const qty = parseInt(document.getElementById('scanQty').value);
-  const loc = document.getElementById('scanLoc').value.trim();
-  const remarks = document.getElementById('scanRemarks').value.trim();
-
-  if (!desc || !qty || qty < 1) {
-    showToast('Please enter item and valid quantity');
-    playSound('error');
-    return;
-  }
-
-  processTransaction(desc, qty, loc, remarks);
-
-  // Clear form
-  document.getElementById('scanDesc').value = '';
-  document.getElementById('scanQty').value = '';
-  document.getElementById('scanLoc').value = '';
-  document.getElementById('scanRemarks').value = '';
-}
-
-function submitModalTx() {
-  const desc = document.getElementById('txDesc').value.trim();
-  const qty = parseInt(document.getElementById('txQty').value);
-  const loc = document.getElementById('txLoc').value.trim();
-  const remarks = document.getElementById('txRemarks').value.trim();
-
-  if (!desc || !qty || qty < 1) {
-    showToast('Please enter item and valid quantity');
-    playSound('error');
-    return;
-  }
-
-  processTransaction(desc, qty, loc, remarks);
-  closeModal('txModal');
-
-  document.getElementById('txDesc').value = '';
-  document.getElementById('txQty').value = '';
-  document.getElementById('txLoc').value = '';
-  document.getElementById('txRemarks').value = '';
-}
-
-function processTransaction(desc, qty, loc, remarks) {
-  const items = getInventory();
-  let item = items.find(i => i.description.toLowerCase() === desc.toLowerCase());
-
-  if (!item) {
-    // Create new item
-    item = {
-      id: items.length > 0 ? Math.max(...items.map(i => i.id)) + 1 : 1,
-      description: desc,
-      category: 'Uncategorized',
-      location: loc || 'Unassigned',
-      onHand: 0,
-      inQty: 0,
-      outQty: 0,
-      mrsQty: 0,
-      finalOnHand: 0,
-      baseUnit: 'pcs',
-      unitCost: 0
-    };
-    items.push(item);
-  }
-
-  // Update ONLY the relevant column (IN, OUT, or MRS)
-  // ON-HAND is never touched by transactions
-  // FINAL ON-HAND must be a formula in the sheet: =E+F-G+H
-  if (CONFIG.TX_TYPE === 'Stock In') {
-    item.inQty += qty;
-  } else if (CONFIG.TX_TYPE === 'Stock Out') {
-    if (item.finalOnHand < qty) {
-      showToast('Insufficient stock! Available: ' + item.finalOnHand);
-      playSound('error');
-      return;
-    }
-    item.outQty += qty;
-  } else if (CONFIG.TX_TYPE === 'MRS Return') {
-    item.mrsQty += qty;
-  }
-
-  // Recalculate final on-hand locally
-  item.finalOnHand = item.onHand + item.inQty - item.outQty + item.mrsQty;
-
-  // Save locally
-  saveInventory(items);
-
-  // Add transaction record
-  const txs = getTransactions();
-  txs.unshift({
-    id: txs.length > 0 ? Math.max(...txs.map(t => t.id)) + 1 : 1,
-    date: new Date().toISOString().split('T')[0],
-    inventoryId: item.id,
-    description: desc,
-    type: CONFIG.TX_TYPE,
-    qty: qty,
-    user: CONFIG.CURRENT_USER ? CONFIG.CURRENT_USER.name : 'Unknown',
-    remarks: remarks || ''
-  });
-  saveTransactions(txs);
-
-  // Try to sync to backend
-  if (CONFIG.API_URL && CONFIG.IS_ONLINE && !CONFIG.DEMO_MODE) {
-    syncTransactionToBackend({
-      action: 'transaction',
-      type: CONFIG.TX_TYPE,
-      description: desc,
-      quantity: qty,
-      location: loc || item.location,
-      remarks: remarks || '',
-      user: CONFIG.CURRENT_USER.name,
-      date: new Date().toISOString().split('T')[0]
-    });
-  } else {
-    // Queue for later sync
-    queueTransaction({
-      type: CONFIG.TX_TYPE,
-      description: desc,
-      quantity: qty,
-      location: loc || item.location,
-      remarks: remarks || '',
-      user: CONFIG.CURRENT_USER ? CONFIG.CURRENT_USER.name : 'Unknown',
-      date: new Date().toISOString().split('T')[0]
-    });
-  }
-
-  showToast(`${CONFIG.TX_TYPE}: ${desc} (${qty})`);
-  playSound('success');
-  vibrate();
-
-  refreshInventory();
-  refreshTransactions();
-  updateDashboard();
-}
-
-// ===================== QUEUE / SYNC =====================
-function queueTransaction(tx) {
-  try {
-    let queue = JSON.parse(localStorage.getItem('gemcor_queue') || '[]');
-    queue.push(tx);
-    localStorage.setItem('gemcor_queue', JSON.stringify(queue));
-    updateQueueBadge();
-  } catch(e) {}
-}
-
-function getQueue() {
-  try { return JSON.parse(localStorage.getItem('gemcor_queue') || '[]'); } catch(e) { return []; }
-}
-
-function updateQueueBadge() {
-  const queue = getQueue();
-  const badge = document.getElementById('queueCount');
-  if (queue.length > 0) {
-    badge.textContent = queue.length + ' pending';
-    badge.classList.add('show');
-  } else {
-    badge.classList.remove('show');
-  }
-}
-
-function showQueueModal() {
-  const queue = getQueue();
-  const list = document.getElementById('queueList');
-  if (queue.length === 0) {
-    list.innerHTML = '<div class="empty-state"><p>No pending transactions</p></div>';
-  } else {
-    list.innerHTML = queue.map((tx, i) => `
-      <div class="tx-row">
-        <div class="tx-info">
-          <h4>${escapeHtml(tx.description)}</h4>
-          <p>${tx.type} • ${tx.date}</p>
-        </div>
-        <div class="tx-qty ${tx.type === 'Stock Out' ? 'negative' : 'positive'}">${tx.type === 'Stock Out' ? '-' : '+'}${tx.quantity}</div>
-      </div>
-    `).join('');
-  }
-  openModal('queueModal');
-}
-
-async function syncQueue() {
-  if (!CONFIG.API_URL || !CONFIG.IS_ONLINE) {
-    showToast('Cannot sync — backend not connected');
-    return;
-  }
-
-  const queue = getQueue();
-  if (queue.length === 0) {
-    showToast('Nothing to sync');
-    return;
-  }
-
-  showToast('Syncing ' + queue.length + ' transactions...');
-
-  let success = 0;
-  for (const tx of queue) {
-    try {
-      const ok = await syncTransactionToBackend(tx);
-      if (ok) success++;
-    } catch(e) {}
-  }
-
-  // Clear synced items
-  if (success > 0) {
-    localStorage.setItem('gemcor_queue', JSON.stringify(queue.slice(success)));
-    updateQueueBadge();
-    showToast('Synced ' + success + ' transactions');
-    refreshInventory();
-  } else {
-    showToast('Sync failed — will retry later');
-  }
-
-  closeModal('queueModal');
-}
-
-async function syncTransactionToBackend(tx) {
-  try {
-    const url = `${CONFIG.API_URL}?action=transaction&type=${encodeURIComponent(tx.type)}&description=${encodeURIComponent(tx.description)}&quantity=${tx.quantity}&location=${encodeURIComponent(tx.location || '')}&remarks=${encodeURIComponent(tx.remarks || '')}&user=${encodeURIComponent(tx.user)}&date=${encodeURIComponent(tx.date)}`;
-    const res = await fetchWithTimeout(url, {}, 8000);
-    const data = await res.json();
-    return data.success;
-  } catch(e) {
-    console.log('Backend sync failed:', e);
-    return false;
-  }
-}
-
-// ===================== DASHBOARD =====================
-function updateDashboard() {
-  const items = getInventory();
-  const txs = getTransactions();
-  const today = new Date().toISOString().split('T')[0];
-
-  document.getElementById('statTotal').textContent = items.length;
-  document.getElementById('statLow').textContent = items.filter(i => i.finalOnHand < 10).length;
-  document.getElementById('statToday').textContent = txs.filter(t => t.date === today).length;
-  document.getElementById('statValue').textContent = '₱' + Math.round(items.reduce((s,i) => s + (i.finalOnHand * i.unitCost), 0) / 1000) + 'K';
-
-  renderCharts(txs);
-
-  // Top issued items
-  const outTxs = txs.filter(t => t.type === 'Stock Out');
-  const itemTotals = {};
-  outTxs.forEach(t => { itemTotals[t.description] = (itemTotals[t.description] || 0) + t.qty; });
-  const topItems = Object.entries(itemTotals).sort((a,b) => b[1] - a[1]).slice(0, 5);
-
-  document.getElementById('topItemsList').innerHTML = topItems.length === 0 
-    ? '<div class="empty-state"><p>No issue data yet</p></div>'
-    : topItems.map(([desc, qty], i) => `
-      <div class="item-row">
-        <div class="item-info">
-          <h4>${i+1}. ${escapeHtml(desc)}</h4>
-        </div>
-        <div class="item-qty"><div class="qty">${qty}</div></div>
-      </div>
-    `).join('');
-}
-
-function renderCharts(txs) {
-  // Daily chart
-  const last7 = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    last7.push(d.toISOString().split('T')[0]);
-  }
-  const dailyData = last7.map(date => ({
-    in: txs.filter(t => t.date === date && t.type === 'Stock In').reduce((s,t) => s + t.qty, 0),
-    out: txs.filter(t => t.date === date && t.type === 'Stock Out').reduce((s,t) => s + t.qty, 0)
-  }));
-
-  const ctx1 = document.getElementById('chartDaily');
-  if (CONFIG.CHARTS.daily) CONFIG.CHARTS.daily.destroy();
-  CONFIG.CHARTS.daily = new Chart(ctx1, {
-    type: 'bar',
-    data: {
-      labels: last7.map(d => d.slice(5)),
-      datasets: [
-        { label: 'Stock In', data: dailyData.map(d => d.in), backgroundColor: '#2e7d32' },
-        { label: 'Stock Out', data: dailyData.map(d => d.out), backgroundColor: '#c62828' }
-      ]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-  });
-
-  // Category chart
-  const items = getInventory();
-  const cats = {};
-  items.forEach(i => { cats[i.category] = (cats[i.category] || 0) + i.finalOnHand; });
-
-  const ctx2 = document.getElementById('chartCategory');
-  if (CONFIG.CHARTS.category) CONFIG.CHARTS.category.destroy();
-  CONFIG.CHARTS.category = new Chart(ctx2, {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(cats),
-      datasets: [{ data: Object.values(cats), backgroundColor: ['#1a237e','#ff6f00','#2e7d32','#c62828','#f9a825'] }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-  });
-}
-
-// ===================== SCANNER =====================
-function startScanner() {
-  if (CONFIG.SCANNER) return;
-  const area = document.getElementById('scannerArea');
-  area.innerHTML = '<div id="reader" style="width:100%;height:100%;"></div><div class="scan-laser"></div>';
-
-  try {
-    CONFIG.SCANNER = new Html5Qrcode('reader');
-    Html5Qrcode.getCameras().then(cameras => {
-      if (cameras.length > 0) {
-        CONFIG.SCANNER.start(
-          cameras[0].id,
-          { fps: 10, qrbox: { width: 200, height: 200 } },
-          decodedText => {
-            document.getElementById('scanDesc').value = decodedText;
-            playSound('beep');
-            vibrate();
-          },
-          () => {}
-        );
-      }
-    });
-  } catch(e) {
-    area.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;flex-direction:column;padding:20px;"><div style="font-size:3rem;margin-bottom:10px;">📷</div><p>Camera access required</p><p style="font-size:.8rem;margin-top:8px;">Type item name manually below</p></div>';
-  }
-}
-
-function stopScanner() {
-  if (CONFIG.SCANNER) {
-    CONFIG.SCANNER.stop().catch(() => {});
-    CONFIG.SCANNER = null;
-  }
-}
-
-// ===================== SETTINGS =====================
-function toggleDark() {
-  document.body.classList.toggle('dark');
-  try { localStorage.setItem('darkMode', document.body.classList.contains('dark')); } catch(e) {}
-}
-
-function saveApiUrl() {
-  const url = document.getElementById('apiUrlInput').value.trim();
-  if (url) {
-    CONFIG.API_URL = url;
-    try { localStorage.setItem('gemcor_api_url', url); } catch(e) {}
-    showToast('API URL saved');
-    testConnection();
-  }
-}
-
-async function testConnection() {
-  const status = document.getElementById('testStatus');
-  status.textContent = 'Testing...';
-  status.className = 'connection-status';
-
-  if (!CONFIG.API_URL) {
-    status.textContent = '❌ No API URL set';
-    status.className = 'connection-status offline';
-    return;
-  }
-
-  try {
-    const res = await fetchWithTimeout(`${CONFIG.API_URL}?action=test`, {}, 5000);
-    const data = await res.json();
-    if (data.success) {
-      CONFIG.IS_ONLINE = true;
-      status.textContent = '✅ Connected successfully';
-      status.className = 'connection-status online';
-      showToast('Backend connected!');
-      updateConnectionStatus();
-    } else {
-      throw new Error('Invalid response');
-    }
-  } catch(e) {
-    CONFIG.IS_ONLINE = false;
-    status.textContent = '❌ Connection failed — check URL and deployment';
-    status.className = 'connection-status offline';
-    showToast('Connection failed');
-  }
-}
-
-async function testConnectionSilent() {
-  if (!CONFIG.API_URL) return;
-  try {
-    const res = await fetchWithTimeout(`${CONFIG.API_URL}?action=test`, {}, 5000);
-    const data = await res.json();
-    CONFIG.IS_ONLINE = data.success === true;
-    updateConnectionStatus();
-  } catch(e) {
-    CONFIG.IS_ONLINE = false;
-    updateConnectionStatus();
-  }
-}
-
-function exportData() {
-  const data = {
-    inventory: getInventory(),
-    transactions: getTransactions(),
-    exported: new Date().toISOString()
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'gemcor-backup-' + new Date().toISOString().split('T')[0] + '.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('Data exported');
-}
-
-function clearAllData() {
-  if (!confirm('Clear all local data? This cannot be undone.')) return;
-  try {
-    localStorage.removeItem('gemcor_inventory');
-    localStorage.removeItem('gemcor_transactions');
-    localStorage.removeItem('gemcor_queue');
-  } catch(e) {}
-  showToast('All local data cleared');
-  refreshInventory();
-  refreshTransactions();
-  updateDashboard();
-}
-
-// ===================== MODALS =====================
-function openModal(id) { document.getElementById(id).classList.add('active'); }
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-function openTxModal() { openModal('txModal'); }
-
-// ===================== UTILITIES =====================
-function fetchWithTimeout(url, options = {}, timeout = 5000) {
-  return Promise.race([
-    fetch(url, options),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
-  ]);
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-function playSound(type) {
-  if (!document.getElementById('soundToggle').checked) return;
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    if (type === 'success') { osc.frequency.value = 880; gain.gain.value = 0.1; }
-    else if (type === 'error') { osc.frequency.value = 220; gain.gain.value = 0.1; }
-    else { osc.frequency.value = 1200; gain.gain.value = 0.05; }
-    osc.start(); osc.stop(ctx.currentTime + 0.15);
-  } catch(e) {}
-}
-
-function vibrate() {
-  if (document.getElementById('vibeToggle').checked && navigator.vibrate) {
-    navigator.vibrate(50);
-  }
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+function exp(){var d={inv:gInv(),tx:gTx(),exp:new Date().toISOString()};var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='gemcor-'+new Date().toISOString().split('T')[0]+'.json';a.click();URL.revokeObjectURL(u);toast('Exported');}
+function clr(){if(!confirm('Clear all local data?'))return;try{localStorage.removeItem('gi');localStorage.removeItem('gt');localStorage.removeItem('gq');}catch(e){}toast('Cleared');rInv();rTx();dash();}
+
+// ====== MODALS ======
+function om(id){document.getElementById(id).classList.add('on');}
+function cm(id){document.getElementById(id).classList.remove('on');}
+
+// ====== UTILS ======
+function ft(url,opts,timeout){return Promise.race([fetch(url,opts||{}),new Promise(function(_,r){setTimeout(function(){r(new Error('timeout'));},timeout||5000);})]);}
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+function snd(type){if(!document.getElementById('stg').checked)return;try{var c=new(window.AudioContext||window.webkitAudioContext)();var o=c.createOscillator();var g=c.createGain();o.connect(g);g.connect(c.destination);if(type==='ok'){o.frequency.value=880;g.gain.value=0.1;}else if(type==='err'){o.frequency.value=220;g.gain.value=0.1;}else{o.frequency.value=1200;g.gain.value=0.05;}o.start();o.stop(c.currentTime+0.15);}catch(e){}}
+function vib(){if(document.getElementById('vt').checked&&navigator.vibrate)navigator.vibrate(50);}
+function esc(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+function enc(s){return encodeURIComponent(s||'');}
 
 // Close modals on outside click
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('active'); });
-});
-
-// Enter key on login
-document.getElementById('loginPass').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
+document.querySelectorAll('.mo').forEach(function(o){o.addEventListener('click',function(e){if(e.target===o)o.classList.remove('on');});});
+// Enter on password
+document.getElementById('lp').addEventListener('keypress',function(e){if(e.key==='Enter')login();});
 </script>
 </body>
 </html>
