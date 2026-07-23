@@ -3,524 +3,1130 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#1a237e">
 <title>GEMCOR IVM</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;color:#212121;min-height:100vh}
-body.dark{background:#121212;color:#eee}
-#loader{position:fixed;inset:0;background:#1a237e;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;animation:fadeOut 0.5s ease 2.5s forwards}
-@keyframes fadeOut{to{opacity:0;visibility:hidden}}
-.spin{width:50px;height:50px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp 1s linear infinite;margin-bottom:15px}
-@keyframes sp{to{transform:rotate(360deg)}}
-#loader h2{color:#fff;font-size:1.3rem}#loader p{color:rgba(255,255,255,.6);font-size:.85rem;margin-top:5px}
-#login{position:fixed;inset:0;background:linear-gradient(135deg,#1a237e 0%,#3949ab 100%);display:flex;align-items:center;justify-content:center;padding:20px;z-index:100}
-.lc{background:#fff;border-radius:16px;padding:30px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-body.dark .lc{background:#1e1e1e}
-.lc h1{text-align:center;color:#1a237e;font-size:1.4rem;margin-bottom:4px}
-.lc .sub{text-align:center;color:#757575;font-size:.85rem;margin-bottom:20px}
-.fg{margin-bottom:14px}
-.fg label{display:block;font-size:.8rem;font-weight:600;color:#757575;margin-bottom:5px}
-.fg input{width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:10px;font-size:1rem;background:#fff;color:#212121}
-.fg input:focus{outline:none;border-color:#1a237e}
-.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px}
-.bp{background:#1a237e;color:#fff}.bs{background:#e0e0e0;color:#212121}
-.err{color:#c62828;font-size:.85rem;text-align:center;margin-top:8px;min-height:20px}
-.st{text-align:center;font-size:.8rem;color:#757575;margin-top:12px;padding:8px;border-radius:6px;background:#f5f5f5}
-.st.ok{color:#2e7d32;background:#e8f5e9}.st.bad{color:#c62828;background:#ffebee}
-#app{display:none}
-#app.on{display:block}
-.hd{background:#1a237e;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
-.hd h1{font-size:1rem}.hd span{font-size:.8rem}
-.nav{display:flex;overflow-x:auto;background:#fff;border-bottom:1px solid #e0e0e0;padding:4px;gap:4px;position:sticky;top:50px;z-index:40}
-body.dark .nav{background:#1e1e1e;border-color:#333}
-.nb{flex:1;min-width:70px;padding:10px 6px;border:none;background:transparent;color:#757575;font-size:.75rem;font-weight:500;border-radius:8px;cursor:pointer;white-space:nowrap}
-.nb.on{background:#1a237e;color:#fff}
-.pg{display:none;padding:16px;padding-bottom:80px}
-.pg.on{display:block}
-.cd{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-body.dark .cd{background:#1e1e1e}
-.cd h3{font-size:1rem;margin-bottom:12px}
-.sb{display:flex;gap:8px;margin-bottom:12px}
-.sb input{flex:1;padding:10px 14px;border:2px solid #e0e0e0;border-radius:10px;font-size:.9rem;background:#fff;color:#212121}
-.sb button{padding:10px 16px;background:#1a237e;color:#fff;border:none;border-radius:10px;cursor:pointer}
-.ir{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid #e0e0e0;cursor:pointer}
-.ir:hover{background:rgba(0,0,0,.03)}
-.ir:last-child{border-bottom:none}
-.ir h4{font-size:.9rem}.ir p{font-size:.8rem;color:#757575}
-.iq{text-align:right}.iq .q{font-size:1.1rem;font-weight:700;color:#1a237e}.iq .u{font-size:.75rem;color:#757575}
-.bd{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600}
-.bdg-s{background:#e8f5e9;color:#2e7d32}.bdg-d{background:#ffebee;color:#c62828}.bdg-w{background:#fff8e1;color:#f9a825}
-.fab{position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:#ff6f00;color:#fff;border:none;font-size:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(255,111,0,.4);cursor:pointer;z-index:30}
-.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
-.mo.on{display:flex}
-.md{background:#fff;border-radius:16px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto}
-body.dark .md{background:#1e1e1e}
-.mh{padding:16px 20px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between}
-.mh h3{font-size:1.1rem}.mc{background:none;border:none;font-size:1.5rem;color:#757575;cursor:pointer}
-.mb{padding:20px}
-.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.tt{display:flex;gap:8px;margin-bottom:16px}
-.ttb{flex:1;padding:12px;border:2px solid #e0e0e0;border-radius:10px;background:#fff;text-align:center;cursor:pointer;font-size:.85rem;font-weight:600}
-body.dark .ttb{background:#1e1e1e;border-color:#333}
-.ttb.on{border-color:#1a237e;background:#e8eaf6;color:#1a237e}
-.ttb.i{border-color:#2e7d32;color:#2e7d32}.ttb.i.on{background:#e8f5e9}
-.ttb.o{border-color:#c62828;color:#c62828}.ttb.o.on{background:#ffebee}
-.ttb.m{border-color:#f9a825;color:#f9a825}.ttb.m.on{background:#fff8e1}
-.sg{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
-.sc{background:#fff;border-radius:12px;padding:16px;text-align:center}
-body.dark .sc{background:#1e1e1e}
-.sv{font-size:1.6rem;font-weight:700;color:#1a237e}.sl{font-size:.75rem;color:#757575;margin-top:4px}
-.cc{position:relative;height:220px;margin-top:12px}
-.es{text-align:center;padding:40px 20px;color:#757575}
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(100px);background:#333;color:#fff;padding:12px 24px;border-radius:8px;font-size:.9rem;z-index:300;opacity:0;transition:all .3s}
-.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
-.tr{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid #e0e0e0}
-.tr h4{font-size:.85rem}.tr p{font-size:.75rem;color:#757575}
-.tq{font-weight:700}.tq.pos{color:#2e7d32}.tq.neg{color:#c62828}
-.fw{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto}
-.fb{padding:6px 14px;border:1px solid #e0e0e0;border-radius:20px;background:#fff;font-size:.75rem;cursor:pointer;white-space:nowrap}
-body.dark .fb{background:#1e1e1e;border-color:#333}
-.fb.on{background:#1a237e;color:#fff;border-color:#1a237e}
-.dg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.di{background:#f5f5f5;padding:10px;border-radius:8px}
-body.dark .di{background:#333}
-.di label{font-size:.7rem;color:#757575;display:block;margin-bottom:2px}
-.di v{font-size:.9rem;font-weight:600}
-.trw{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e0e0e0}
-.trw:last-child{border-bottom:none}
-.sw{position:relative;width:44px;height:24px}
-.sw input{opacity:0;width:0;height:0}
-.sld{position:absolute;cursor:pointer;inset:0;background:#e0e0e0;border-radius:24px;transition:.3s}
-.sld:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
-input:checked+.sld{background:#1a237e}
-input:checked+.sld:before{transform:translateX(20px)}
-.scan-box{width:100%;aspect-ratio:1;background:#000;border-radius:12px;overflow:hidden;margin-bottom:12px;position:relative}
-.scan-laser{position:absolute;top:50%;left:10%;right:10%;height:2px;background:#00ff00;box-shadow:0 0 8px #00ff00;animation:scan 2s ease-in-out infinite;z-index:10;pointer-events:none;display:none}
-@keyframes scan{0%,100%{opacity:0}50%{opacity:1}}
-.scan-btn{padding:8px 16px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;cursor:pointer;margin:4px;font-size:.8rem}
-.scan-controls{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;z-index:20}
-@media(min-width:768px){.sg{grid-template-columns:repeat(4,1fr)}}
+:root{--primary:#1a73e8;--primary-dark:#1557b0;--success:#34a853;--danger:#ea4335;--warning:#fbbc04;--bg:#f0f2f5;--card:#fff;--text:#202124;--text2:#5f6368;--border:#dadce0;--shadow:0 2px 8px rgba(60,64,67,0.15);}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+body{background:var(--bg);color:var(--text);overflow-x:hidden;}
+
+/* LOADING SCREEN */
+#loader{position:fixed;inset:0;background:linear-gradient(135deg,#1a73e8 0%,#0d47a1 100%);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s,visibility .6s;}
+#loader.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+.loader-ring{width:60px;height:60px;border:4px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loader h2{color:#fff;font-size:1.5rem;margin-bottom:8px;}
+#loader p{color:rgba(255,255,255,.7);font-size:.9rem;}
+#loader .tap-skip{position:absolute;bottom:30px;color:rgba(255,255,255,.5);font-size:.8rem;}
+
+/* LOGIN */
+#login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#1a73e8 0%,#0d47a1 100%);}
+.login-card{background:var(--card);border-radius:16px;padding:32px;width:100%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.2);}
+.login-card h1{text-align:center;color:var(--primary);margin-bottom:4px;font-size:1.6rem;}
+.login-card .subtitle{text-align:center;color:var(--text2);margin-bottom:24px;font-size:.85rem;}
+.input-group{margin-bottom:16px;}
+.input-group label{display:block;font-size:.8rem;color:var(--text2);margin-bottom:4px;font-weight:500;}
+.input-group input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:1rem;outline:none;transition:border .2s;}
+.input-group input:focus{border-color:var(--primary);}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:active{background:var(--primary-dark);transform:scale(.98);}
+.btn-success{background:var(--success);color:#fff;margin-top:10px;}
+.btn-success:active{background:#2e7d32;transform:scale(.98);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-warning{background:var(--warning);color:#202124;}
+.btn-outline{background:transparent;border:2px solid var(--primary);color:var(--primary);}
+.status-msg{text-align:center;margin-top:12px;font-size:.85rem;min-height:20px;}
+.status-msg.error{color:var(--danger);}
+.status-msg.success{color:var(--success);}
+
+/* APP */
+#app{display:none;min-height:100vh;padding-bottom:70px;}
+#app.active{display:block;}
+
+/* HEADER */
+.app-header{background:var(--primary);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 4px rgba(0,0,0,.1);}
+.app-header h1{font-size:1.1rem;font-weight:600;}
+.app-header .user-info{font-size:.75rem;opacity:.9;text-align:right;}
+.app-header .logout-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 12px;border-radius:6px;font-size:.75rem;cursor:pointer;}
+
+/* TABS */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);display:flex;justify-content:space-around;padding:6px 0;border-top:1px solid var(--border);z-index:100;box-shadow:0 -2px 8px rgba(0,0,0,.05);}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;background:none;border:none;color:var(--text2);font-size:.65rem;cursor:pointer;transition:color .2s;}
+.tab-btn svg{width:22px;height:22px;}
+.tab-btn.active{color:var(--primary);}
+.tab-btn.active svg{fill:var(--primary);}
+
+/* PAGES */
+.page{display:none;padding:16px;animation:fadeIn .3s;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* SEARCH */
+.search-box{position:sticky;top:56px;z-index:50;background:var(--bg);padding:8px 0;margin-bottom:8px;}
+.search-box input{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:12px;font-size:.95rem;outline:none;background:var(--card);}
+.search-box input:focus{border-color:var(--primary);}
+
+/* CARDS */
+.item-card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s;}
+.item-card:active{transform:scale(.98);}
+.item-card .title{font-weight:600;font-size:.95rem;color:var(--text);margin-bottom:4px;line-height:1.3;}
+.item-card .meta{font-size:.8rem;color:var(--text2);display:flex;gap:8px;flex-wrap:wrap;}
+.item-card .meta span{background:#e8f0fe;padding:2px 8px;border-radius:4px;font-size:.7rem;}
+.item-card .qty-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0;}
+.item-card .qty-row .label{font-size:.75rem;color:var(--text2);}
+.item-card .qty-row .value{font-weight:700;font-size:1.1rem;}
+.item-card .qty-row .value.ok{color:var(--success);}
+.item-card .qty-row .value.low{color:var(--danger);}
+
+/* SCANNER */
+.scanner-container{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px;}
+.scanner-header{padding:16px;background:var(--primary);color:#fff;text-align:center;}
+.scanner-header h3{font-size:1.1rem;margin-bottom:4px;}
+.scanner-header p{font-size:.8rem;opacity:.8;}
+#reader{width:100%!important;min-height:300px;border:none!important;}
+#reader video{border-radius:0 0 12px 12px;}
+#reader__dashboard_section_csr span{display:none!important;}
+#reader__dashboard_section_swaplink{display:none!important;}
+.scanner-overlay{position:relative;}
+.scanner-laser{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border:2px solid var(--success);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);pointer-events:none;z-index:10;}
+.scanner-laser::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--success);animation:scan 2s linear infinite;box-shadow:0 0 8px var(--success);}
+@keyframes scan{0%{top:0;}50%{top:100%;}100%{top:0;}}
+.scanner-controls{display:flex;gap:10px;padding:12px;justify-content:center;background:#f8f9fa;}
+.scanner-controls button{flex:1;padding:12px;border:none;border-radius:10px;font-size:.85rem;font-weight:600;cursor:pointer;}
+.btn-start-scan{background:var(--success);color:#fff;}
+.btn-stop-scan{background:var(--danger);color:#fff;}
+.btn-flash{background:var(--warning);color:#202124;}
+
+/* SCAN RESULT */
+.scan-result{background:var(--card);border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:var(--shadow);animation:slideUp .4s;}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.scan-result .result-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #e8f0fe;}
+.scan-result .result-header .icon{width:40px;height:40px;background:var(--success);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;}
+.scan-result .result-header h3{flex:1;font-size:1rem;}
+.scan-result .result-header .close-btn{background:none;border:none;color:var(--text2);font-size:1.2rem;cursor:pointer;padding:4px;}
+.scan-result .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.scan-result .info-item{background:#f8f9fa;padding:10px;border-radius:8px;}
+.scan-result .info-item label{display:block;font-size:.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+.scan-result .info-item value{display:block;font-size:.9rem;font-weight:600;color:var(--text);}
+.scan-result .stock-bar{display:flex;gap:8px;margin-bottom:16px;}
+.scan-result .stock-bar .stock-pill{flex:1;text-align:center;padding:10px 6px;border-radius:8px;background:#f8f9fa;}
+.scan-result .stock-bar .stock-pill label{display:block;font-size:.65rem;color:var(--text2);margin-bottom:2px;}
+.scan-result .stock-bar .stock-pill value{display:block;font-size:1rem;font-weight:700;}
+.scan-result .stock-bar .stock-pill.onhand{background:#e3f2fd;color:#1565c0;}
+.scan-result .stock-bar .stock-pill.in{background:#e8f5e9;color:#2e7d32;}
+.scan-result .stock-bar .stock-pill.out{background:#ffebee;color:#c62828;}
+.scan-result .stock-bar .stock-pill.mrs{background:#fff3e0;color:#e65100;}
+.scan-result .stock-bar .stock-pill.final{background:#f3e5f5;color:#6a1b9a;}
+
+/* TRANSACTION FORM */
+.tx-form .form-group{margin-bottom:14px;}
+.tx-form label{display:block;font-size:.8rem;color:var(--text2);margin-bottom:5px;font-weight:500;}
+.tx-form select,.tx-form input,.tx-form textarea{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:.95rem;outline:none;background:var(--card);}
+.tx-form select:focus,.tx-form input:focus,.tx-form textarea:focus{border-color:var(--primary);}
+.tx-form .type-selector{display:flex;gap:8px;margin-bottom:14px;}
+.tx-form .type-btn{flex:1;padding:12px 6px;border:2px solid var(--border);border-radius:10px;background:var(--card);text-align:center;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .2s;}
+.tx-form .type-btn.active{border-color:var(--primary);background:#e8f0fe;color:var(--primary);}
+.tx-form .type-btn.in.active{border-color:var(--success);background:#e8f5e9;color:var(--success);}
+.tx-form .type-btn.out.active{border-color:var(--danger);background:#ffebee;color:var(--danger);}
+.tx-form .type-btn.mrs.active{border-color:var(--warning);background:#fff3e0;color:#e65100;}
+.tx-form .qty-stepper{display:flex;align-items:center;gap:0;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;}
+.tx-form .qty-stepper button{width:50px;height:48px;border:none;background:#f8f9fa;font-size:1.2rem;cursor:pointer;}
+.tx-form .qty-stepper input{flex:1;height:48px;border:none;text-align:center;font-size:1.1rem;font-weight:600;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.active{display:flex;}
+.modal-content{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-height:85vh;overflow-y:auto;padding:20px;animation:slideUpModal .3s;}
+@keyframes slideUpModal{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.modal-header h2{font-size:1.1rem;}
+.modal-header .close-btn{background:none;border:none;font-size:1.5rem;color:var(--text2);cursor:pointer;}
+
+/* TRANSACTION LIST */
+.tx-card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;}
+.tx-card .tx-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:#fff;flex-shrink:0;}
+.tx-card .tx-icon.in{background:var(--success);}
+.tx-card .tx-icon.out{background:var(--danger);}
+.tx-card .tx-icon.mrs{background:var(--warning);color:#202124;}
+.tx-card .tx-info{flex:1;min-width:0;}
+.tx-card .tx-info .tx-title{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tx-card .tx-info .tx-meta{font-size:.75rem;color:var(--text2);margin-top:2px;}
+.tx-card .tx-qty{text-align:right;}
+.tx-card .tx-qty .qty-val{font-size:1.1rem;font-weight:700;}
+.tx-card .tx-qty .qty-val.in{color:var(--success);}
+.tx-card .tx-qty .qty-val.out{color:var(--danger);}
+.tx-card .tx-qty .qty-val.mrs{color:#e65100;}
+.tx-card .tx-qty .qty-label{font-size:.7rem;color:var(--text2);}
+
+/* DASHBOARD */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.stat-card{background:var(--card);border-radius:12px;padding:16px;box-shadow:var(--shadow);text-align:center;}
+.stat-card .stat-value{font-size:1.6rem;font-weight:700;color:var(--primary);}
+.stat-card .stat-label{font-size:.75rem;color:var(--text2);margin-top:4px;}
+.chart-container{background:var(--card);border-radius:12px;padding:16px;box-shadow:var(--shadow);margin-bottom:16px;}
+.chart-container h3{font-size:.9rem;margin-bottom:12px;color:var(--text2);}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:#323232;color:#fff;padding:12px 24px;border-radius:10px;font-size:.9rem;z-index:300;transition:transform .3s;box-shadow:0 4px 12px rgba(0,0,0,.2);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{background:var(--success);}
+.toast.error{background:var(--danger);}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text2);}
+.empty-state svg{width:80px;height:80px;margin-bottom:16px;opacity:.3;}
+.empty-state h3{font-size:1rem;margin-bottom:8px;color:var(--text);}
+.empty-state p{font-size:.85rem;}
+
+/* DETAIL VIEW */
+.detail-view{background:var(--card);border-radius:16px;padding:20px;box-shadow:var(--shadow);}
+.detail-view .detail-header{margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #f0f0f0;}
+.detail-view .detail-header h2{font-size:1.2rem;margin-bottom:4px;}
+.detail-view .detail-header .detail-id{font-size:.8rem;color:var(--text2);font-family:monospace;}
+.detail-view .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.detail-view .detail-item{background:#f8f9fa;padding:12px;border-radius:10px;}
+.detail-view .detail-item label{display:block;font-size:.7rem;color:var(--text2);text-transform:uppercase;margin-bottom:4px;}
+.detail-view .detail-item value{display:block;font-size:1rem;font-weight:600;}
+.detail-view .stock-visual{display:flex;gap:8px;margin-bottom:20px;}
+.detail-view .stock-visual .sv-item{flex:1;text-align:center;padding:14px 8px;border-radius:10px;}
+.detail-view .stock-visual .sv-item.onhand{background:#e3f2fd;}
+.detail-view .stock-visual .sv-item.onhand value{color:#1565c0;}
+.detail-view .stock-visual .sv-item.in{background:#e8f5e9;}
+.detail-view .stock-visual .sv-item.in value{color:#2e7d32;}
+.detail-view .stock-visual .sv-item.out{background:#ffebee;}
+.detail-view .stock-visual .sv-item.out value{color:#c62828;}
+.detail-view .stock-visual .sv-item.mrs{background:#fff3e0;}
+.detail-view .stock-visual .sv-item.mrs value{color:#e65100;}
+.detail-view .stock-visual .sv-item.final{background:#f3e5f5;}
+.detail-view .stock-visual .sv-item.final value{color:#6a1b9a;}
+.detail-view .stock-visual .sv-item label{display:block;font-size:.65rem;margin-bottom:4px;}
+.detail-view .stock-visual .sv-item value{display:block;font-size:1.2rem;font-weight:700;}
+
+/* SETTINGS */
+.settings-card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);}
+.settings-card h3{font-size:.95rem;margin-bottom:12px;}
+.settings-card .setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;}
+.settings-card .setting-row:last-child{border-bottom:none;}
+.settings-card .setting-row label{font-size:.9rem;}
+.settings-card .setting-row input{flex:1;margin-left:12px;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;}
+
+/* RESPONSIVE */
+@media(min-width:768px){
+  .item-card,.tx-card,.stat-card,.chart-container,.settings-card{max-width:600px;margin-left:auto;margin-right:auto;}
+  .search-box{max-width:600px;margin:0 auto 8px;}
+}
 </style>
 <base target="_blank">
 </head>
 <body>
 
+<!-- LOADING -->
 <div id="loader">
-  <div class="spin"></div>
+  <div class="loader-ring"></div>
   <h2>GEMCOR IVM</h2>
-  <p>Loading...</p>
+  <p>Initializing Inventory System...</p>
+  <div class="tap-skip">Tap to skip</div>
 </div>
 
-<div id="login">
-  <div class="lc">
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
     <h1>🔧 GEMCOR IVM</h1>
-    <p class="sub">Inventory Management System</p>
-    <div class="fg"><label>Username</label><input type="text" id="lu" placeholder="Enter username" autocomplete="username"></div>
-    <div class="fg"><label>Password</label><input type="password" id="lp" placeholder="Enter password" autocomplete="current-password"></div>
-    <button class="btn bp" onclick="login()">Sign In</button>
-    <button class="btn bs" onclick="demo()">Demo Mode</button>
-    <div class="err" id="le"></div>
-    <div class="st bad" id="ls">Checking connection...</div>
-    <p style="text-align:center;margin-top:10px;font-size:.75rem;color:#757575">Demo: <b>admin</b> / <b>admin123</b></p>
+    <p class="subtitle">Inventory & Warehouse Management</p>
+    <div class="input-group">
+      <label>Username</label>
+      <input type="text" id="login-user" placeholder="Enter username" autocomplete="off">
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter password">
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+    <button class="btn btn-success" onclick="demoLogin()">Demo Mode</button>
+    <div class="status-msg" id="login-status"></div>
   </div>
 </div>
 
+<!-- APP -->
 <div id="app">
-  <div class="hd">
+  <div class="app-header">
     <h1>🔧 GEMCOR IVM</h1>
-    <div>
-      <span id="un">User</span>
-      <span class="bd bdg-s" id="ur">Role</span>
-      <button onclick="logout()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;margin-left:8px">⏻</button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="user-info" id="user-info"></div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </div>
-  <nav class="nav">
-    <button class="nb on" onclick="page('dash')">📊 Dash</button>
-    <button class="nb" onclick="page('inv')">📦 Inv</button>
-    <button class="nb" onclick="page('tx')">📝 Tx</button>
-    <button class="nb" onclick="page('scan')">📷 Scan</button>
-    <button class="nb" onclick="page('set')">⚙️ Set</button>
-  </nav>
 
-  <div class="pg on" id="pg-dash">
-    <div class="sg">
-      <div class="sc"><div class="sv" id="st">0</div><div class="sl">Total Items</div></div>
-      <div class="sc"><div class="sv" id="sl">0</div><div class="sl">Low Stock</div></div>
-      <div class="sc"><div class="sv" id="sd">0</div><div class="sl">Today Tx</div></div>
-      <div class="sc"><div class="sv" id="sv">0</div><div class="sl">Value</div></div>
+  <!-- INVENTORY PAGE -->
+  <div class="page active" id="page-inventory">
+    <div class="search-box">
+      <input type="text" id="inv-search" placeholder="🔍 Search items..." oninput="filterInventory()">
     </div>
-    <div class="cd"><h3>📈 Daily Transactions</h3><div class="cc"><canvas id="ch1"></canvas></div></div>
-    <div class="cd"><h3>🥧 By Category</h3><div class="cc"><canvas id="ch2"></canvas></div></div>
-    <div class="cd"><h3>🔥 Top Issued</h3><div id="top"></div></div>
+    <div id="inventory-list"></div>
   </div>
 
-  <div class="pg" id="pg-inv">
-    <div class="sb"><input type="text" id="is" placeholder="Search items..." oninput="fInv()"><button onclick="rInv()">🔄</button></div>
-    <div class="fw">
-      <button class="fb on" onclick="fCat('all')">All</button>
-      <button class="fb" onclick="fCat('COMPONENTS')">Components</button>
-      <button class="fb" onclick="fCat('TOOLS')">Tools</button>
-      <button class="fb" onclick="fCat('EQUIPMENT')">Equipment</button>
-    </div>
-    <div id="il"></div>
-  </div>
-
-  <div class="pg" id="pg-tx">
-    <div class="sb"><input type="text" id="ts" placeholder="Search transactions..." oninput="fTx()"><button onclick="rTx()">🔄</button></div>
-    <div class="fw">
-      <button class="fb on" onclick="fTt('all')">All</button>
-      <button class="fb" onclick="fTt('Stock In')">In</button>
-      <button class="fb" onclick="fTt('Stock Out')">Out</button>
-      <button class="fb" onclick="fTt('MRS Return')">MRS</button>
-    </div>
-    <div id="tl"></div>
-  </div>
-
-  <div class="pg" id="pg-scan">
-    <div class="cd">
-      <h3>📷 QR Scanner</h3>
-      <div class="scan-box" id="scanBox">
-        <div id="scanInner" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;flex-direction:column">
-          <div style="font-size:3rem;margin-bottom:10px">📷</div>
-          <p>Camera not started</p>
-          <button class="scan-btn" onclick="startScan()" style="margin-top:15px">Start Camera</button>
+  <!-- SCAN PAGE -->
+  <div class="page" id="page-scan">
+    <div id="scanner-section">
+      <div class="scanner-container">
+        <div class="scanner-header">
+          <h3>📷 QR Code Scanner</h3>
+          <p>Scan item QR code to process transaction</p>
         </div>
-        <div class="scan-laser" id="scanLaser"></div>
-        <div class="scan-controls" id="scanControls" style="display:none">
-          <button class="scan-btn" onclick="stopScan()">Stop</button>
-          <button class="scan-btn" onclick="toggleTorch()">Flash</button>
+        <div class="scanner-overlay">
+          <div id="reader"></div>
+          <div class="scanner-laser" id="scanner-laser" style="display:none;"></div>
+        </div>
+        <div class="scanner-controls">
+          <button class="btn-start-scan" id="btn-start-scan" onclick="startScanner()">▶ Start Scanner</button>
+          <button class="btn-stop-scan" id="btn-stop-scan" onclick="stopScanner()" style="display:none;">⏹ Stop</button>
+          <button class="btn-flash" id="btn-flash" onclick="toggleFlash()" style="display:none;">🔦 Flash</button>
         </div>
       </div>
-      <div class="tt">
-        <button class="ttb i on" onclick="setT('Stock In')">📥 Stock In</button>
-        <button class="ttb o" onclick="setT('Stock Out')">📤 Stock Out</button>
-        <button class="ttb m" onclick="setT('MRS Return')">↩️ MRS</button>
-      </div>
-      <div class="fg"><label>Item Description</label><input type="text" id="sdsc" placeholder="Scan or type item name..."></div>
-      <div class="fr">
-        <div class="fg"><label>Quantity</label><input type="number" id="sq" placeholder="0" min="1"></div>
-        <div class="fg"><label>Location</label><input type="text" id="slc" placeholder="Warehouse..."></div>
-      </div>
-      <div class="fg"><label>Remarks</label><input type="text" id="srk" placeholder="Optional..."></div>
-      <button class="btn bp" onclick="subTx()">Submit Transaction</button>
+    </div>
+    <div id="scan-result" style="display:none;"></div>
+  </div>
+
+  <!-- TRANSACTIONS PAGE -->
+  <div class="page" id="page-transactions">
+    <div id="transactions-list"></div>
+  </div>
+
+  <!-- DASHBOARD PAGE -->
+  <div class="page" id="page-dashboard">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Total Items</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-categories">0</div><div class="stat-label">Categories</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-tx">0</div><div class="stat-label">Transactions</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-value">₱0</div><div class="stat-label">Total Value</div></div>
+    </div>
+    <div class="chart-container">
+      <h3>📊 Stock by Category</h3>
+      <canvas id="catChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>📈 Transaction History</h3>
+      <canvas id="txChart"></canvas>
     </div>
   </div>
 
-  <div class="pg" id="pg-set">
-    <div class="cd">
-      <h3>⚙️ Preferences</h3>
-      <div class="trw"><span>🌙 Dark Mode</span><label class="sw"><input type="checkbox" id="dt" onchange="tDark()"><span class="sld"></span></label></div>
-      <div class="trw"><span>🔊 Sound</span><label class="sw"><input type="checkbox" id="stg" checked><span class="sld"></span></label></div>
-      <div class="trw"><span>📳 Vibration</span><label class="sw"><input type="checkbox" id="vt" checked><span class="sld"></span></label></div>
-    </div>
-    <div class="cd">
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="settings-card">
       <h3>🔌 Connection</h3>
-      <div class="fg"><label>API URL</label><input type="text" id="au" placeholder="https://script.google.com/macros/s/.../exec"></div>
-      <button class="btn bp" onclick="sApi()">Save URL</button>
-      <button class="btn bs" onclick="tCon()">Test Connection</button>
-      <div class="st" id="tc">Not tested</div>
-    </div>
-    <div class="cd">
-      <h3>💾 Data</h3>
-      <button class="btn bs" onclick="exp()">📥 Export</button>
-      <button class="btn bs" onclick="clr()" style="margin-top:8px">🗑️ Clear</button>
-    </div>
-  </div>
-</div>
-
-<div class="mo" id="m-tx">
-  <div class="md">
-    <div class="mh"><h3>📝 New Transaction</h3><button class="mc" onclick="cm('m-tx')">&times;</button></div>
-    <div class="mb">
-      <div class="tt">
-        <button class="ttb i on" onclick="setT('Stock In')">📥 Stock In</button>
-        <button class="ttb o" onclick="setT('Stock Out')">📤 Stock Out</button>
-        <button class="ttb m" onclick="setT('MRS Return')">↩️ MRS</button>
+      <div class="setting-row">
+        <label>API URL:</label>
+        <input type="text" id="api-url" placeholder="Paste GAS Web App URL">
       </div>
-      <div class="fg"><label>Item Description</label><input type="text" id="mtd" placeholder="Enter item..."></div>
-      <div class="fr">
-        <div class="fg"><label>Quantity</label><input type="number" id="mtq" placeholder="0" min="1"></div>
-        <div class="fg"><label>Location</label><input type="text" id="mtl" placeholder="Location..."></div>
-      </div>
-      <div class="fg"><label>Remarks</label><input type="text" id="mtr" placeholder="Remarks..."></div>
-      <button class="btn bp" onclick="subModal()">Submit</button>
+      <button class="btn btn-primary" onclick="saveApiUrl()" style="margin-top:10px;">Save URL</button>
+      <button class="btn btn-outline" onclick="testConnection()" style="margin-top:8px;">Test Connection</button>
+      <div class="status-msg" id="conn-status"></div>
     </div>
+    <div class="settings-card">
+      <h3>ℹ️ About</h3>
+      <div class="setting-row"><label>Version</label><span>2.0</span></div>
+      <div class="setting-row"><label>Mode</label><span id="mode-label">Demo</span></div>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('inventory')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Inventory
+    </button>
+    <button class="tab-btn" onclick="switchTab('scan')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Scan
+    </button>
+    <button class="tab-btn" onclick="switchTab('transactions')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      History
+    </button>
+    <button class="tab-btn" onclick="switchTab('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Dashboard
+    </button>
+    <button class="tab-btn" onclick="switchTab('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Settings
+    </button>
   </div>
 </div>
 
-<div class="mo" id="m-it">
-  <div class="md">
-    <div class="mh"><h3 id="mti">Item Details</h3><button class="mc" onclick="cm('m-it')">&times;</button></div>
-    <div class="mb">
-      <div class="dg" id="mid"></div>
-      <button class="btn bp" onclick="txFromIt()" style="margin-top:16px">📝 New Transaction</button>
+<!-- ITEM DETAIL MODAL -->
+<div class="modal-overlay" id="item-modal" onclick="closeModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Item Details</h2>
+      <button class="close-btn" onclick="closeItemModal()">&times;</button>
     </div>
+    <div id="item-detail-content"></div>
   </div>
 </div>
 
+<!-- TOAST -->
 <div class="toast" id="toast"></div>
-<button class="fab" onclick="om('m-tx')">+</button>
 
 <script>
-// ====== CONFIG ======
-var C={
-  api:'https://script.google.com/macros/s/AKfycbxaz8ZcVTgemCtniaeReELtC1u0juGMB0Sr5_J7-MAJcicn6x-w8c3fomxiNhrp2_dy/exec',
-  demo:false,user:null,tt:'Stock In',si:null,cf:'all',tf:'all',on:false,cht:{},scanner:null
+// ============================================================
+// CONFIG - YOUR GAS URL IS HARDCODED HERE
+// ============================================================
+var C = {
+  api: 'https://script.google.com/macros/s/AKfycbxaz8ZcVTgemCtniaeReELtC1u0juGMB0Sr5_J7-MAJcicn6x-w8c3fomxiNhrp2_dy/exec',
+  demo: false,
+  currentUser: null,
+  inventory: [],
+  transactions: [],
+  users: [],
+  scanner: null,
+  scannerActive: false,
+  flashOn: false,
+  charts: {}
 };
 
-// ====== INIT ======
-window.onload=function(){
-  try{var saved=localStorage.getItem('ga');if(saved)C.api=saved;}catch(e){}
-  var p=new URLSearchParams(location.search);
-  var urlParam=p.get('api');
-  if(urlParam){C.api=urlParam;try{localStorage.setItem('ga',urlParam);}catch(e){}}
-  document.getElementById('au').value=C.api;
-  try{if(localStorage.getItem('dm')==='true'){document.body.classList.add('dark');document.getElementById('dt').checked=true;}}catch(e){}
-  updSt();
-  setTimeout(function(){tCon(true);},500);
-};
+// ============================================================
+// DEMO DATA
+// ============================================================
+var DEMO_INVENTORY = [
+  {qrCode:'GEM-1-1099939-2',inventoryId:'GEM-1-1099939-2',description:'Utilux Brand, Crimping Lugs, 120mm2',category:'COMPONENTS',location:'PER PROJECT',onHand:27,stockIn:0,stockOut:0,mrs:0,finalOnHand:27,baseUnit:'PIECE',unitCost:638},
+  {qrCode:'GEM-1-1099899-3',inventoryId:'GEM-1-1099899-3',description:'Cable Gland, PG-21, Nylon',category:'COMPONENTS',location:'PER PROJECT',onHand:1,stockIn:0,stockOut:0,mrs:0,finalOnHand:1,baseUnit:'PIECE',unitCost:45},
+  {qrCode:'GEM-1-1099900-1',inventoryId:'GEM-1-1099900-1',description:'Cable Tie, 300mm, Black',category:'CONSUMABLES',location:'WAREHOUSE',onHand:500,stockIn:0,stockOut:0,mrs:0,finalOnHand:500,baseUnit:'PIECE',unitCost:2},
+  {qrCode:'GEM-1-1099901-5',inventoryId:'GEM-1-1099901-5',description:'Electrical Tape, 3M, 19mm',category:'CONSUMABLES',location:'WAREHOUSE',onHand:100,stockIn:0,stockOut:0,mrs:0,finalOnHand:100,baseUnit:'ROLL',unitCost:35},
+  {qrCode:'GEM-1-1099902-2',inventoryId:'GEM-1-1099902-2',description:'Multimeter, Digital, Fluke',category:'TOOLS',location:'TOOL ROOM',onHand:5,stockIn:0,stockOut:0,mrs:0,finalOnHand:5,baseUnit:'PIECE',unitCost:8500},
+  {qrCode:'GEM-1-1099903-8',inventoryId:'GEM-1-1099903-8',description:'Drill Bit Set, HSS, 1-13mm',category:'TOOLS',location:'TOOL ROOM',onHand:10,stockIn:0,stockOut:0,mrs:0,finalOnHand:10,baseUnit:'SET',unitCost:1200},
+  {qrCode:'GEM-1-1099904-4',inventoryId:'GEM-1-1099904-4',description:'Safety Helmet, Yellow',category:'EQUIPMENT',location:'WAREHOUSE',onHand:50,stockIn:0,stockOut:0,mrs:0,finalOnHand:50,baseUnit:'PIECE',unitCost:450},
+  {qrCode:'GEM-1-1099905-1',inventoryId:'GEM-1-1099905-1',description:'Welding Rod, E6013, 3.2mm',category:'CONSUMABLES',location:'WAREHOUSE',onHand:200,stockIn:0,stockOut:0,mrs:0,finalOnHand:200,baseUnit:'KG',unitCost:85}
+];
 
-function updSt(){
-  var s=document.getElementById('ls');
-  if(!s)return;
-  if(C.on){s.textContent='✅ Connected to backend';s.className='st ok';}
-  else{s.textContent='⚠️ Backend not responding — Demo mode available';s.className='st bad';}
-}
+var DEMO_USERS = [
+  {username:'admin',password:'admin123',role:'Admin',fullName:'System Administrator'},
+  {username:'user',password:'user123',role:'User',fullName:'Regular User'},
+  {username:'manager',password:'manager123',role:'Manager',fullName:'Warehouse Manager'}
+];
 
-// ====== AUTH ======
-function login(){
-  var u=document.getElementById('lu').value.trim(),p=document.getElementById('lp').value,e=document.getElementById('le');
-  if(!u||!p){e.textContent='Enter username and password';return;}
-  e.textContent='Signing in...';
-  fetch(C.api+'?action=login&user='+enc(u)+'&pass='+enc(p))
-  .then(function(r){return r.json();})
-  .then(function(d){
-    if(d.success){C.user={n:d.name||u,r:d.role};C.demo=false;showApp();}
-    else{e.textContent=d.error||'Invalid credentials';}
-  }).catch(function(err){console.log('Backend login failed:',err);tryDemo(u,p);});
-}
+var DEMO_TRANSACTIONS = [
+  {date:'2026-07-20 09:30:00',inventoryId:'GEM-1-1099939-2',description:'Utilux Brand, Crimping Lugs, 120mm2',type:'Stock In',qty:50,balance:77,user:'admin',remarks:'Initial stock'},
+  {date:'2026-07-21 14:15:00',inventoryId:'GEM-1-1099900-1',description:'Cable Tie, 300mm, Black',type:'Stock Out',qty:100,balance:400,user:'user',remarks:'Project Alpha'},
+  {date:'2026-07-22 10:00:00',inventoryId:'GEM-1-1099902-2',description:'Multimeter, Digital, Fluke',type:'MRS Return',qty:2,balance:7,user:'manager',remarks:'Returned from site'},
+  {date:'2026-07-22 11:30:00',inventoryId:'GEM-1-1099904-4',description:'Safety Helmet, Yellow',type:'Stock Out',qty:10,balance:40,user:'user',remarks:'New workers'},
+  {date:'2026-07-23 08:00:00',inventoryId:'GEM-1-1099905-1',description:'Welding Rod, E6013, 3.2mm',type:'Stock In',qty:100,balance:300,user:'admin',remarks:'Monthly supply'}
+];
 
-function tryDemo(u,p){
-  var du=DEMO_USERS.find(function(x){return x.n.toLowerCase()===u.toLowerCase()&&x.p===p;});
-  if(du){C.user={n:du.n,r:du.r};C.demo=true;showApp();toast('Demo Mode (backend unavailable)');}
-  else{document.getElementById('le').textContent='Invalid username or password';}
-}
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  // Auto-hide loader after 2 seconds
+  setTimeout(function() {
+    document.getElementById('loader').classList.add('hidden');
+  }, 2000);
 
-function demo(){C.user={n:'admin',r:'Admin'};C.demo=true;showApp();toast('Demo Mode — all data is local');}
+  // Tap to skip
+  document.getElementById('loader').addEventListener('click', function() {
+    this.classList.add('hidden');
+  });
 
-function showApp(){
-  document.getElementById('login').style.display='none';
-  document.getElementById('app').classList.add('on');
-  document.getElementById('un').textContent=C.user.n;
-  document.getElementById('ur').textContent=C.user.r;
-  if(C.on&&!C.demo){loadBackendData();}
-  else{rInv();rTx();dash();}
-}
-
-function logout(){C.user=null;C.demo=false;document.getElementById('app').classList.remove('on');document.getElementById('login').style.display='flex';document.getElementById('lu').value='';document.getElementById('lp').value='';document.getElementById('le').textContent='';}
-
-// ====== LOAD BACKEND DATA ======
-function loadBackendData(){
-  fetch(C.api+'?action=getInventory')
-  .then(function(r){return r.json();})
-  .then(function(d){
-    if(d.success&&d.items&&d.items.length){
-      var items=d.items.map(function(i){return{
-        id:i.id,
-        inventoryId:String(i.inventoryId||''),
-        description:String(i.description||''),
-        category:String(i.category||'Uncategorized'),
-        location:String(i.location||''),
-        onHand:parseFloat(i.onHand)||0,
-        inQty:parseFloat(i.inQty)||0,
-        outQty:parseFloat(i.outQty)||0,
-        mrsQty:parseFloat(i.mrsQty)||0,
-        finalOnHand:parseFloat(i.finalOnHand)||0,
-        baseUnit:String(i.baseUnit||'PIECE'),
-        unitCost:parseFloat(i.unitCost)||0
-      };});
-      saveInv(items);rInv();dash();
-    }else{rInv();dash();}
-  }).catch(function(e){console.log('Inv load failed',e);rInv();dash();});
-
-  fetch(C.api+'?action=getTransactions')
-  .then(function(r){return r.json();})
-  .then(function(d){
-    if(d.success&&d.transactions){
-      var txs=d.transactions.map(function(t){return{
-        id:t.id,date:t.date,
-        description:String(t.description||''),
-        type:String(t.type||''),
-        qty:parseFloat(t.qty)||0,
-        user:String(t.user||''),
-        remarks:String(t.remarks||'')
-      };});
-      saveTx(txs);rTx();
-    }else{rTx();}
-  }).catch(function(e){console.log('Tx load failed',e);rTx();});
-}
-
-// ====== NAV ======
-function page(id){
-  document.querySelectorAll('.pg').forEach(function(x){x.classList.remove('on');});
-  document.querySelectorAll('.nb').forEach(function(x){x.classList.remove('on');});
-  document.getElementById('pg-'+id).classList.add('on');
-  event.target.classList.add('on');
-  if(id==='dash')dash();if(id==='inv')rInv();if(id==='tx')rTx();
-}
-
-// ====== INVENTORY ======
-function getInv(){try{var d=localStorage.getItem('gi');if(d)return JSON.parse(d);}catch(e){}return [];}
-function saveInv(d){try{localStorage.setItem('gi',JSON.stringify(d));}catch(e){}}
-
-function rInv(){
-  var list=document.getElementById('il'),items=getInv(),s=(document.getElementById('is').value||'').toLowerCase(),cat=C.cf;
-  if(!items.length){list.innerHTML='<div class="es">📦 No items found</div>';return;}
-  var f=items.filter(function(i){return(!s||i.description.toLowerCase().includes(s)||i.inventoryId.toLowerCase().includes(s))&&(cat==='all'||i.category===cat);});
-  list.innerHTML=f.length?f.map(function(i){return'<div class="ir" onclick="shIt('+i.id+')"><div><h4>'+esc(i.description)+'</h4><p>'+esc(i.inventoryId)+' &bull; '+esc(i.category)+' &bull; '+esc(i.location)+'</p></div><div class="iq"><div class="q">'+i.finalOnHand+'</div><div class="u">'+esc(i.baseUnit)+'</div></div></div>';}).join(''):'<div class="es">📦 No items match</div>';
-}
-function fInv(){rInv();}
-function fCat(c){C.cf=c;document.querySelectorAll('#pg-inv .fb').forEach(function(x){x.classList.remove('on');});event.target.classList.add('on');rInv();}
-
-function shIt(id){
-  var i=getInv().find(function(x){return x.id===id;});
-  if(!i)return;C.si=i;
-  document.getElementById('mti').textContent=esc(i.description);
-  document.getElementById('mid').innerHTML=
-    '<div class="di"><label>Inventory ID</label><v>'+esc(i.inventoryId)+'</v></div>'+
-    '<div class="di"><label>Category</label><v>'+esc(i.category)+'</v></div>'+
-    '<div class="di"><label>Location</label><v>'+esc(i.location)+'</v></div>'+
-    '<div class="di"><label style="color:#1a237e;font-weight:bold">ON-HAND (Base)</label><v style="color:#1a237e;font-size:1.1rem">'+i.onHand+' '+esc(i.baseUnit)+'</v></div>'+
-    '<div class="di"><label>Stock In Total</label><v style="color:#2e7d32">+'+i.inQty+'</v></div>'+
-    '<div class="di"><label>Stock Out Total</label><v style="color:#c62828">-'+i.outQty+'</v></div>'+
-    '<div class="di"><label>MRS Return Total</label><v style="color:#f9a825">+'+i.mrsQty+'</v></div>'+
-    '<div class="di"><label style="color:#1a237e;font-size:.8rem">FINAL ON-HAND</label><v style="color:#1a237e;font-size:1.2rem;font-weight:bold">'+i.finalOnHand+' '+esc(i.baseUnit)+'</v></div>'+
-    '<div class="di"><label>Unit Cost</label><v>₱'+i.unitCost.toLocaleString()+'</v></div>';
-  om('m-it');
-}
-function txFromIt(){cm('m-it');document.getElementById('mtd').value=C.si.description;document.getElementById('mtl').value=C.si.location;om('m-tx');}
-
-// ====== TRANSACTIONS ======
-function getTx(){try{var d=localStorage.getItem('gt');if(d)return JSON.parse(d);}catch(e){}return [];}
-function saveTx(d){try{localStorage.setItem('gt',JSON.stringify(d));}catch(e){}}
-
-function rTx(){
-  var list=document.getElementById('tl'),txs=getTx().sort(function(a,b){return new Date(b.date)-new Date(a.date);}),s=(document.getElementById('ts').value||'').toLowerCase(),t=C.tf;
-  if(!txs.length){list.innerHTML='<div class="es">📝 No transactions found</div>';return;}
-  var f=txs.filter(function(x){return(!s||x.description.toLowerCase().includes(s))&&(t==='all'||x.type===t);});
-  list.innerHTML=f.length?f.map(function(x){return'<div class="tr"><div><h4>'+esc(x.description)+'</h4><p>'+x.date+' &bull; '+esc(x.user)+(x.remarks?' &bull; '+esc(x.remarks):'')+'</p></div><div style="text-align:right"><span class="bd '+(x.type==='Stock In'?'bdg-s':x.type==='Stock Out'?'bdg-d':'bdg-w')+'">'+x.type+'</span><div class="tq '+(x.type==='Stock Out'?'neg':'pos')+'">'+(x.type==='Stock Out'?'-':'+')+x.qty+'</div></div></div>';}).join(''):'<div class="es">📝 No transactions match</div>';
-}
-function fTx(){rTx();}
-function fTt(t){C.tf=t;document.querySelectorAll('#pg-tx .fb').forEach(function(x){x.classList.remove('on');});event.target.classList.add('on');rTx();}
-
-// ====== TRANSACTION SUBMIT ======
-function setT(t){C.tt=t;document.querySelectorAll('.ttb').forEach(function(b){b.classList.remove('on');if((t==='Stock In'&&b.textContent.includes('In'))||(t==='Stock Out'&&b.textContent.includes('Out'))||(t==='MRS Return'&&b.textContent.includes('MRS')))b.classList.add('on');});}
-
-function subTx(){
-  var d=document.getElementById('sdsc').value.trim(),q=parseInt(document.getElementById('sq').value),l=document.getElementById('slc').value.trim(),r=document.getElementById('srk').value.trim();
-  if(!d||!q||q<1){toast('Enter item and valid quantity');return;}
-  proc(d,q,l,r);
-  document.getElementById('sdsc').value='';document.getElementById('sq').value='';document.getElementById('slc').value='';document.getElementById('srk').value='';
-}
-function subModal(){
-  var d=document.getElementById('mtd').value.trim(),q=parseInt(document.getElementById('mtq').value),l=document.getElementById('mtl').value.trim(),r=document.getElementById('mtr').value.trim();
-  if(!d||!q||q<1){toast('Enter item and valid quantity');return;}
-  proc(d,q,l,r);cm('m-tx');
-  document.getElementById('mtd').value='';document.getElementById('mtq').value='';document.getElementById('mtl').value='';document.getElementById('mtr').value='';
-}
-
-function proc(desc,qty,loc,remarks){
-  var items=getInv(),it=items.find(function(i){return i.description.toLowerCase()===desc.toLowerCase()||i.inventoryId.toLowerCase()===desc.toLowerCase();});
-  if(!it){
-    it={id:items.length?Math.max.apply(null,items.map(function(i){return i.id;}))+1:1,inventoryId:'NEW',description:desc,category:'Uncategorized',location:loc||'Unassigned',onHand:0,inQty:0,outQty:0,mrsQty:0,finalOnHand:0,baseUnit:'PIECE',unitCost:0};
-    items.push(it);
+  // Load saved API URL
+  var saved = localStorage.getItem('gemcor_api_url');
+  if (saved) {
+    C.api = saved;
+    document.getElementById('api-url').value = saved;
   }
-  if(C.tt==='Stock In'){it.inQty+=qty;}
-  else if(C.tt==='Stock Out'){if(it.finalOnHand<qty){toast('Insufficient stock! Available: '+it.finalOnHand);return;}it.outQty+=qty;}
-  else if(C.tt==='MRS Return'){it.mrsQty+=qty;}
-  it.finalOnHand=it.onHand+it.inQty-it.outQty+it.mrsQty;
-  saveInv(items);
-  var txs=getTx();
-  txs.unshift({id:txs.length?Math.max.apply(null,txs.map(function(t){return t.id;}))+1:1,date:new Date().toISOString().split('T')[0],description:desc,type:C.tt,qty:qty,user:C.user?C.user.n:'?',remarks:remarks||''});
-  saveTx(txs);
-  if(C.on&&!C.demo){
-    var url=C.api+'?action=transaction&type='+enc(C.tt)+'&description='+enc(desc)+'&quantity='+qty+'&location='+enc(loc||it.location)+'&remarks='+enc(remarks||'')+'&user='+enc(C.user.n)+'&date='+enc(new Date().toISOString().split('T')[0]);
-    fetch(url).then(function(r){return r.json();}).then(function(d){if(d.success)toast('Saved to Google Sheet');}).catch(function(e){console.log('Sync failed',e);});
+
+  // Try backend in background
+  setTimeout(testConnectionSilent, 3000);
+});
+
+// ============================================================
+// AUTH
+// ============================================================
+function doLogin() {
+  var user = document.getElementById('login-user').value.trim();
+  var pass = document.getElementById('login-pass').value.trim();
+  var status = document.getElementById('login-status');
+
+  if (!user || !pass) {
+    status.textContent = 'Please enter username and password';
+    status.className = 'status-msg error';
+    return;
   }
-  toast(C.tt+': '+desc+' ('+qty+')');
-  rInv();rTx();dash();
+
+  status.textContent = 'Connecting...';
+  status.className = 'status-msg';
+
+  fetch(C.api, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({action:'login',username:user,password:pass})
+  }).then(function() {
+    // no-cors means we can't read response, try GET to verify
+    return fetch(C.api + '?action=getUsers');
+  }).then(function(r) {
+    if (!r.ok) throw new Error('Backend error');
+    return r.json();
+  }).then(function(data) {
+    if (data.success) {
+      var found = data.users.find(function(u) { return u.username === user && u.password === pass; });
+      if (found) {
+        C.currentUser = {username: found.username, role: found.role, fullName: found.fullName};
+        C.demo = false;
+        startApp();
+      } else {
+        status.textContent = 'Invalid username or password';
+        status.className = 'status-msg error';
+      }
+    } else {
+      throw new Error(data.error || 'Login failed');
+    }
+  }).catch(function(err) {
+    console.log('Backend login failed, trying demo users:', err);
+    var found = DEMO_USERS.find(function(u) { return u.username === user && u.password === pass; });
+    if (found) {
+      C.currentUser = {username: found.username, role: found.role, fullName: found.fullName};
+      C.demo = true;
+      startApp();
+    } else {
+      status.textContent = 'Invalid username or password';
+      status.className = 'status-msg error';
+    }
+  });
 }
 
-// ====== DASHBOARD ======
-function dash(){
-  var items=getInv(),txs=getTx(),td=new Date().toISOString().split('T')[0];
-  document.getElementById('st').textContent=items.length;
-  document.getElementById('sl').textContent=items.filter(function(i){return i.finalOnHand<10;}).length;
-  document.getElementById('sd').textContent=txs.filter(function(t){return t.date===td;}).length;
-  document.getElementById('sv').textContent='₱'+Math.round(items.reduce(function(s,i){return s+(i.finalOnHand*i.unitCost);},0)/1000)+'K';
-  var out=txs.filter(function(t){return t.type==='Stock Out';}),tot={};
-  out.forEach(function(t){tot[t.description]=(tot[t.description]||0)+t.qty;});
-  var top=Object.entries(tot).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
-  document.getElementById('top').innerHTML=top.length?top.map(function(x,i){return'<div class="ir"><div><h4>'+(i+1)+'. '+esc(x[0])+'</h4></div><div class="iq"><div class="q">'+x[1]+'</div></div></div>';}).join(''):'<div class="es">No issue data yet</div>';
-  if(typeof Chart!=='undefined')renderCharts(items,txs);
+function demoLogin() {
+  C.currentUser = {username: 'demo', role: 'User', fullName: 'Demo User'};
+  C.demo = true;
+  C.inventory = JSON.parse(JSON.stringify(DEMO_INVENTORY));
+  C.transactions = JSON.parse(JSON.stringify(DEMO_TRANSACTIONS));
+  C.users = JSON.parse(JSON.stringify(DEMO_USERS));
+  startApp();
 }
 
-function renderCharts(items,txs){
-  var d7=[];for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()-i);d7.push(d.toISOString().split('T')[0]);}
-  var dd=d7.map(function(dt){return{inn:txs.filter(function(t){return t.date===dt&&t.type==='Stock In';}).reduce(function(s,t){return s+t.qty;},0),out:txs.filter(function(t){return t.date===dt&&t.type==='Stock Out';}).reduce(function(s,t){return s+t.qty;},0)};});
-  try{if(C.cht.d)C.cht.d.destroy();C.cht.d=new Chart(document.getElementById('ch1'),{type:'bar',data:{labels:d7.map(function(d){return d.slice(5);}),datasets:[{label:'In',data:dd.map(function(x){return x.inn;}),backgroundColor:'#2e7d32'},{label:'Out',data:dd.map(function(x){return x.out;}),backgroundColor:'#c62828'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});}catch(e){}
-  try{var cats={};items.forEach(function(i){if(i.category)cats[i.category]=(cats[i.category]||0)+i.finalOnHand;});if(C.cht.c)C.cht.c.destroy();C.cht.c=new Chart(document.getElementById('ch2'),{type:'doughnut',data:{labels:Object.keys(cats),datasets:[{data:Object.values(cats),backgroundColor:['#1a237e','#ff6f00','#2e7d32','#c62828','#f9a825']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});}catch(e){}
+function startApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('user-info').textContent = C.currentUser.fullName + ' (' + C.currentUser.role + ')';
+  document.getElementById('mode-label').textContent = C.demo ? 'Demo' : 'Live';
+
+  if (C.demo) {
+    renderInventory();
+    renderTransactions();
+    renderDashboard();
+  } else {
+    loadInventory();
+    loadTransactions();
+  }
 }
 
-// ====== SCANNER ======
-function startScan(){
-  if(!window.Html5Qrcode){toast('Scanner library not loaded. Refresh page.');return;}
-  document.getElementById('scanInner').innerHTML='<div id="reader" style="width:100%;height:100%"></div>';
-  document.getElementById('scanLaser').style.display='block';
-  document.getElementById('scanControls').style.display='flex';
-  try{
-    C.scanner=new Html5Qrcode('reader');
-    Html5Qrcode.getCameras().then(function(cams){
-      if(cams.length){C.scanner.start(cams[0].id,{fps:10,qrbox:{width:200,height:200}},function(txt){document.getElementById('sdsc').value=txt;toast('Scanned: '+txt);},function(){});}
-      else{toast('No cameras found');stopScan();}
-    }).catch(function(e){toast('Camera error: '+e.message);stopScan();});
-  }catch(e){toast('Scanner error: '+e.message);stopScan();}
+function logout() {
+  C.currentUser = null;
+  C.inventory = [];
+  C.transactions = [];
+  C.demo = false;
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-status').textContent = '';
+  stopScanner();
 }
-function stopScan(){
-  if(C.scanner){C.scanner.stop().catch(function(){});C.scanner=null;}
-  document.getElementById('scanInner').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;flex-direction:column"><div style="font-size:3rem;margin-bottom:10px">📷</div><p>Camera stopped</p><button class="scan-btn" onclick="startScan()" style="margin-top:15px">Start Camera</button></div>';
-  document.getElementById('scanLaser').style.display='none';
-  document.getElementById('scanControls').style.display='none';
+
+// ============================================================
+// DATA LOADING
+// ============================================================
+function loadInventory() {
+  fetch(C.api + '?action=getInventory')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        C.inventory = data.items;
+        renderInventory();
+        renderDashboard();
+      }
+    })
+    .catch(function(err) {
+      console.log('Load inventory error:', err);
+      showToast('Using demo data (backend unavailable)', 'error');
+      C.inventory = JSON.parse(JSON.stringify(DEMO_INVENTORY));
+      C.demo = true;
+      renderInventory();
+      renderDashboard();
+    });
 }
-function toggleTorch(){toast('Flashlight toggle not supported on this device');}
 
-// ====== SETTINGS ======
-function tDark(){document.body.classList.toggle('dark');try{localStorage.setItem('dm',document.body.classList.contains('dark'));}catch(e){}}
-function sApi(){var u=document.getElementById('au').value.trim();if(u){C.api=u;try{localStorage.setItem('ga',u);}catch(e){}toast('URL saved');tCon();}}
-function tCon(silent){
-  var st=document.getElementById('tc');if(!silent){st.textContent='Testing...';st.className='st';}
-  if(!C.api){if(!silent){st.textContent='❌ No URL';st.className='st bad';}return;}
-  fetch(C.api+'?action=test').then(function(r){return r.json();}).then(function(d){if(d.success){C.on=true;if(!silent){st.textContent='✅ Connected';st.className='st ok';toast('Connected!');}updSt();}else{throw new Error('bad');}}).catch(function(e){C.on=false;if(!silent){st.textContent='❌ Failed';st.className='st bad';}updSt();});
+function loadTransactions() {
+  fetch(C.api + '?action=getTransactions')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        C.transactions = data.transactions;
+        renderTransactions();
+        renderDashboard();
+      }
+    })
+    .catch(function(err) {
+      console.log('Load transactions error:', err);
+      C.transactions = JSON.parse(JSON.stringify(DEMO_TRANSACTIONS));
+      renderTransactions();
+    });
 }
-function exp(){var d={inv:getInv(),tx:getTx(),exp:new Date().toISOString()};var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='gemcor-'+new Date().toISOString().split('T')[0]+'.json';a.click();URL.revokeObjectURL(u);toast('Exported');}
-function clr(){if(!confirm('Clear ALL local data?'))return;try{localStorage.removeItem('gi');localStorage.removeItem('gt');}catch(e){}toast('Cleared');rInv();rTx();dash();}
 
-// ====== MODALS ======
-function om(id){document.getElementById(id).classList.add('on');}
-function cm(id){document.getElementById(id).classList.remove('on');}
+// ============================================================
+// INVENTORY RENDER
+// ============================================================
+function renderInventory() {
+  var container = document.getElementById('inventory-list');
+  if (!C.inventory || C.inventory.length === 0) {
+    container.innerHTML = '<div class="empty-state"><h3>No items found</h3><p>Add items in your Google Sheet</p></div>';
+    return;
+  }
 
-// ====== UTILS ======
-function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
-function esc(t){var d=document.createElement('div');d.textContent=t||'';return d.innerHTML;}
-function enc(s){return encodeURIComponent(s||'');}
+  var html = '';
+  C.inventory.forEach(function(item) {
+    var stockClass = item.finalOnHand > 10 ? 'ok' : (item.finalOnHand > 0 ? 'low' : 'low');
+    html += '<div class="item-card" onclick="showItemDetail(\'' + item.inventoryId + '\')">' +
+      '<div class="title">' + escapeHtml(item.description) + '</div>' +
+      '<div class="meta">' +
+        '<span>' + escapeHtml(item.category) + '</span>' +
+        '<span>' + escapeHtml(item.location) + '</span>' +
+        '<span>' + escapeHtml(item.inventoryId) + '</span>' +
+      '</div>' +
+      '<div class="qty-row">' +
+        '<div><div class="label">Final On-Hand</div><div class="value ' + stockClass + '">' + item.finalOnHand + ' ' + escapeHtml(item.baseUnit) + '</div></div>' +
+        '<div style="text-align:right"><div class="label">Unit Cost</div><div class="value">₱' + item.unitCost.toLocaleString() + '</div></div>' +
+      '</div>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+}
 
-document.querySelectorAll('.mo').forEach(function(o){o.addEventListener('click',function(e){if(e.target===o)o.classList.remove('on');});});
-document.getElementById('lp').addEventListener('keypress',function(e){if(e.key==='Enter')login();});
+function filterInventory() {
+  var term = document.getElementById('inv-search').value.toLowerCase();
+  var cards = document.querySelectorAll('.item-card');
+  cards.forEach(function(card) {
+    var text = card.textContent.toLowerCase();
+    card.style.display = text.includes(term) ? 'block' : 'none';
+  });
+}
 
-var DEMO_USERS=[{n:'admin',p:'admin123',r:'Admin'},{n:'warehouse',p:'warehouse123',r:'Warehouse'},{n:'supervisor',p:'supervisor123',r:'Supervisor'},{n:'Erwin',p:'erwin123',r:'Warehouse'}];
+function showItemDetail(id) {
+  var item = C.inventory.find(function(i) { return i.inventoryId === id; });
+  if (!item) return;
+
+  var content = document.getElementById('item-detail-content');
+  content.innerHTML = 
+    '<div class="detail-view">' +
+      '<div class="detail-header">' +
+        '<h2>' + escapeHtml(item.description) + '</h2>' +
+        '<div class="detail-id">' + escapeHtml(item.inventoryId) + '</div>' +
+      '</div>' +
+      '<div class="detail-grid">' +
+        '<div class="detail-item"><label>Category</label><value>' + escapeHtml(item.category) + '</value></div>' +
+        '<div class="detail-item"><label>Location</label><value>' + escapeHtml(item.location) + '</value></div>' +
+        '<div class="detail-item"><label>Base Unit</label><value>' + escapeHtml(item.baseUnit) + '</value></div>' +
+        '<div class="detail-item"><label>Unit Cost</label><value>₱' + item.unitCost.toLocaleString() + '</value></div>' +
+      '</div>' +
+      '<div class="stock-visual">' +
+        '<div class="sv-item onhand"><label>ON-HAND</label><value>' + item.onHand + '</value></div>' +
+        '<div class="sv-item in"><label>IN</label><value>' + item.stockIn + '</value></div>' +
+        '<div class="sv-item out"><label>OUT</label><value>' + item.stockOut + '</value></div>' +
+        '<div class="sv-item mrs"><label>MRS</label><value>' + item.mrs + '</value></div>' +
+        '<div class="sv-item final"><label>FINAL</label><value>' + item.finalOnHand + '</value></div>' +
+      '</div>' +
+      '<div style="background:#e3f2fd;padding:12px;border-radius:10px;margin-bottom:16px;font-size:.8rem;color:#1565c0;">' +
+        '<strong>Formula:</strong> FINAL ON-HAND = ON-HAND + IN - OUT + MRS<br>' +
+        '<strong>Note:</strong> ON-HAND is never modified by transactions. Only IN, OUT, and MRS columns update.' +
+      '</div>' +
+      '<button class="btn btn-primary" onclick="quickScan(\'' + item.inventoryId + '\')">📷 Scan & Transact</button>' +
+    '</div>';
+
+  document.getElementById('item-modal').classList.add('active');
+}
+
+function closeItemModal() {
+  document.getElementById('item-modal').classList.remove('active');
+}
+
+function closeModal(e) {
+  if (e.target === e.currentTarget) closeItemModal();
+}
+
+function quickScan(id) {
+  closeItemModal();
+  switchTab('scan');
+  setTimeout(function() {
+    onScanSuccess(id, null);
+  }, 500);
+}
+
+// ============================================================
+// SCANNER
+// ============================================================
+function startScanner() {
+  if (C.scannerActive) return;
+
+  var reader = document.getElementById('reader');
+  reader.innerHTML = '';
+
+  C.scanner = new Html5Qrcode('reader');
+
+  C.scanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+    onScanSuccess,
+    onScanFailure
+  ).then(function() {
+    C.scannerActive = true;
+    document.getElementById('scanner-laser').style.display = 'block';
+    document.getElementById('btn-start-scan').style.display = 'none';
+    document.getElementById('btn-stop-scan').style.display = 'block';
+    document.getElementById('btn-flash').style.display = 'block';
+    showToast('Scanner started - point at QR code', 'success');
+  }).catch(function(err) {
+    console.error('Scanner error:', err);
+    showToast('Camera error: ' + err.message, 'error');
+  });
+}
+
+function stopScanner() {
+  if (!C.scanner) return;
+
+  C.scanner.stop().then(function() {
+    C.scannerActive = false;
+    document.getElementById('scanner-laser').style.display = 'none';
+    document.getElementById('btn-start-scan').style.display = 'block';
+    document.getElementById('btn-stop-scan').style.display = 'none';
+    document.getElementById('btn-flash').style.display = 'none';
+    C.scanner = null;
+  }).catch(function(err) {
+    console.error('Stop error:', err);
+  });
+}
+
+function toggleFlash() {
+  if (!C.scanner) return;
+  C.flashOn = !C.flashOn;
+  C.scanner.applyVideoConstraints({ advanced: [{ torch: C.flashOn }] })
+    .then(function() {
+      showToast(C.flashOn ? 'Flashlight ON' : 'Flashlight OFF', 'success');
+    })
+    .catch(function() {
+      showToast('Flashlight not supported on this device', 'error');
+    });
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+  // Stop scanner immediately
+  stopScanner();
+
+  var scannedId = String(decodedText).trim();
+  console.log('Scanned:', scannedId);
+
+  // Find item
+  var item = C.inventory.find(function(i) {
+    return i.inventoryId === scannedId || i.qrCode === scannedId;
+  });
+
+  if (!item) {
+    // Try to fetch from backend or show not found
+    showScanResultNotFound(scannedId);
+    return;
+  }
+
+  showScanResult(item);
+}
+
+function onScanFailure(error) {
+  // Silent - scanning failures are normal
+}
+
+function showScanResult(item) {
+  var resultDiv = document.getElementById('scan-result');
+  resultDiv.style.display = 'block';
+
+  resultDiv.innerHTML = 
+    '<div class="scan-result">' +
+      '<div class="result-header">' +
+        '<div class="icon">✓</div>' +
+        '<h3>Item Found</h3>' +
+        '<button class="close-btn" onclick="closeScanResult()">&times;</button>' +
+      '</div>' +
+      '<div class="info-grid">' +
+        '<div class="info-item"><label>Inventory ID</label><value>' + escapeHtml(item.inventoryId) + '</value></div>' +
+        '<div class="info-item"><label>Category</label><value>' + escapeHtml(item.category) + '</value></div>' +
+        '<div class="info-item"><label>Location</label><value>' + escapeHtml(item.location) + '</value></div>' +
+        '<div class="info-item"><label>Base Unit</label><value>' + escapeHtml(item.baseUnit) + '</value></div>' +
+      '</div>' +
+      '<div style="background:#f8f9fa;padding:12px;border-radius:10px;margin-bottom:16px;">' +
+        '<div style="font-weight:600;margin-bottom:4px;">' + escapeHtml(item.description) + '</div>' +
+        '<div style="font-size:.8rem;color:var(--text2);">Unit Cost: ₱' + item.unitCost.toLocaleString() + '</div>' +
+      '</div>' +
+      '<div class="stock-bar">' +
+        '<div class="stock-pill onhand"><label>ON-HAND</label><value>' + item.onHand + '</value></div>' +
+        '<div class="stock-pill in"><label>IN</label><value>' + item.stockIn + '</value></div>' +
+        '<div class="stock-pill out"><label>OUT</label><value>' + item.stockOut + '</value></div>' +
+        '<div class="stock-pill mrs"><label>MRS</label><value>' + item.mrs + '</value></div>' +
+        '<div class="stock-pill final"><label>FINAL</label><value>' + item.finalOnHand + '</value></div>' +
+      '</div>' +
+      '<div class="tx-form">' +
+        '<label style="font-weight:600;margin-bottom:10px;display:block;">Select Transaction Type:</label>' +
+        '<div class="type-selector">' +
+          '<div class="type-btn in" onclick="selectTxType(this,\'Stock In\')">📥 Stock In</div>' +
+          '<div class="type-btn out" onclick="selectTxType(this,\'Stock Out\')">📤 Stock Out</div>' +
+          '<div class="type-btn mrs" onclick="selectTxType(this,\'MRS Return\')">🔄 MRS Return</div>' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label>Quantity</label>' +
+          '<div class="qty-stepper">' +
+            '<button onclick="adjustQty(-1)">−</button>' +
+            '<input type="number" id="tx-qty" value="1" min="1">' +
+            '<button onclick="adjustQty(1)">+</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label>Remarks (optional)</label>' +
+          '<textarea id="tx-remarks" rows="2" placeholder="Enter remarks..."></textarea>' +
+        '</div>' +
+        '<button class="btn btn-primary" onclick="submitTransaction(\'' + item.inventoryId + '\')" id="btn-submit-tx" disabled style="opacity:.5;">💾 Save Transaction</button>' +
+      '</div>' +
+    '</div>';
+
+  // Scroll to result
+  resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showScanResultNotFound(scannedId) {
+  var resultDiv = document.getElementById('scan-result');
+  resultDiv.style.display = 'block';
+  resultDiv.innerHTML = 
+    '<div class="scan-result">' +
+      '<div class="result-header">' +
+        '<div class="icon" style="background:var(--danger);">!</div>' +
+        '<h3>Item Not Found</h3>' +
+        '<button class="close-btn" onclick="closeScanResult()">&times;</button>' +
+      '</div>' +
+      '<p style="color:var(--text2);margin-bottom:16px;">Scanned code: <code>' + escapeHtml(scannedId) + '</code></p>' +
+      '<p style="color:var(--text2);margin-bottom:16px;">This item is not in the inventory database.</p>' +
+      '<button class="btn btn-primary" onclick="closeScanResult()">🔄 Scan Again</button>' +
+    '</div>';
+}
+
+function closeScanResult() {
+  document.getElementById('scan-result').style.display = 'none';
+  // Auto-restart scanner after closing
+  setTimeout(function() {
+    startScanner();
+  }, 500);
+}
+
+var selectedTxType = '';
+
+function selectTxType(el, type) {
+  selectedTxType = type;
+  document.querySelectorAll('.type-btn').forEach(function(btn) {
+    btn.classList.remove('active');
+  });
+  el.classList.add('active');
+  document.getElementById('btn-submit-tx').disabled = false;
+  document.getElementById('btn-submit-tx').style.opacity = '1';
+}
+
+function adjustQty(delta) {
+  var input = document.getElementById('tx-qty');
+  var val = parseInt(input.value) || 0;
+  val += delta;
+  if (val < 1) val = 1;
+  input.value = val;
+}
+
+function submitTransaction(inventoryId) {
+  var qty = parseInt(document.getElementById('tx-qty').value) || 0;
+  var remarks = document.getElementById('tx-remarks').value.trim();
+  var btn = document.getElementById('btn-submit-tx');
+
+  if (!selectedTxType) {
+    showToast('Please select a transaction type', 'error');
+    return;
+  }
+  if (qty < 1) {
+    showToast('Quantity must be at least 1', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Saving...';
+
+  var payload = {
+    action: 'transaction',
+    inventoryId: inventoryId,
+    type: selectedTxType,
+    qty: qty,
+    user: C.currentUser ? C.currentUser.username : 'unknown',
+    remarks: remarks
+  };
+
+  if (C.demo) {
+    // Demo mode - update locally
+    setTimeout(function() {
+      var item = C.inventory.find(function(i) { return i.inventoryId === inventoryId; });
+      if (item) {
+        if (selectedTxType === 'Stock In') {
+          item.stockIn += qty;
+        } else if (selectedTxType === 'Stock Out') {
+          item.stockOut += qty;
+        } else if (selectedTxType === 'MRS Return') {
+          item.mrs += qty;
+        }
+        item.finalOnHand = item.onHand + item.stockIn - item.stockOut + item.mrs;
+
+        C.transactions.unshift({
+          date: new Date().toISOString().replace('T',' ').slice(0,19),
+          inventoryId: inventoryId,
+          description: item.description,
+          type: selectedTxType,
+          qty: qty,
+          balance: item.finalOnHand,
+          user: C.currentUser.username,
+          remarks: remarks
+        });
+
+        renderInventory();
+        renderTransactions();
+        renderDashboard();
+      }
+
+      showToast(selectedTxType + ' of ' + qty + ' saved!', 'success');
+      closeScanResult();
+      selectedTxType = '';
+    }, 800);
+    return;
+  }
+
+  // Live mode - send to backend
+  fetch(C.api, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function() {
+    // no-cors, assume success and refresh
+    showToast('Transaction saved! Refreshing...', 'success');
+    setTimeout(function() {
+      loadInventory();
+      loadTransactions();
+      closeScanResult();
+      selectedTxType = '';
+    }, 1500);
+  }).catch(function(err) {
+    console.error('Transaction error:', err);
+    showToast('Error saving transaction', 'error');
+    btn.disabled = false;
+    btn.textContent = '💾 Save Transaction';
+  });
+}
+
+// ============================================================
+// TRANSACTIONS RENDER
+// ============================================================
+function renderTransactions() {
+  var container = document.getElementById('transactions-list');
+  if (!C.transactions || C.transactions.length === 0) {
+    container.innerHTML = '<div class="empty-state"><h3>No transactions yet</h3><p>Transactions will appear here</p></div>';
+    return;
+  }
+
+  var html = '';
+  C.transactions.forEach(function(tx) {
+    var iconClass = tx.type === 'Stock In' ? 'in' : (tx.type === 'Stock Out' ? 'out' : 'mrs');
+    var qtyClass = iconClass;
+    var sign = tx.type === 'Stock Out' ? '-' : '+';
+    html += '<div class="tx-card">' +
+      '<div class="tx-icon ' + iconClass + '">' + sign + '</div>' +
+      '<div class="tx-info">' +
+        '<div class="tx-title">' + escapeHtml(tx.description || tx.inventoryId) + '</div>' +
+        '<div class="tx-meta">' + escapeHtml(tx.type) + ' • ' + escapeHtml(tx.date) + ' • by ' + escapeHtml(tx.user) + '</div>' +
+      '</div>' +
+      '<div class="tx-qty">' +
+        '<div class="qty-val ' + qtyClass + '">' + sign + tx.qty + '</div>' +
+        '<div class="qty-label">Bal: ' + tx.balance + '</div>' +
+      '</div>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  if (!C.inventory) return;
+
+  var totalItems = C.inventory.length;
+  var categories = {};
+  var totalValue = 0;
+  var totalTx = C.transactions ? C.transactions.length : 0;
+
+  C.inventory.forEach(function(item) {
+    var cat = item.category || 'Unknown';
+    categories[cat] = (categories[cat] || 0) + (item.finalOnHand || 0);
+    totalValue += (item.finalOnHand || 0) * (item.unitCost || 0);
+  });
+
+  document.getElementById('stat-total').textContent = totalItems;
+  document.getElementById('stat-categories').textContent = Object.keys(categories).length;
+  document.getElementById('stat-tx').textContent = totalTx;
+  document.getElementById('stat-value').textContent = '₱' + totalValue.toLocaleString();
+
+  // Category Chart
+  var catCtx = document.getElementById('catChart');
+  if (catCtx) {
+    if (C.charts.cat) C.charts.cat.destroy();
+    C.charts.cat = new Chart(catCtx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(categories),
+        datasets: [{
+          data: Object.values(categories),
+          backgroundColor: ['#1a73e8', '#34a853', '#fbbc04', '#ea4335', '#9c27b0', '#00bcd4']
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+      }
+    });
+  }
+
+  // Transaction Chart
+  var txCtx = document.getElementById('txChart');
+  if (txCtx && C.transactions && C.transactions.length > 0) {
+    var txByDate = {};
+    C.transactions.slice(0, 30).reverse().forEach(function(tx) {
+      var d = tx.date ? tx.date.split(' ')[0] : '';
+      if (!txByDate[d]) txByDate[d] = {in:0,out:0,mrs:0};
+      if (tx.type === 'Stock In') txByDate[d].in += tx.qty;
+      else if (tx.type === 'Stock Out') txByDate[d].out += tx.qty;
+      else if (tx.type === 'MRS Return') txByDate[d].mrs += tx.qty;
+    });
+
+    var labels = Object.keys(txByDate);
+    if (C.charts.tx) C.charts.tx.destroy();
+    C.charts.tx = new Chart(txCtx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Stock In', data: labels.map(function(l) { return txByDate[l].in; }), backgroundColor: '#34a853' },
+          { label: 'Stock Out', data: labels.map(function(l) { return txByDate[l].out; }), backgroundColor: '#ea4335' },
+          { label: 'MRS Return', data: labels.map(function(l) { return txByDate[l].mrs; }), backgroundColor: '#fbbc04' }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+      }
+    });
+  }
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+
+  document.getElementById('page-' + tab).classList.add('active');
+  var tabIndex = ['inventory','scan','transactions','dashboard','settings'].indexOf(tab);
+  if (tabIndex >= 0) {
+    document.querySelectorAll('.tab-btn')[tabIndex].classList.add('active');
+  }
+
+  if (tab === 'scan') {
+    // Don't auto-start, let user click start
+  } else {
+    stopScanner();
+  }
+
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'transactions' && !C.demo) loadTransactions();
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function saveApiUrl() {
+  var url = document.getElementById('api-url').value.trim();
+  if (!url) {
+    showToast('Please enter a URL', 'error');
+    return;
+  }
+  C.api = url;
+  localStorage.setItem('gemcor_api_url', url);
+  showToast('API URL saved', 'success');
+}
+
+function testConnection() {
+  var status = document.getElementById('conn-status');
+  status.textContent = 'Testing...';
+  status.className = 'status-msg';
+
+  fetch(C.api + '?action=test')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        status.textContent = '✅ Connected to backend!';
+        status.className = 'status-msg success';
+        C.demo = false;
+        loadInventory();
+        loadTransactions();
+      } else {
+        throw new Error(data.error);
+      }
+    })
+    .catch(function(err) {
+      status.textContent = '❌ Connection failed: ' + err.message;
+      status.className = 'status-msg error';
+    });
+}
+
+function testConnectionSilent() {
+  fetch(C.api + '?action=test')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        C.demo = false;
+        console.log('Backend connected');
+      }
+    })
+    .catch(function(err) {
+      console.log('Backend not available, demo mode');
+    });
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function showToast(msg, type) {
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast ' + (type || '');
+  toast.classList.add('show');
+  setTimeout(function() {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  var div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
 </script>
 </body>
 </html>
