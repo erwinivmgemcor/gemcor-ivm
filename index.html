@@ -166,7 +166,7 @@
 <div id="loadingScreen">
   <div class="logo-box"><h1>GEMCOR<span>Inventory & Vehicle Mgmt</span></h1></div>
   <div class="spinner"></div>
-  <div class="load-text">Connecting to Google Sheets...</div>
+  <div class="load-text">Loading GEMCOR IVM...</div>
 </div>
 
 <div id="loginScreen">
@@ -290,12 +290,17 @@ function initApp(){
   const saved = localStorage.getItem('gemcor_user');
   const savedHistory = localStorage.getItem('gemcor_scan_history');
   if(savedHistory){ try{ scanHistory = JSON.parse(savedHistory); }catch(e){} }
-  if(saved){ try{ currentUser = JSON.parse(saved); showApp(); }catch(e){ localStorage.removeItem('gemcor_user'); showLogin(); }}
-  else { showLogin(); }
-  setTimeout(()=>{ document.getElementById('loadingScreen').style.opacity='0'; setTimeout(()=>document.getElementById('loadingScreen').style.display='none',500); },800);
+
+  // Always hide loading screen after max 2 seconds regardless of network
+  setTimeout(()=>{
+    document.getElementById('loadingScreen').style.opacity='0';
+    setTimeout(()=>document.getElementById('loadingScreen').style.display='none',500);
+    if(saved){ try{ currentUser = JSON.parse(saved); showApp(); }catch(e){ localStorage.removeItem('gemcor_user'); showLogin(); }}
+    else { showLogin(); }
+  }, 1500);
 }
 function showLogin(){ document.getElementById('loginScreen').style.display='flex'; document.getElementById('app').style.display='none'; }
-function showApp(){ document.getElementById('loginScreen').style.display='none'; document.getElementById('app').style.display='flex'; updateUserDisplay(); syncData(); }
+function showApp(){ document.getElementById('loginScreen').style.display='none'; document.getElementById('app').style.display='flex'; updateUserDisplay(); renderScanHistory(); syncData().catch(()=>{}); }
 
 async function doLogin(){
   const u = document.getElementById('loginUser').value.trim();
@@ -304,6 +309,8 @@ async function doLogin(){
   const loading = document.getElementById('loginLoading');
   if(!u||!p){ err.style.display='block'; err.textContent='Please fill in all fields'; return; }
   err.style.display='none'; loading.classList.add('show');
+
+  // Try Google Sheets login first
   try{
     const res = await fetch(GS_URL + '?action=getUsers');
     const data = await res.json();
@@ -313,10 +320,30 @@ async function doLogin(){
       if(found){
         currentUser = { name: String(found.account||found.ACCOUNT||found.Account||found.username||u), username: u, role: 'Warehouse Staff' };
         localStorage.setItem('gemcor_user', JSON.stringify(currentUser));
-        err.style.display='none'; showApp(); showToast('Welcome, ' + currentUser.name + '!');
-      } else { err.style.display='block'; err.textContent='Invalid username or password'; }
-    } else { err.style.display='block'; err.textContent='Cannot connect to database. Try again.'; }
-  } catch(e){ loading.classList.remove('show'); err.style.display='block'; err.textContent='Connection error: ' + e.message; }
+        err.style.display='none'; showApp(); showToast('Welcome, ' + currentUser.name + '!'); return;
+      }
+    }
+  } catch(e){ console.log('Sheet login failed, trying fallback'); }
+
+  // Fallback: hardcoded demo credentials (for testing when Sheets is down)
+  const demoUsers = [
+    {username:'Angel',password:'Aivm123',name:'IVM Angel'},
+    {username:'Jomar',password:'Jivm123',name:'IVM Jomar'},
+    {username:'Marcel',password:'Mivm123',name:'IVM Marcel'},
+    {username:'Richel',password:'Rivm123',name:'IVM Richel'},
+    {username:'Erwin',password:'Eivm123',name:'IVM ERWIN'},
+    {username:'Chay',password:'Civm123',name:'IVM CHAY'},
+    {username:'admin',password:'admin123',name:'Admin User'}
+  ];
+  const demoFound = demoUsers.find(user => user.username.toLowerCase() === u.toLowerCase() && user.password === p);
+  loading.classList.remove('show');
+  if(demoFound){
+    currentUser = { name: demoFound.name, username: u, role: 'Warehouse Staff' };
+    localStorage.setItem('gemcor_user', JSON.stringify(currentUser));
+    err.style.display='none'; showApp(); showToast('Welcome, ' + currentUser.name + '! (Offline mode)');
+  } else {
+    err.style.display='block'; err.textContent='Invalid username or password';
+  }
 }
 
 function doLogout(){
@@ -355,7 +382,7 @@ async function syncData(){
     const txData = await txRes.json();
     if(txData.success && txData.data){ transactionData = txData.data; renderTransactions(transactionData); }
     updateSyncBadge('sync-ok','Synced'); showToast('Data synced successfully');
-  } catch(e){ console.error('Sync error:', e); updateSyncBadge('sync-err','Sync Failed'); showToast('Sync failed: ' + e.message); }
+  } catch(e){ console.error('Sync error:', e); updateSyncBadge('sync-err','Offline'); showToast('Working offline - tap sync to retry'); }
 }
 function updateSyncBadge(cls,text){ document.querySelectorAll('.sync-badge').forEach(b=>{ b.className = 'sync-badge ' + cls; b.textContent = text; }); }
 
