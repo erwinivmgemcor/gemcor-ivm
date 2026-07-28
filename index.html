@@ -307,6 +307,15 @@ html,body{height:100%;font-family:'Inter',system-ui,-apple-system,sans-serif;bac
 <div class="toast" id="toast"></div>
 
 <script>
+// Global error handler - shows errors on screen for debugging
+window.onerror = function(msg, url, line, col, error){
+  var errDiv = document.createElement('div');
+  errDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#f05252;color:#fff;padding:12px;font-size:13px;font-family:monospace;white-space:pre-wrap;word-break:break-all;';
+  errDiv.textContent = 'JS ERROR: ' + msg + ' at line ' + line;
+  document.body.appendChild(errDiv);
+  setTimeout(function(){ errDiv.remove(); }, 5000);
+  return false;
+};
 const GS_URL = 'https://script.google.com/macros/s/AKfycbxwRn8nlfMMj-7IARV70GRzkrHNe6eo6mzvYgzQF1c2PVi_nkEWOwGAHOHHORq2zZqk/exec';
 let currentUser = null;
 let html5QrCode = null;
@@ -318,15 +327,25 @@ let inventoryData = [];
 let transactionData = [];
 let scanHistory = [];
 
-// CRITICAL: Show login immediately when loading screen fades
-// The loading screen fades via CSS animation after 2 seconds
-setTimeout(function(){
-  const saved = localStorage.getItem('gemcor_user');
-  const savedHistory = localStorage.getItem('gemcor_scan_history');
+// CRITICAL: Hide loading screen completely after animation, then show login
+var loadingScreen = document.getElementById('loadingScreen');
+loadingScreen.addEventListener('animationend', function(){
+  loadingScreen.style.display = 'none';
+  var saved = localStorage.getItem('gemcor_user');
+  var savedHistory = localStorage.getItem('gemcor_scan_history');
   if(savedHistory){ try{ scanHistory = JSON.parse(savedHistory); }catch(e){} }
   if(saved){ try{ currentUser = JSON.parse(saved); showApp(); }catch(e){ localStorage.removeItem('gemcor_user'); showLogin(); }}
   else { showLogin(); }
-}, 2500);
+});
+// Backup: force hide after 4 seconds
+setTimeout(function(){
+  loadingScreen.style.display = 'none';
+  if(document.getElementById('loginScreen').style.display !== 'flex' && document.getElementById('app').style.display !== 'flex'){
+    var saved = localStorage.getItem('gemcor_user');
+    if(saved){ try{ currentUser = JSON.parse(saved); showApp(); }catch(e){ showLogin(); }}
+    else { showLogin(); }
+  }
+}, 4000);
 
 function showLogin(){ document.getElementById('loginScreen').style.display='flex'; document.getElementById('app').style.display='none'; }
 function showApp(){ document.getElementById('loginScreen').style.display='none'; document.getElementById('app').style.display='flex'; updateUserDisplay(); renderScanHistory(); syncData().catch(function(){}); }
