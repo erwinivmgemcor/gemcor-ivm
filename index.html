@@ -175,7 +175,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
   <div class="splash-title">GEMCOR IVM</div>
   <div class="splash-subtitle">Inventory Management Pro</div>
   <div class="splash-progress"><div class="splash-progress-bar"></div></div>
-  <div class="splash-version">v3.1 Bulletproof</div>
+  <div class="splash-version">v3.2 Fixed</div>
 </div>
 <div id="login-screen">
   <div class="login-card">
@@ -273,7 +273,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
     <div class="manual-scan">
       <label><i class="fas fa-keyboard" style="margin-right:4px"></i>Manual Entry</label>
       <div class="input-row">
-        <input type="text" id="manualCode" placeholder="Enter item code..." onkeypress="if(event.key==='Enter')manualLookup()">
+        <input type="text" id="manualCode" placeholder="Search by code, name, or description..." onkeypress="if(event.key==='Enter')manualLookup()">
         <button class="btn-primary" onclick="manualLookup()" style="width:auto;padding:12px 18px"><i class="fas fa-search"></i></button>
       </div>
     </div>
@@ -317,7 +317,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
         <div class="detail-row"><span class="label">Last Sync</span><span class="value" id="lastSyncTime">Never</span></div>
         <div class="detail-row"><span class="label">Cached Items</span><span class="value" id="cachedCount">0</span></div>
         <div class="detail-row"><span class="label">Pending</span><span class="value" id="pendingCount">0</span></div>
-        <div class="detail-row"><span class="label">Version</span><span class="value">v3.1</span></div>
+        <div class="detail-row"><span class="label">Version</span><span class="value">v3.2</span></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -327,12 +327,11 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
   </div>
 </div>
 <script>
-var GS_URL='https://script.google.com/macros/s/AKfycbxwRn8nlfMMj-7IARV70GRzkrHNe6eo6mzvYgzQF1c2PVi_nkEWOwGAHOHHORq2zZqk/exec';
+var GS_URL='https://script.google.com/macros/s/AKfycbwxZQPSNFqAmRb9OcHLY-BFEtNxad5QmL3oxiYVenUr-5JnTBuE7FnDVLEQRwundtAY/exec';
 var FALLBACK_USERS={'Angel':'Aivm123','Jomar':'Jivm123','Marcel':'Mivm123','Richel':'Rivm123','Erwin':'Eivm123','Chay':'Civm123','admin':'admin123'};
 var currentUser=null,inventoryData=[],historyData=[],selectedItem=null,html5QrCode=null,isScanning=false,lastSync=null;
 var activeCategory='All',searchTimeout=null,autoSyncInterval=null,pendingQueue=[];
 
-// HARD KILL SWITCH - splash dies after 2.5s no matter what
 setTimeout(function(){
   var splash=document.getElementById('splash');
   if(splash){splash.classList.add('done');setTimeout(function(){splash.classList.add('removed');splash.style.display='none'},700)}
@@ -404,12 +403,17 @@ function autoSync(){
       inventoryData=data.items;lastSync=new Date();saveCachedData();
       renderInventory();updateStats();renderBarChart();renderCategoryChips();
       showSyncStatus(false);showToast('Inventory synced','success');haptic()
-    }else{showSyncStatus(false);if(inventoryData.length===0)showToast('Sync failed. Using cached data.','warning')}
+    }else{
+      showSyncStatus(false);
+      if(inventoryData.length===0)showToast('Sync failed. Using cached data.','warning')
+    }
   };
   script.src=GS_URL+'?action=getInventory&callback='+cb+'&_='+Date.now();
   script.onerror=function(){
     delete window[cb];if(script.parentNode)script.parentNode.removeChild(script);
-    showSyncStatus(false);showToast('Offline mode','warning');renderInventory();updateStats();renderBarChart()
+    showSyncStatus(false);
+    if(inventoryData.length===0)showToast('Offline mode','warning');
+    renderInventory();updateStats();renderBarChart()
   };
   setTimeout(function(){
     if(window[cb]){delete window[cb];if(script.parentNode)script.parentNode.removeChild(script);showSyncStatus(false);renderInventory();updateStats();renderBarChart()}
@@ -423,8 +427,7 @@ function showSyncStatus(show){document.getElementById('syncStatus').classList.to
 function queueAction(action,data){
   pendingQueue.push({action:action,data:data,time:Date.now()});
   localStorage.setItem('gemcor_pending',JSON.stringify(pendingQueue));
-  document.getElementById('pendingCount').textContent=pendingQueue.length;
-  showToast('Action queued for sync','warning')
+  document.getElementById('pendingCount').textContent=pendingQueue.length
 }
 function processPendingQueue(){
   var stored=localStorage.getItem('gemcor_pending');
@@ -466,6 +469,14 @@ function getFilteredInventory(){
   return filtered
 }
 
+// ===== FIX #1: Clean display code - skip "Cellimage" =====
+function cleanCode(code){
+  if(!code)return'';
+  var s=String(code).trim();
+  if(s.toLowerCase()==='cellimage')return'';
+  return s
+}
+
 function renderInventory(){
   var container=document.getElementById('inventoryList');
   var filtered=getFilteredInventory();
@@ -482,7 +493,9 @@ function renderInventory(){
     var badgeClass=status==='Out'?'badge-out':(item.qty<5?'badge-low':'badge-in');
     var badgeText=status==='Out'?'OUT':(item.qty<5?'LOW':'IN');
     var icon=getItemIcon(item.category);
-    html+='<div class="inventory-item" onclick="openItemDetail('+i+')"><div class="item-img">'+icon+'</div><div class="item-info"><h4>'+escapeHtml(item.name||'Unnamed')+'</h4><div class="item-meta">'+escapeHtml(item.code||'N/A')+' &bull; '+escapeHtml(item.location||'N/A')+' &bull; Qty: '+(item.qty||0)+'</div></div><div class="item-badge '+badgeClass+'">'+badgeText+'</div></div>'
+    var codeDisplay=cleanCode(item.code);
+    var metaLine=(codeDisplay?escapeHtml(codeDisplay)+' &bull; ':'')+escapeHtml(item.location||'N/A')+' &bull; Qty: '+(item.qty||0);
+    html+='<div class="inventory-item" onclick="openItemDetail('+i+')"><div class="item-img">'+icon+'</div><div class="item-info"><h4>'+escapeHtml(item.name||'Unnamed')+'</h4><div class="item-meta">'+metaLine+'</div></div><div class="item-badge '+badgeClass+'">'+badgeText+'</div></div>'
   }
   container.innerHTML=html
 }
@@ -526,7 +539,8 @@ function openItemDetail(index){
   var filtered=getFilteredInventory();selectedItem=filtered[index];if(!selectedItem)return;
   var body=document.getElementById('modalBody');
   var icon=getItemIcon(selectedItem.category);
-  body.innerHTML='<div style="text-align:center;margin-bottom:16px"><div style="width:72px;height:72px;background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(6,182,212,0.2));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 10px">'+icon+'</div><h3 style="font-size:17px;font-weight:800">'+escapeHtml(selectedItem.name||'Unnamed')+'</h3><p style="color:var(--text-muted);font-size:13px">'+escapeHtml(selectedItem.code||'N/A')+'</p></div>'+
+  var codeDisplay=cleanCode(selectedItem.code);
+  body.innerHTML='<div style="text-align:center;margin-bottom:16px"><div style="width:72px;height:72px;background:linear-gradient(135deg,rgba(16,185,129,0.2),rgba(6,182,212,0.2));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 10px">'+icon+'</div><h3 style="font-size:17px;font-weight:800">'+escapeHtml(selectedItem.name||'Unnamed')+'</h3>'+(codeDisplay?'<p style="color:var(--text-muted);font-size:13px">'+escapeHtml(codeDisplay)+'</p>':'')+'</div>'+
     '<div class="detail-row"><span class="label">Category</span><span class="value">'+escapeHtml(selectedItem.category||'General')+'</span></div>'+
     '<div class="detail-row"><span class="label">Location</span><span class="value">'+escapeHtml(selectedItem.location||'N/A')+'</span></div>'+
     '<div class="detail-row"><span class="label">Quantity</span><span class="value" style="color:'+((selectedItem.qty||0)<5?'var(--warning)':'var(--success)')+'">'+(selectedItem.qty||0)+'</span></div>'+
@@ -535,7 +549,42 @@ function openItemDetail(index){
   document.getElementById('itemModal').classList.add('active')
 }
 function closeModal(){document.getElementById('itemModal').classList.remove('active');selectedItem=null}
-function checkoutItem(){if(!selectedItem)return;queueAction('checkout',{code:selectedItem.code,user:currentUser});closeModal()}
+
+// ===== FIX #2: Real checkout - sends to server =====
+function checkoutItem(){
+  if(!selectedItem)return;
+  var code=selectedItem.code;
+  var amount=1;
+  haptic();
+
+  // Try to send to server immediately
+  var script=document.createElement('script');
+  var cb='checkoutCB_'+Date.now();
+  window[cb]=function(res){
+    delete window[cb];if(script.parentNode)script.parentNode.removeChild(script);
+    if(res&&res.success){
+      showToast('Checked out successfully','success');
+      selectedItem.qty=Math.max(0,(selectedItem.qty||0)-amount);
+      if(selectedItem.qty===0)selectedItem.status='Out';
+      saveCachedData();renderInventory();updateStats();closeModal()
+    }else{
+      showToast('Server error: '+(res&&res.message?res.message:'Unknown'),'error');
+      queueAction('checkout',{code:code,user:currentUser,amount:amount});
+      closeModal()
+    }
+  };
+  script.src=GS_URL+'?action=checkout&code='+encodeURIComponent(code)+'&amount='+amount+'&user='+encodeURIComponent(currentUser)+'&callback='+cb+'&_='+Date.now();
+  script.onerror=function(){
+    delete window[cb];if(script.parentNode)script.parentNode.removeChild(script);
+    showToast('Offline - queued for sync','warning');
+    queueAction('checkout',{code:code,user:currentUser,amount:amount});
+    closeModal()
+  };
+  setTimeout(function(){
+    if(window[cb]){delete window[cb];if(script.parentNode)script.parentNode.removeChild(script);showToast('Checkout timed out - queued','warning');queueAction('checkout',{code:code,user:currentUser,amount:amount});closeModal()}
+  },6000);
+  document.head.appendChild(script)
+}
 
 function startScanner(){
   if(isScanning)return;
@@ -576,21 +625,42 @@ function toggleTorch(){
     document.getElementById('torchBtn').style.color=torchOn?'var(--warning)':'white'
   }
 }
+
+// ===== FIX #3: Scanner searches name, code, description =====
 function manualLookup(){
-  var code=document.getElementById('manualCode').value.trim();
-  if(!code){showToast('Please enter a code','warning');return}
-  lookupByCode(code)
+  var query=document.getElementById('manualCode').value.trim();
+  if(!query){showToast('Please enter a search term','warning');return}
+  lookupByCode(query)
 }
-function lookupByCode(code){
+function lookupByCode(query){
+  var q=query.toLowerCase().trim();
   var found=null;
-  for(var i=0;i<inventoryData.length;i++){if((inventoryData[i].code||'').toLowerCase()===code.toLowerCase()){found=inventoryData[i];found._index=i;break}}
-  addToHistory(code,!!found);
+  // First: exact code match
+  for(var i=0;i<inventoryData.length;i++){
+    var code=cleanCode(inventoryData[i].code);
+    if(code&&code.toLowerCase()===q){found=inventoryData[i];found._index=i;break}
+  }
+  // Second: fuzzy search on name, code, description
+  if(!found){
+    var matches=[];
+    for(var i=0;i<inventoryData.length;i++){
+      var item=inventoryData[i];
+      var text=(item.name+' '+cleanCode(item.code)+' '+(item.description||'')+' '+(item.location||'')).toLowerCase();
+      if(text.indexOf(q)!==-1){item._index=i;matches.push(item)}
+    }
+    if(matches.length===1){found=matches[0]}
+    else if(matches.length>1){
+      showToast(matches.length+' matches found - showing first','info');
+      found=matches[0]
+    }
+  }
+  addToHistory(query,!!found);
   if(found){selectedItem=found;openItemDetail(found._index);showToast('Found: '+found.name,'success');haptic()}
-  else{showToast('Not found: '+code,'error')}
+  else{showToast('Not found: '+query,'error')}
 }
 
-function addToHistory(code,found){
-  historyData.unshift({code:code,found:found,time:new Date().toISOString(),user:currentUser});
+function addToHistory(query,found){
+  historyData.unshift({query:query,found:found,time:new Date().toISOString(),user:currentUser});
   if(historyData.length>50)historyData=historyData.slice(0,50);
   saveCachedData();renderHistory();renderRecentActivity()
 }
@@ -600,7 +670,7 @@ function renderHistory(){
   var html='';
   for(var i=0;i<historyData.length;i++){
     var h=historyData[i],dotColor=h.found?'var(--success)':'var(--danger)',icon=h.found?'fa-check':'fa-xmark',timeStr=formatTime(new Date(h.time));
-    html+='<div class="history-item"><div class="history-dot" style="background:'+dotColor+'"></div><div class="history-content"><h4><i class="fas '+icon+'" style="margin-right:6px;color:'+dotColor+'"></i>'+escapeHtml(h.code)+'</h4><p>'+(h.found?'Item found':'Item not found')+' by '+h.user+'</p></div><div class="history-time">'+timeStr+'</div></div>'
+    html+='<div class="history-item"><div class="history-dot" style="background:'+dotColor+'"></div><div class="history-content"><h4><i class="fas '+icon+'" style="margin-right:6px;color:'+dotColor+'"></i>'+escapeHtml(h.query)+'</h4><p>'+(h.found?'Item found':'Item not found')+' by '+h.user+'</p></div><div class="history-time">'+timeStr+'</div></div>'
   }
   container.innerHTML=html
 }
@@ -611,7 +681,7 @@ function renderRecentActivity(){
   var html='';
   for(var i=0;i<recent.length;i++){
     var h=recent[i],dotColor=h.found?'var(--success)':'var(--danger)',icon=h.found?'fa-check':'fa-xmark',timeStr=formatTime(new Date(h.time));
-    html+='<div class="history-item"><div class="history-dot" style="background:'+dotColor+'"></div><div class="history-content"><h4><i class="fas '+icon+'" style="margin-right:6px;color:'+dotColor+'"></i>'+escapeHtml(h.code)+'</h4><p>'+(h.found?'Found':'Not found')+' &bull; '+timeStr+'</p></div></div>'
+    html+='<div class="history-item"><div class="history-dot" style="background:'+dotColor+'"></div><div class="history-content"><h4><i class="fas '+icon+'" style="margin-right:6px;color:'+dotColor+'"></i>'+escapeHtml(h.query)+'</h4><p>'+(h.found?'Found':'Not found')+' &bull; '+timeStr+'</p></div></div>'
   }
   container.innerHTML=html
 }
@@ -651,7 +721,7 @@ function exportCSV(){
   var csv='Name,Code,Category,Location,Quantity,Status,Description\n';
   for(var i=0;i<inventoryData.length;i++){
     var item=inventoryData[i];
-    csv+='"'+(item.name||'')+'","'+(item.code||'')+'","'+(item.category||'')+'","'+(item.location||'')+'","'+(item.qty||0)+'","'+(item.status||'')+'","'+(item.description||'')+'"\n'
+    csv+='"'+(item.name||'')+'","'+(cleanCode(item.code))+'","'+(item.category||'')+'","'+(item.location||'')+'","'+(item.qty||0)+'","'+(item.status||'')+'","'+(item.description||'')+'"\n'
   }
   var blob=new Blob([csv],{type:'text/csv'});
   var url=URL.createObjectURL(blob);
@@ -661,8 +731,8 @@ function exportCSV(){
 
 function exportHistoryCSV(){
   if(historyData.length===0){showToast('No history to export','warning');return}
-  var csv='Time,Code,Found,User\n';
-  for(var i=0;i<historyData.length;i++){var h=historyData[i];csv+='"'+h.time+'","'+h.code+'","'+h.found+'","'+h.user+'"\n'}
+  var csv='Time,Query,Found,User\n';
+  for(var i=0;i<historyData.length;i++){var h=historyData[i];csv+='"'+h.time+'","'+h.query+'","'+h.found+'","'+h.user+'"\n'}
   var blob=new Blob([csv],{type:'text/csv'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');a.href=url;a.download='gemcor_history_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
