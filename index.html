@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d6efd">
+  <title>Warehouse QR Scanner</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    :root { --primary-color: #0d6efd; --success-color: #198754; --danger-color: #dc3545; --bg-color: #f0f2f5; }
+    body { background-color: var(--bg-color); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
+    .navbar-brand { font-weight: 700; letter-spacing: -0.5px; }
+    .module-btn { border-width: 2px; border-radius: 12px; padding: 14px 8px; font-weight: 600; transition: all 0.2s ease; font-size: 0.85rem; line-height: 1.3; min-height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+    .module-btn .emoji { font-size: 1.4rem; line-height: 1; }
+    .module-btn.active-module { background-color: var(--primary-color) !important; color: white !important; border-color: var(--primary-color) !important; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(13,110,253,0.3); }
+    .module-btn:not(.active-module):hover { background-color: rgba(13,110,253,0.05); transform: translateY(-1px); }
+    .card { border: none; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; }
+    .card-header { border-bottom: 1px solid rgba(0,0,0,0.05); padding: 14px 18px; font-weight: 600; }
+    .card-header h6 { font-weight: 700; font-size: 0.95rem; color: #2c3e50; }
+    .scanner-wrapper { position: relative; background: #000; border-radius: 0 0 16px 16px; overflow: hidden; }
+    #reader { width: 100% !important; min-height: 280px; }
+    #reader video { border-radius: 0 0 16px 16px; object-fit: cover; }
+    .scanner-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 10; }
+    .scanner-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 220px; height: 220px; border: 2px solid rgba(255,255,255,0.3); border-radius: 16px; }
+    .scanner-frame::before, .scanner-frame::after { content: ''; position: absolute; width: 24px; height: 24px; border-color: #00ff88; border-style: solid; }
+    .scanner-frame::before { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-top-left-radius: 12px; }
+    .scanner-frame::after { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-bottom-right-radius: 12px; }
+    .scan-line { position: absolute; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, transparent, #00ff88, transparent); box-shadow: 0 0 8px #00ff88, 0 0 16px rgba(0,255,136,0.4); animation: scanMove 2.2s ease-in-out infinite; }
+    @keyframes scanMove { 0%,100% { top: 15%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 50% { top: 85%; } }
+    .scanner-label { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 500; backdrop-filter: blur(4px); }
+    .item-row { padding: 14px 18px; border-left: 4px solid transparent; transition: all 0.3s ease; cursor: default; }
+    .item-row.verified { background-color: #d1e7dd !important; border-left-color: var(--success-color); }
+    .item-row.verified .item-id { color: var(--success-color); }
+    .item-row.verified .status-badge { background-color: var(--success-color) !important; }
+    .item-id { font-family: 'SF Mono', Monaco, monospace; font-weight: 700; font-size: 0.95rem; color: #2c3e50; letter-spacing: -0.3px; }
+    .item-desc { font-size: 0.82rem; color: #6c757d; margin-top: 2px; }
+    .status-badge { font-size: 0.7rem; padding: 5px 10px; border-radius: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+    .qty-badge { background-color: #e9ecef; color: #495057; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px; font-weight: 600; }
+    .submit-btn { border-radius: 12px; font-weight: 700; font-size: 1.05rem; padding: 14px; letter-spacing: 0.3px; transition: all 0.3s ease; }
+    .submit-btn:not(:disabled) { animation: pulseBtn 2s infinite; }
+    @keyframes pulseBtn { 0%,100% { box-shadow: 0 0 0 0 rgba(25,135,84,0.4); } 50% { box-shadow: 0 0 0 10px rgba(25,135,84,0); } }
+    .progress { border-radius: 10px; background-color: #e9ecef; }
+    .progress-bar { border-radius: 10px; transition: width 0.5s ease; }
+    .toast { border-radius: 12px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+    .manual-input-group { border-radius: 12px; overflow: hidden; }
+    .manual-input-group .form-control { border: 1px solid #dee2e6; font-size: 0.95rem; }
+    .manual-input-group .form-control:focus { box-shadow: none; border-color: var(--primary-color); }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-in { animation: fadeInUp 0.4s ease forwards; }
+    @keyframes verifiedPulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+    .verified-pulse { animation: verifiedPulse 0.4s ease; }
+    .loading-dots::after { content: ''; animation: dots 1.5s steps(4,end) infinite; }
+    @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+    @media (max-width: 375px) { .module-btn { font-size: 0.75rem; padding: 10px 4px; min-height: 64px; } .module-btn .emoji { font-size: 1.2rem; } }
+    @media (min-width: 768px) { body { max-width: 540px; margin: 0 auto; border-left: 1px solid #dee2e6; border-right: 1px solid #dee2e6; min-height: 100vh; background: #fff; } .container-fluid { background: var(--bg-color); min-height: 100vh; } }
+    .mismatch-alert { position: fixed; top: 70px; left: 16px; right: 16px; z-index: 1060; border-radius: 12px; box-shadow: 0 8px 32px rgba(220,53,69,0.3); animation: shakeAlert 0.5s ease; display: none; }
+    @keyframes shakeAlert { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+    .last-scanned { background: rgba(13,110,253,0.08); border-radius: 10px; padding: 10px 14px; margin: 0 16px 16px; font-size: 0.85rem; color: #495057; }
+    .last-scanned .code { font-family: 'SF Mono', Monaco, monospace; font-weight: 700; color: var(--primary-color); }
+  </style>
+<base target="_blank">
+</head>
+<body>
+  <div class="alert alert-danger mismatch-alert d-flex align-items-center" id="mismatchAlert" role="alert">
+    <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+    <div class="flex-grow-1"><strong class="d-block">Maling Item Code!</strong><span class="small">Scanned: <span class="fw-bold" id="mismatchCode"></span></span></div>
+    <button type="button" class="btn-close" onclick="hideMismatchAlert()"></button>
+  </div>
+  <nav class="navbar navbar-dark bg-primary sticky-top shadow-sm">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1"><i class="bi bi-box-seam me-2"></i>Warehouse QR</span>
+      <span class="badge bg-white text-primary" id="connStatus"><i class="bi bi-wifi"></i> Online</span>
+    </div>
+  </nav>
+  <div class="container-fluid py-3">
+    <div class="row g-2 mb-3 animate-in" style="animation-delay:0.05s">
+      <div class="col-4"><button class="btn btn-outline-primary w-100 module-btn" data-type="MRR" onclick="selectModule('MRR')"><span class="emoji">📥</span><span>Receiving</span><small class="fw-normal opacity-75">MRR</small></button></div>
+      <div class="col-4"><button class="btn btn-outline-primary w-100 module-btn" data-type="MRIF" onclick="selectModule('MRIF')"><span class="emoji">📤</span><span>Releasing</span><small class="fw-normal opacity-75">MRIF</small></button></div>
+      <div class="col-4"><button class="btn btn-outline-primary w-100 module-btn" data-type="MRS" onclick="selectModule('MRS')"><span class="emoji">🔄</span><span>Returns</span><small class="fw-normal opacity-75">MRS</small></button></div>
+    </div>
+    <div class="card mb-3 animate-in" id="docCard" style="display:none;animation-delay:0.1s">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Select Document</h6>
+        <span class="badge bg-primary" id="docCountBadge">0</span>
+      </div>
+      <div class="card-body">
+        <div id="docLoading" class="text-center py-3">
+          <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+          <span class="text-muted">Loading documents<span class="loading-dots"></span></span>
+        </div>
+        <div id="docSelectWrapper" style="display:none">
+          <select class="form-select form-select-lg" id="docSelect" onchange="onDocSelect(this.value)">
+            <option value="">-- Choose a document --</option>
+          </select>
+          <div class="form-text mt-2 text-muted"><i class="bi bi-info-circle me-1"></i>Select a document to load its item checklist.</div>
+        </div>
+        <div id="docEmpty" class="text-center py-3 text-muted" style="display:none">
+          <i class="bi bi-inbox fs-2 d-block mb-2"></i>No pending documents found.
+        </div>
+      </div>
+    </div>
+    <div class="card mb-3 animate-in" id="scannerCard" style="display:none;animation-delay:0.15s">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-qr-code-scan me-2"></i>QR Scanner</h6>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-secondary" id="scannerStatusBadge"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem"></i>Off</span>
+          <button class="btn btn-sm btn-outline-secondary" id="camToggleBtn" onclick="toggleCamera()" style="display:none"><i class="bi bi-camera-switch"></i></button>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="scanner-wrapper" id="scannerWrapper">
+          <div id="reader"></div>
+          <div class="scanner-overlay" id="scannerOverlay" style="display:none">
+            <div class="scanner-frame"><div class="scan-line"></div></div>
+            <div class="scanner-label"><i class="bi bi-qr-code-scan me-1"></i>Align QR code within frame</div>
+          </div>
+          <div id="cameraError" class="text-center py-5 text-white" style="display:none;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <i class="bi bi-camera-video-off fs-1 mb-3 opacity-75"></i>
+            <p class="mb-0">Camera access denied or unavailable.</p>
+            <small class="opacity-75">Use manual input below.</small>
+          </div>
+        </div>
+        <div class="last-scanned" id="lastScanned" style="display:none">
+          <i class="bi bi-check-circle-fill text-success me-2"></i>Last scanned: <span class="code" id="lastScannedCode"></span>
+        </div>
+        <div class="p-3">
+          <label class="form-label small text-muted mb-2"><i class="bi bi-keyboard me-1"></i>Manual Entry (optional)</label>
+          <div class="input-group manual-input-group">
+            <span class="input-group-text bg-white"><i class="bi bi-upc-scan text-muted"></i></span>
+            <input type="text" class="form-control" id="manualInput" placeholder="Type Inventory ID and press Enter..." onkeypress="if(event.key==='Enter')manualVerify()">
+            <button class="btn btn-primary" type="button" onclick="manualVerify()"><i class="bi bi-check-lg"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card mb-3 animate-in" id="itemsCard" style="display:none;animation-delay:0.2s">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-list-check me-2"></i>Item Checklist</h6>
+        <span class="badge bg-primary" id="progressBadge">0 / 0 Verified</span>
+      </div>
+      <div class="card-body p-0">
+        <div id="itemsLoading" class="text-center py-5">
+          <div class="spinner-border text-primary mb-2"></div>
+          <p class="text-muted mb-0">Loading items<span class="loading-dots"></span></p>
+        </div>
+        <div class="list-group list-group-flush" id="itemsList" style="display:none"></div>
+        <div id="noItemsMsg" class="text-center py-5 text-muted" style="display:none">
+          <i class="bi bi-clipboard-x fs-1 d-block mb-2 opacity-50"></i>
+          <p class="mb-0">No items in this document.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card animate-in" id="submitCard" style="display:none;animation-delay:0.25s">
+      <div class="card-body">
+        <button class="btn btn-success w-100 submit-btn" id="submitBtn" onclick="submitTransaction()" disabled>
+          <i class="bi bi-check-circle-fill me-2"></i>Confirm & Submit
+        </button>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <small class="text-muted" id="submitHint">Verify all items to enable submission.</small>
+          <small class="text-success fw-bold" id="submitReady" style="display:none"><i class="bi bi-shield-check me-1"></i>All verified!</small>
+        </div>
+        <div class="progress mt-2" style="height:8px"><div class="progress-bar bg-success" id="progressBar" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index:1080"></div>
+  <div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-body text-center py-5">
+          <div class="mb-3"><i class="bi bi-check-circle-fill text-success" style="font-size:4rem"></i></div>
+          <h4 class="fw-bold text-success">Transaction Submitted!</h4>
+          <p class="text-muted mb-0">Document <strong id="successDocNo"></strong> has been successfully processed.</p>
+          <div class="mt-4"><div class="spinner-border spinner-border-sm text-muted me-2"></div><span class="text-muted">Reloading page<span class="loading-dots"></span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwhS_9_WFKHjDusoT5sCTzXrT6FC8HGm527TKT_nnkibAuoS7-R6HyK2RO_DfiHQJhT/exec';
+    const state = { currentModule: null, selectedDoc: null, items: [], verifiedIds: new Set(), scanner: null, isScanning: false, scanCooldown: false, cameras: [], currentCameraIndex: 0, audioCtx: null, lastScanned: null };
+
+    function initAudio() { if (!state.audioCtx) { state.audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } }
+    function playSuccessBeep() { try { initAudio(); if (state.audioCtx.state === 'suspended') state.audioCtx.resume(); const now = state.audioCtx.currentTime; const osc1 = state.audioCtx.createOscillator(); const g1 = state.audioCtx.createGain(); osc1.connect(g1); g1.connect(state.audioCtx.destination); osc1.frequency.setValueAtTime(880, now); osc1.type = 'sine'; g1.gain.setValueAtTime(0.15, now); g1.gain.exponentialRampToValueAtTime(0.001, now + 0.15); osc1.start(now); osc1.stop(now + 0.15); const osc2 = state.audioCtx.createOscillator(); const g2 = state.audioCtx.createGain(); osc2.connect(g2); g2.connect(state.audioCtx.destination); osc2.frequency.setValueAtTime(698.46, now + 0.12); osc2.type = 'sine'; g2.gain.setValueAtTime(0.12, now + 0.12); g2.gain.exponentialRampToValueAtTime(0.001, now + 0.35); osc2.start(now + 0.12); osc2.stop(now + 0.35); } catch (e) { console.warn('Audio beep failed:', e); } }
+    function playErrorBeep() { try { initAudio(); if (state.audioCtx.state === 'suspended') state.audioCtx.resume(); const now = state.audioCtx.currentTime; const osc = state.audioCtx.createOscillator(); const g = state.audioCtx.createGain(); osc.connect(g); g.connect(state.audioCtx.destination); osc.frequency.setValueAtTime(200, now); osc.type = 'sawtooth'; g.gain.setValueAtTime(0.1, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.3); osc.start(now); osc.stop(now + 0.3); } catch (e) { console.warn('Error beep failed:', e); } }
+    function vibrateSuccess() { if (navigator.vibrate) navigator.vibrate([30, 60, 30]); }
+    function vibrateError() { if (navigator.vibrate) navigator.vibrate([100, 50, 100]); }
+
+    function showToast(message, type) {
+      const container = document.querySelector('.toast-container');
+      const id = 'toast-' + Date.now();
+      const icons = { success: 'bi-check-circle-fill', error: 'bi-x-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
+      const colors = { success: 'bg-success', error: 'bg-danger', warning: 'bg-warning text-dark', info: 'bg-info text-dark' };
+      container.insertAdjacentHTML('beforeend', '<div id="' + id + '" class="toast align-items-center text-white ' + colors[type] + ' border-0" role="alert"><div class="d-flex"><div class="toast-body"><i class="bi ' + icons[type] + ' me-2"></i>' + message + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>');
+      const el = document.getElementById(id);
+      const toast = new bootstrap.Toast(el, { delay: 3000 });
+      toast.show();
+      el.addEventListener('hidden.bs.toast', () => el.remove());
+    }
+
+    function showMismatchAlert(code) { document.getElementById('mismatchAlert').style.display = 'flex'; document.getElementById('mismatchCode').textContent = code; playErrorBeep(); vibrateError(); setTimeout(hideMismatchAlert, 4000); }
+    function hideMismatchAlert() { document.getElementById('mismatchAlert').style.display = 'none'; }
+
+    function selectModule(type) {
+      initAudio();
+      resetDocumentState();
+      document.querySelectorAll('.module-btn').forEach(btn => { btn.classList.toggle('active-module', btn.dataset.type === type); });
+      state.currentModule = type;
+      const docCard = document.getElementById('docCard');
+      docCard.style.display = 'block'; docCard.classList.remove('animate-in'); void docCard.offsetWidth; docCard.classList.add('animate-in');
+      fetchPendingDocs(type);
+    }
+
+    function resetDocumentState() {
+      state.selectedDoc = null; state.items = []; state.verifiedIds.clear(); state.lastScanned = null;
+      document.getElementById('scannerCard').style.display = 'none';
+      document.getElementById('itemsCard').style.display = 'none';
+      document.getElementById('submitCard').style.display = 'none';
+      document.getElementById('lastScanned').style.display = 'none';
+      stopScanner();
+      updateProgress();
+    }
+
+    async function fetchPendingDocs(docType) {
+      const loadingEl = document.getElementById('docLoading');
+      const selectWrapper = document.getElementById('docSelectWrapper');
+      const emptyEl = document.getElementById('docEmpty');
+      const select = document.getElementById('docSelect');
+      const badge = document.getElementById('docCountBadge');
+      loadingEl.style.display = 'block'; selectWrapper.style.display = 'none'; emptyEl.style.display = 'none';
+      select.innerHTML = '<option value="">-- Choose a document --</option>';
+      try {
+        const url = API_URL + '?action=getPendingDocs&docType=' + encodeURIComponent(docType);
+        const response = await fetch(url, { method: 'GET' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        const docs = Array.isArray(data) ? data : (data.docs || data.data || []);
+        if (docs.length === 0) { loadingEl.style.display = 'none'; emptyEl.style.display = 'block'; badge.textContent = '0'; return; }
+        docs.forEach(doc => {
+          const docNo = typeof doc === 'string' ? doc : (doc.docNo || doc.documentNo || doc.id || doc.code || JSON.stringify(doc));
+          const desc = typeof doc === 'object' ? (doc.description || doc.desc || doc.name || '') : '';
+          const option = document.createElement('option');
+          option.value = docNo; option.textContent = desc ? docNo + ' — ' + desc : docNo;
+          select.appendChild(option);
+        });
+        badge.textContent = docs.length; loadingEl.style.display = 'none'; selectWrapper.style.display = 'block';
+        showToast('Loaded ' + docs.length + ' pending ' + docType + ' document(s)', 'info');
+      } catch (error) {
+        console.error('Failed to fetch documents:', error);
+        loadingEl.style.display = 'none'; emptyEl.style.display = 'block';
+        emptyEl.innerHTML = '<i class="bi bi-wifi-off fs-2 d-block mb-2 text-danger"></i><p class="mb-0">Failed to load documents.</p><small class="text-danger">' + error.message + '</small>';
+        showToast('Failed to load documents. Check connection.', 'error');
+      }
+    }
+
+    function onDocSelect(docNo) {
+      if (!docNo) return;
+      state.selectedDoc = docNo;
+      const scannerCard = document.getElementById('scannerCard');
+      const itemsCard = document.getElementById('itemsCard');
+      scannerCard.style.display = 'block'; itemsCard.style.display = 'block';
+      [scannerCard, itemsCard].forEach((card, i) => { card.classList.remove('animate-in'); void card.offsetWidth; card.classList.add('animate-in'); card.style.animationDelay = (0.05 * (i + 1)) + 's'; });
+      fetchDocItems(docNo, state.currentModule);
+    }
+
+    async function fetchDocItems(docNo, docType) {
+      const loadingEl = document.getElementById('itemsLoading');
+      const listEl = document.getElementById('itemsList');
+      const noItemsEl = document.getElementById('noItemsMsg');
+      loadingEl.style.display = 'block'; listEl.style.display = 'none'; noItemsEl.style.display = 'none';
+      try {
+        const url = API_URL + '?action=getDocItems&docNo=' + encodeURIComponent(docNo) + '&docType=' + encodeURIComponent(docType);
+        const response = await fetch(url, { method: 'GET' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        const items = Array.isArray(data) ? data : (data.items || data.data || []);
+        state.items = items.map((item, idx) => {
+          if (typeof item === 'string') return { inventoryId: item, description: '', qty: 1, index: idx };
+          return {
+            inventoryId: item.inventoryId || item.id || item.code || item.itemCode || item.sku || 'UNKNOWN',
+            description: item.description || item.desc || item.name || item.itemName || '',
+            qty: item.qty || item.quantity || item.qtyRequested || 1,
+            index: idx
+          };
+        });
+        renderItems();
+        loadingEl.style.display = 'none';
+        if (state.items.length === 0) { noItemsEl.style.display = 'block'; }
+        else { listEl.style.display = 'block'; initScanner(); }
+        updateProgress();
+        const submitCard = document.getElementById('submitCard');
+        submitCard.style.display = 'block'; submitCard.classList.remove('animate-in'); void submitCard.offsetWidth; submitCard.classList.add('animate-in');
+      } catch (error) {
+        console.error('Failed to fetch items:', error);
+        loadingEl.style.display = 'none';
+        listEl.innerHTML = '<div class="text-center py-4 text-danger"><i class="bi bi-wifi-off fs-2 d-block mb-2"></i><p class="mb-0">Failed to load items.</p><small>' + error.message + '</small></div>';
+        listEl.style.display = 'block';
+        showToast('Failed to load items. Check connection.', 'error');
+      }
+    }
+
+    function renderItems() {
+      const listEl = document.getElementById('itemsList');
+      listEl.innerHTML = '';
+      state.items.forEach(item => {
+        const isVerified = state.verifiedIds.has(item.inventoryId);
+        const div = document.createElement('div');
+        div.className = 'list-group-item item-row' + (isVerified ? ' verified' : '');
+        div.dataset.id = item.inventoryId;
+        div.innerHTML = '<div class="d-flex justify-content-between align-items-center"><div><div class="item-id">' + escapeHtml(item.inventoryId) + '</div>' + (item.description ? '<div class="item-desc">' + escapeHtml(item.description) + '</div>' : '') + '</div><div class="d-flex align-items-center gap-2"><span class="qty-badge">Qty: ' + item.qty + '</span><span class="badge status-badge ' + (isVerified ? 'bg-success' : 'bg-secondary') + '">' + (isVerified ? '<i class="bi bi-check-lg me-1"></i>Verified' : 'Pending') + '</span></div></div>';
+        listEl.appendChild(div);
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function initScanner() {
+      if (state.scanner) return;
+      try {
+        state.cameras = await Html5Qrcode.getCameras();
+        if (state.cameras.length > 1) {
+          document.getElementById('camToggleBtn').style.display = 'inline-block';
+        }
+        const backCamera = state.cameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('environment') || c.label.toLowerCase().includes('rear'));
+        state.currentCameraIndex = backCamera ? state.cameras.indexOf(backCamera) : 0;
+        const cameraId = state.cameras[state.currentCameraIndex].id;
+        state.scanner = new Html5Qrcode('reader');
+        await state.scanner.start(
+          cameraId,
+          { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
+          onScanSuccess,
+          onScanFailure
+        );
+        state.isScanning = true;
+        document.getElementById('scannerOverlay').style.display = 'block';
+        document.getElementById('scannerStatusBadge').className = 'badge bg-success';
+        document.getElementById('scannerStatusBadge').innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:0.5rem"></i>Live';
+        showToast('Scanner active — align QR code in frame', 'info');
+      } catch (err) {
+        console.error('Scanner init failed:', err);
+        document.getElementById('cameraError').style.display = 'flex';
+        document.getElementById('reader').style.display = 'none';
+        showToast('Camera unavailable. Use manual entry.', 'warning');
+      }
+    }
+
+    async function stopScanner() {
+      if (state.scanner && state.isScanning) {
+        try { await state.scanner.stop(); } catch (e) { /* ignore */ }
+        state.isScanning = false;
+      }
+      document.getElementById('scannerOverlay').style.display = 'none';
+      document.getElementById('scannerStatusBadge').className = 'badge bg-secondary';
+      document.getElementById('scannerStatusBadge').innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:0.5rem"></i>Off';
+    }
+
+    async function toggleCamera() {
+      if (!state.scanner || state.cameras.length < 2) return;
+      try {
+        await state.scanner.stop();
+        state.currentCameraIndex = (state.currentCameraIndex + 1) % state.cameras.length;
+        const cameraId = state.cameras[state.currentCameraIndex].id;
+        await state.scanner.start(
+          cameraId,
+          { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
+          onScanSuccess,
+          onScanFailure
+        );
+        showToast('Switched to: ' + state.cameras[state.currentCameraIndex].label.substring(0, 30), 'info');
+      } catch (err) {
+        showToast('Failed to switch camera', 'error');
+      }
+    }
+
+    function onScanSuccess(decodedText) {
+      if (state.scanCooldown) return;
+      state.scanCooldown = true;
+      setTimeout(() => { state.scanCooldown = false; }, 1500);
+      handleScan(decodedText.trim());
+    }
+
+    function onScanFailure(error) { /* qr code scan error - ignore */ }
+
+    function manualVerify() {
+      const input = document.getElementById('manualInput');
+      const code = input.value.trim();
+      if (!code) return;
+      handleScan(code);
+      input.value = '';
+      input.focus();
+    }
+
+    function handleScan(code) {
+      state.lastScanned = code;
+      const lastScannedEl = document.getElementById('lastScanned');
+      document.getElementById('lastScannedCode').textContent = code;
+      lastScannedEl.style.display = 'block';
+      const matchedItem = state.items.find(item => item.inventoryId === code);
+      if (!matchedItem) {
+        showMismatchAlert(code);
+        return;
+      }
+      if (state.verifiedIds.has(code)) {
+        showToast('Item ' + code + ' already verified', 'warning');
+        return;
+      }
+      state.verifiedIds.add(code);
+      const row = document.querySelector('.item-row[data-id="' + CSS.escape(code) + '"]');
+      if (row) {
+        row.classList.add('verified', 'verified-pulse');
+        const badge = row.querySelector('.status-badge');
+        if (badge) { badge.className = 'badge status-badge bg-success'; badge.innerHTML = '<i class="bi bi-check-lg me-1"></i>Verified'; }
+        setTimeout(() => row.classList.remove('verified-pulse'), 400);
+      }
+      playSuccessBeep();
+      vibrateSuccess();
+      showToast('Verified: ' + code, 'success');
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const total = state.items.length;
+      const verified = state.verifiedIds.size;
+      const pct = total > 0 ? Math.round((verified / total) * 100) : 0;
+      document.getElementById('progressBadge').textContent = verified + ' / ' + total + ' Verified';
+      document.getElementById('progressBar').style.width = pct + '%';
+      const submitBtn = document.getElementById('submitBtn');
+      const submitHint = document.getElementById('submitHint');
+      const submitReady = document.getElementById('submitReady');
+      if (total > 0 && verified === total) {
+        submitBtn.disabled = false;
+        submitHint.style.display = 'none';
+        submitReady.style.display = 'block';
+      } else {
+        submitBtn.disabled = true;
+        submitHint.style.display = 'block';
+        submitReady.style.display = 'none';
+      }
+    }
+
+    async function submitTransaction() {
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+      const payload = {
+        docNo: state.selectedDoc,
+        docType: state.currentModule,
+        scannedItems: state.items.filter(item => state.verifiedIds.has(item.inventoryId)).map(item => ({
+          inventoryId: item.inventoryId,
+          description: item.description,
+          qty: item.qty,
+          scannedAt: new Date().toISOString()
+        }))
+      };
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const result = await response.json();
+        document.getElementById('successDocNo').textContent = state.selectedDoc;
+        const modal = new bootstrap.Modal(document.getElementById('successModal'));
+        modal.show();
+        setTimeout(() => { window.location.reload(); }, 2500);
+      } catch (error) {
+        console.error('Submit failed:', error);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Confirm & Submit';
+        showToast('Submission failed: ' + error.message, 'error');
+      }
+    }
+
+    window.addEventListener('beforeunload', () => { stopScanner(); });
+  </script>
+</body>
+</html>
