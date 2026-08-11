@@ -172,7 +172,6 @@
               <div class="col-3 text-end"><small class="text-muted fw-bold">Status</small></div>
             </div>
           </div>
-          <!-- Items injected here -->
         </div>
         <div id="noItemsMsg" class="text-center py-5 text-muted" style="display:none">
           <i class="bi bi-clipboard-x fs-1 d-block mb-2 opacity-50"></i>
@@ -317,6 +316,23 @@
       alert.classList.add('d-none');
     }
 
+    // ========== SHEET ID PARSER ==========
+    function extractSheetId(rawInput) {
+      if (!rawInput) return '';
+      const trimmed = String(rawInput).trim();
+      // If it's a full URL, extract the ID between /d/ and /edit or similar
+      const match = trimmed.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      if (match && match[1]) return match[1];
+      // If it's just the ID (44 chars typical for Google Sheets)
+      if (/^[a-zA-Z0-9-_]+$/.test(trimmed) && trimmed.length >= 20) return trimmed;
+      // Otherwise return as-is and let the backend handle it
+      return trimmed;
+    }
+
+    function getCleanSheetId() {
+      return extractSheetId(state.sheetId);
+    }
+
     // ========== SETTINGS ==========
     function openSettings() {
       if (!settingsModalInstance) settingsModalInstance = new bootstrap.Modal(document.getElementById('settingsModal'));
@@ -340,8 +356,9 @@
 
     function updateSheetBadge() {
       const badge = document.getElementById('sheetBadge');
-      if (state.sheetId) {
-        badge.textContent = state.sheetId.length > 20 ? state.sheetId.substring(0, 20) + '...' : state.sheetId;
+      const clean = getCleanSheetId();
+      if (clean) {
+        badge.textContent = clean.length > 20 ? clean.substring(0, 20) + '...' : clean;
         badge.title = state.sheetId;
         badge.classList.remove('d-none');
       } else {
@@ -373,6 +390,13 @@
     }
 
     async function fetchPendingDocs(docType) {
+      const cleanSheetId = getCleanSheetId();
+      if (!cleanSheetId) {
+        showToast('Please set a valid Google Sheet URL or ID in Settings!', 'warning');
+        openSettings();
+        return;
+      }
+
       const loadingEl = document.getElementById('docLoading');
       const selectWrapper = document.getElementById('docSelectWrapper');
       const emptyEl = document.getElementById('docEmpty');
@@ -380,13 +404,33 @@
       const badge = document.getElementById('docCountBadge');
       loadingEl.style.display = 'block'; selectWrapper.style.display = 'none'; emptyEl.style.display = 'none';
       select.innerHTML = '<option value="">-- Choose a document --</option>';
+
       try {
-        const url = API_URL + '?action=getPendingDocs&docType=' + encodeURIComponent(docType) + '&sheetId=' + encodeURIComponent(state.sheetId || '');
-        const response = await fetch(url, { method: 'GET' });
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        const data = await response.json();
-        const docs = Array.isArray(data) ? data : (data.docs || data.data || []);
-        if (docs.length === 0) { loadingEl.style.display = 'none'; emptyEl.style.display = 'block'; badge.textContent = '0'; return; }
+        const url = API_URL + '?action=getPendingDocs&docType=' + encodeURIComponent(docType) + '&sheetId=' + encodeURIComponent(cleanSheetId);
+        const response = await fetch(url, { redirect: 'follow' });
+        const text = await response.text();
+        console.log('Raw Response Text (getPendingDocs):', text);
+
+        let data;
+        try { data = JSON.parse(text); } catch (parseErr) { console.warn('JSON parse failed, treating as text array'); data = text.split(',').map(s => s.trim()).filter(s => s); }
+        console.log('Parsed JSON Data (getPendingDocs):', data);
+
+        let docs = [];
+        if (data && Array.isArray(data.pendingDocs)) {
+          docs = data.pendingDocs;
+        } else if (Array.isArray(data)) {
+          docs = data;
+        } else if (data && typeof data === 'object') {
+          docs = Object.values(data).find(val => Array.isArray(val)) || [];
+        }
+
+        if (docs.length === 0) {
+          loadingEl.style.display = 'none';
+          emptyEl.style.display = 'block';
+          badge.textContent = '0';
+          return;
+        }
+
         docs.forEach(doc => {
           const docNo = typeof doc === 'string' ? doc : (doc.docNo || doc.documentNo || doc.id || doc.code || JSON.stringify(doc));
           const desc = typeof doc === 'object' ? (doc.description || doc.desc || doc.name || '') : '';
@@ -397,7 +441,7 @@
         badge.textContent = docs.length; loadingEl.style.display = 'none'; selectWrapper.style.display = 'block';
         showToast('Loaded ' + docs.length + ' pending ' + docType + ' document(s)', 'info');
       } catch (error) {
-        console.error('Failed to fetch documents:', error);
+        console.error('Fetch/Parsing Error (getPendingDocs):', error);
         loadingEl.style.display = 'none'; emptyEl.style.display = 'block';
         emptyEl.innerHTML = '<i class="bi bi-wifi-off fs-2 d-block mb-2 text-danger"></i><p class="mb-0">Failed to load documents.</p><small class="text-danger">' + error.message + '</small>';
         showToast('Failed to load documents. Check connection.', 'error');
@@ -416,16 +460,31 @@
     }
 
     async function fetchDocItems(docNo, docType) {
+      const cleanSheetId = getCleanSheetId();
       const loadingEl = document.getElementById('itemsLoading');
       const listEl = document.getElementById('itemsList');
       const noItemsEl = document.getElementById('noItemsMsg');
       loadingEl.style.display = 'block'; listEl.style.display = 'none'; noItemsEl.style.display = 'none';
+
       try {
-        const url = API_URL + '?action=getDocItems&docNo=' + encodeURIComponent(docNo) + '&docType=' + encodeURIComponent(docType) + '&sheetId=' + encodeURIComponent(state.sheetId || '');
-        const response = await fetch(url, { method: 'GET' });
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        const data = await response.json();
-        const items = Array.isArray(data) ? data : (data.items || data.data || []);
+        const url = API_URL + '?action=getDocItems&docNo=' + encodeURIComponent(docNo) + '&docType=' + encodeURIComponent(docType) + '&sheetId=' + encodeURIComponent(cleanSheetId);
+        const response = await fetch(url, { redirect: 'follow' });
+        const text = await response.text();
+        console.log('Raw Response Text (getDocItems):', text);
+
+        let data;
+        try { data = JSON.parse(text); } catch (parseErr) { console.warn('JSON parse failed, treating as text array'); data = []; }
+        console.log('Parsed JSON Data (getDocItems):', data);
+
+        let items = [];
+        if (data && Array.isArray(data.items)) {
+          items = data.items;
+        } else if (Array.isArray(data)) {
+          items = data;
+        } else if (data && typeof data === 'object') {
+          items = Object.values(data).find(val => Array.isArray(val)) || [];
+        }
+
         state.items = items.map((item, idx) => {
           if (typeof item === 'string') return { inventoryId: item, description: '', qty: 1, rowIndex: idx, issuedQty: null, index: idx };
           return {
@@ -445,7 +504,7 @@
         const submitCard = document.getElementById('submitCard');
         submitCard.style.display = 'block'; submitCard.classList.remove('animate-in'); void submitCard.offsetWidth; submitCard.classList.add('animate-in');
       } catch (error) {
-        console.error('Failed to fetch items:', error);
+        console.error('Fetch/Parsing Error (getDocItems):', error);
         loadingEl.style.display = 'none';
         listEl.innerHTML = '<div class="text-center py-4 text-danger"><i class="bi bi-wifi-off fs-2 d-block mb-2"></i><p class="mb-0">Failed to load items.</p><small>' + error.message + '</small></div>';
         listEl.style.display = 'block';
@@ -455,7 +514,6 @@
 
     function renderItems() {
       const listEl = document.getElementById('itemsList');
-      // Keep header, remove items
       const header = listEl.querySelector('.list-group-item.bg-light');
       listEl.innerHTML = '';
       if (header) listEl.appendChild(header);
@@ -581,7 +639,6 @@
         return;
       }
 
-      // Open qty modal
       state.awaitingQty = true;
       state.pendingQtyItem = matchedItem;
       openQtyModal(matchedItem);
@@ -653,10 +710,11 @@
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+      const cleanSheetId = getCleanSheetId();
       const payload = {
         docNo: state.selectedDoc,
         docType: state.currentModule,
-        sheetId: state.sheetId || '',
+        sheetId: cleanSheetId,
         scannedItems: state.items.filter(item => state.verifiedIds.has(item.inventoryId)).map(item => ({
           inventoryId: item.inventoryId,
           description: item.description,
