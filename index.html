@@ -18,7 +18,7 @@
     .card { border: none; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; }
     .card-header { border-bottom: 1px solid rgba(0,0,0,0.05); padding: 14px 18px; font-weight: 600; }
     .card-header h6 { font-weight: 700; font-size: 0.95rem; color: #2c3e50; }
-    .scanner-wrapper { position: relative; background: #000; border-radius: 0 0 16px 16px; overflow: hidden; }
+    .scanner-wrapper { position: relative; background: #000; border-radius: 0 0 16px 16px; overflow: hidden; min-height: 280px; }
     #reader { width: 100% !important; min-height: 280px; }
     #reader video { border-radius: 0 0 16px 16px; object-fit: cover; }
     .scanner-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 10; }
@@ -59,6 +59,7 @@
     .last-scanned { background: rgba(13,110,253,0.08); border-radius: 10px; padding: 10px 14px; margin: 0 16px 16px; font-size: 0.85rem; color: #495057; }
     .last-scanned .code { font-family: 'SF Mono', Monaco, monospace; font-weight: 700; color: var(--primary-color); }
     .sheet-indicator { font-size: 0.7rem; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .camera-error-box { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px; background: #000; color: #fff; }
   </style>
 <base target="_blank">
 </head>
@@ -131,10 +132,14 @@
             <div class="scanner-frame"><div class="scan-line"></div></div>
             <div class="scanner-label"><i class="bi bi-qr-code-scan me-1"></i>Align QR code within frame</div>
           </div>
-          <div id="cameraError" class="text-center py-5 text-white" style="display:none;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <!-- Camera Error / Retry -->
+          <div id="cameraError" class="camera-error-box" style="display:none;">
             <i class="bi bi-camera-video-off fs-1 mb-3 opacity-75"></i>
-            <p class="mb-0">Camera access denied or unavailable.</p>
-            <small class="opacity-75">Use manual input below.</small>
+            <p class="mb-1 fw-semibold">Camera access denied or unavailable.</p>
+            <small class="opacity-75 d-block mb-3">Please allow camera permission when prompted.</small>
+            <button class="btn btn-light fw-semibold px-4" onclick="retryCamera()">
+              <i class="bi bi-camera-fill me-2"></i>Start / Retry Camera
+            </button>
           </div>
         </div>
         <div class="last-scanned" id="lastScanned" style="display:none">
@@ -320,12 +325,9 @@
     function extractSheetId(rawInput) {
       if (!rawInput) return '';
       const trimmed = String(rawInput).trim();
-      // If it's a full URL, extract the ID between /d/ and /edit or similar
       const match = trimmed.match(/\/d\/([a-zA-Z0-9-_]+)/);
       if (match && match[1]) return match[1];
-      // If it's just the ID (44 chars typical for Google Sheets)
       if (/^[a-zA-Z0-9-_]+$/.test(trimmed) && trimmed.length >= 20) return trimmed;
-      // Otherwise return as-is and let the backend handle it
       return trimmed;
     }
 
@@ -537,17 +539,40 @@
       return div.innerHTML;
     }
 
-    // ========== SCANNER ==========
+    // ========== CAMERA / SCANNER ==========
+    function showCameraError(show) {
+      const errBox = document.getElementById('cameraError');
+      const reader = document.getElementById('reader');
+      const overlay = document.getElementById('scannerOverlay');
+      if (show) {
+        errBox.style.display = 'flex';
+        reader.style.display = 'none';
+        overlay.style.display = 'none';
+      } else {
+        errBox.style.display = 'none';
+        reader.style.display = 'block';
+      }
+    }
+
     async function initScanner() {
       if (state.scanner) return;
+      showCameraError(false);
       try {
         state.cameras = await Html5Qrcode.getCameras();
+        if (state.cameras.length === 0) {
+          throw new Error('No cameras found on this device.');
+        }
         if (state.cameras.length > 1) {
           document.getElementById('camToggleBtn').style.display = 'inline-block';
         }
-        const backCamera = state.cameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('environment') || c.label.toLowerCase().includes('rear'));
+        // Prefer back/environment camera
+        const backCamera = state.cameras.find(c => {
+          const lbl = c.label.toLowerCase();
+          return lbl.includes('back') || lbl.includes('environment') || lbl.includes('rear') || lbl.includes('world');
+        });
         state.currentCameraIndex = backCamera ? state.cameras.indexOf(backCamera) : 0;
         const cameraId = state.cameras[state.currentCameraIndex].id;
+
         state.scanner = new Html5Qrcode('reader');
         await state.scanner.start(
           cameraId,
@@ -562,10 +587,16 @@
         showToast('Scanner active — align QR code in frame', 'info');
       } catch (err) {
         console.error('Scanner init failed:', err);
-        document.getElementById('cameraError').style.display = 'flex';
-        document.getElementById('reader').style.display = 'none';
-        showToast('Camera unavailable. Use manual entry.', 'warning');
+        showCameraError(true);
+        document.getElementById('scannerStatusBadge').className = 'badge bg-danger';
+        document.getElementById('scannerStatusBadge').innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:0.5rem"></i>Error';
+        showToast('Camera unavailable. Tap "Start / Retry Camera" to try again.', 'warning');
       }
+    }
+
+    async function retryCamera() {
+      showToast('Requesting camera access...', 'info');
+      await initScanner();
     }
 
     async function stopScanner() {
@@ -710,6 +741,7 @@
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
       const cleanSheetId = getCleanSheetId();
       const payload = {
         docNo: state.selectedDoc,
@@ -724,23 +756,37 @@
           scannedAt: new Date().toISOString()
         }))
       };
+
       try {
         const response = await fetch(API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
           body: JSON.stringify(payload)
         });
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        const result = await response.json();
-        document.getElementById('successDocNo').textContent = state.selectedDoc;
-        const modal = new bootstrap.Modal(document.getElementById('successModal'));
-        modal.show();
-        setTimeout(() => { window.location.reload(); }, 2500);
-      } catch (error) {
-        console.error('Submit failed:', error);
+
+        const text = await response.text();
+        console.log('Raw POST Response Text:', text);
+
+        const result = JSON.parse(text);
+        console.log('Parsed POST Result:', result);
+
+        if (result.success) {
+          document.getElementById('successDocNo').textContent = state.selectedDoc;
+          const modal = new bootstrap.Modal(document.getElementById('successModal'));
+          modal.show();
+          setTimeout(() => { window.location.reload(); }, 2500);
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Confirm & Submit';
+          showToast('Error: ' + (result.error || result.message || 'Unknown server error'), 'error');
+        }
+      } catch (err) {
+        console.error('Submit Error:', err);
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Confirm & Submit';
-        showToast('Submission failed: ' + error.message, 'error');
+        showToast('Submission failed. Check network log.', 'error');
       }
     }
 
