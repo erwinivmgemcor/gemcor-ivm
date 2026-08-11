@@ -477,7 +477,7 @@
       }
     }
 
-    // ========== RENDER DOCUMENT LIST (String-aware) ==========
+    // ========== RENDER DOCUMENT LIST (Object-aware with status badges) ==========
     function renderDocList(docs) {
       const container = document.getElementById('docListContainer');
       container.innerHTML = '';
@@ -487,17 +487,30 @@
         return;
       }
 
-      // Detect if docs are plain strings (fast API) or objects (legacy API)
-      const isStringArray = docs.length > 0 && typeof docs[0] === 'string';
+      let visibleCount = 0;
 
-      docs.forEach(doc => {
-        const docNo = typeof doc === 'object' ? (doc.docNo || doc.documentNo || doc.id || doc.code || doc.name || String(doc)) : String(doc);
+      docs.forEach(item => {
+        const docNo = typeof item === 'object' ? item.docNo : item;
+        const status = typeof item === 'object' ? (item.status || 'NEW') : 'NEW';
 
-        // If plain strings, always show; if objects, apply pending filter
-        if (!isStringArray && state.docFilter === 'pending') {
-          const status = typeof doc === 'object' ? (doc.status || 'NEW') : 'NEW';
-          if (status === 'SERVED') return;
+        // Determine Badge styling based on status
+        let badgeClass = 'bg-secondary';
+        let badgeLabel = 'NEW';
+
+        if (status === 'IN_PROGRESS') {
+          badgeClass = 'bg-warning text-dark';
+          badgeLabel = 'WITH PENDING';
+        } else if (status === 'SERVED') {
+          badgeClass = 'bg-success';
+          badgeLabel = 'SERVED';
         }
+
+        // If "Show Pending Only" toggle is active, hide SERVED documents
+        if (state.docFilter === 'pending' && status === 'SERVED') {
+          return;
+        }
+
+        visibleCount++;
 
         const card = document.createElement('div');
         card.className = 'card mb-2 shadow-sm list-item-card';
@@ -506,30 +519,14 @@
           this.classList.add('active');
           onDocSelect(docNo);
         };
-
-        // For plain strings: show READY badge. For objects: show status badge.
-        let badgeHTML;
-        if (isStringArray) {
-          badgeHTML = '<span class="badge bg-primary">READY</span>';
-        } else {
-          const status = typeof doc === 'object' ? (doc.status || 'NEW') : 'NEW';
-          let badgeClass = 'bg-secondary';
-          let statusText = 'NEW';
-          if (status === 'IN_PROGRESS') { badgeClass = 'bg-warning text-dark'; statusText = 'IN PROGRESS'; }
-          else if (status === 'SERVED') { badgeClass = 'bg-success'; statusText = 'SERVED'; }
-          badgeHTML = '<span class="badge ' + badgeClass + '">' + statusText + '</span>';
-        }
-
-        card.innerHTML = '<div class="card-body d-flex justify-content-between align-items-center py-2 px-3"><span class="fw-bold text-dark">' + escapeHtml(docNo) + '</span>' + badgeHTML + '</div>';
+        card.innerHTML = '<div class="card-body d-flex justify-content-between align-items-center py-2 px-3"><span class="fw-bold text-dark">' + escapeHtml(docNo) + '</span><span class="badge ' + badgeClass + '">' + badgeLabel + '</span></div>';
         container.appendChild(card);
       });
 
-      // Update count badge
-      const visibleCards = container.querySelectorAll('.card');
-      document.getElementById('docCountBadge').textContent = visibleCards.length + (state.docFilter === 'pending' && !isStringArray ? ' pending' : ' docs');
+      document.getElementById('docCountBadge').textContent = visibleCount + (state.docFilter === 'pending' ? ' pending' : ' total');
 
-      if (visibleCards.length === 0) {
-        container.innerHTML = '<div class="text-center p-3 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2"></i>No ' + (state.docFilter === 'pending' && !isStringArray ? 'pending ' : '') + 'documents found.</div>';
+      if (visibleCount === 0) {
+        container.innerHTML = '<div class="text-center p-3 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2"></i>No ' + (state.docFilter === 'pending' ? 'pending ' : '') + 'documents found.</div>';
       }
     }
     function onDocSelect(docNo) {
