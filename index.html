@@ -352,10 +352,23 @@
       return extractSheetId(state.sheetId);
     }
 
+    // Normalize status string: handles "IN PROGRESS", "IN_PROGRESS", "IN-PROGRESS", etc.
+    function normalizeStatus(status) {
+      return String(status || 'NEW').toUpperCase().replace(/[-_\s]+/g, '');
+    }
+
     function getFrontendStatusClass(status) {
-      if (status === 'SERVED') return 'bg-success';
-      if (status === 'IN PROGRESS') return 'bg-warning text-dark';
+      const norm = normalizeStatus(status);
+      if (norm === 'SERVED') return 'bg-success';
+      if (norm === 'INPROGRESS') return 'bg-warning text-dark';
       return 'bg-secondary';
+    }
+
+    function getFrontendStatusLabel(status) {
+      const norm = normalizeStatus(status);
+      if (norm === 'SERVED') return 'SERVED';
+      if (norm === 'INPROGRESS') return 'IN PROGRESS';
+      return 'NEW';
     }
 
     // ========== SETTINGS ==========
@@ -456,34 +469,52 @@
         }
 
         state.pendingDocs = docs;
-        renderDocList(docs);
 
-        const filteredCount = docs.filter(d => d.status !== 'SERVED').length;
-        badge.textContent = state.docFilter === 'pending' ? filteredCount + ' pending' : docs.length + ' total';
+        // Always hide loading first, then render
+        loadingEl.style.display = 'none';
 
-        if (docs.length === 0) {
-          loadingEl.style.display = 'none';
+        if (!Array.isArray(docs) || docs.length === 0) {
           emptyEl.style.display = 'block';
+          badge.textContent = '0';
           return;
         }
-        loadingEl.style.display = 'none'; selectWrapper.style.display = 'block';
+
+        try {
+          renderDocList(docs);
+        } catch (renderErr) {
+          console.error('renderDocList error:', renderErr);
+          emptyEl.style.display = 'block';
+          emptyEl.innerHTML = '<i class="bi bi-bug fs-2 d-block mb-2 text-danger"></i><p class="mb-0">Error rendering document list.</p><small class="text-danger">' + renderErr.message + '</small>';
+          return;
+        }
+
+        const filteredCount = docs.filter(d => normalizeStatus(d.status) !== 'SERVED').length;
+        badge.textContent = state.docFilter === 'pending' ? filteredCount + ' pending' : docs.length + ' total';
+        selectWrapper.style.display = 'block';
         showToast('Loaded ' + docs.length + ' ' + docType + ' document(s)', 'info');
       } catch (error) {
         console.error('Fetch/Parsing Error (getPendingDocs):', error);
-        loadingEl.style.display = 'none'; emptyEl.style.display = 'block';
+        loadingEl.style.display = 'none';
+        emptyEl.style.display = 'block';
         emptyEl.innerHTML = '<i class="bi bi-wifi-off fs-2 d-block mb-2 text-danger"></i><p class="mb-0">Failed to load documents.</p><small class="text-danger">' + error.message + '</small>';
         showToast('Failed to load documents. Check connection.', 'error');
       }
     }
 
+    // ========== RENDER DOCUMENT LIST (Object-aware) ==========
     function renderDocList(docs) {
       const listEl = document.getElementById('docList');
       listEl.innerHTML = '';
 
+      if (!Array.isArray(docs) || docs.length === 0) {
+        listEl.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-inbox fs-2 d-block mb-2"></i>No documents found.</div>';
+        return;
+      }
+
       const filtered = docs.filter(doc => {
         if (state.docFilter === 'all') return true;
-        const status = (doc.status || 'NEW');
-        return status !== 'SERVED';
+        const statusNorm = normalizeStatus(doc.status);
+        return statusNorm !== 'SERVED';
       });
 
       document.getElementById('docCountBadge').textContent = filtered.length + (state.docFilter === 'pending' ? ' pending' : ' total');
@@ -494,10 +525,20 @@
       }
 
       filtered.forEach(doc => {
-        const docNo = typeof doc === 'string' ? doc : (doc.docNo || doc.documentNo || doc.id || doc.code || JSON.stringify(doc));
-        const status = typeof doc === 'object' ? (doc.status || 'NEW') : 'NEW';
-        const statusClass = typeof doc === 'object' ? (doc.statusClass || getFrontendStatusClass(status)) : getFrontendStatusClass(status);
-        const desc = typeof doc === 'object' ? (doc.description || doc.desc || '') : '';
+        // Extract docNo and status safely from both String and Object formats
+        let docNo, rawStatus, description;
+        if (doc && typeof doc === 'object') {
+          docNo = doc.docNo || doc.documentNo || doc.id || doc.code || doc.name || String(doc);
+          rawStatus = doc.status || 'NEW';
+          description = doc.description || doc.desc || '';
+        } else {
+          docNo = String(doc);
+          rawStatus = 'NEW';
+          description = '';
+        }
+
+        const statusClass = getFrontendStatusClass(rawStatus);
+        const statusLabel = getFrontendStatusLabel(rawStatus);
 
         const btn = document.createElement('button');
         btn.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3';
@@ -508,7 +549,7 @@
           onDocSelect(docNo);
         };
 
-        btn.innerHTML = '<div><div class="fw-bold">' + escapeHtml(docNo) + '</div>' + (desc ? '<small class="text-muted">' + escapeHtml(desc) + '</small>' : '') + '</div><span class="badge ' + statusClass + '">' + status + '</span>';
+        btn.innerHTML = '<div><div class="fw-bold">' + escapeHtml(docNo) + '</div>' + (description ? '<small class="text-muted">' + escapeHtml(description) + '</small>' : '') + '</div><span class="badge ' + statusClass + '">' + statusLabel + '</span>';
         listEl.appendChild(btn);
       });
     }
@@ -764,8 +805,7 @@
         input.classList.add('is-invalid');
         errorEl.textContent = 'Please enter a valid quantity.';
         errorEl.style.display = 'block';
-        playErrorBeep();
-        vibrateError();
+        playErrorBeep(); vibrateError();
         return;
       }
 
@@ -773,8 +813,7 @@
         input.classList.add('is-invalid');
         errorEl.textContent = '\u274c Error: Issued Qty cannot exceed Requested Qty (Max: ' + item.qty + ')';
         errorEl.style.display = 'block';
-        playErrorBeep();
-        vibrateError();
+        playErrorBeep(); vibrateError();
         return;
       }
 
