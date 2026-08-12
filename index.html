@@ -138,6 +138,7 @@
   <div class="container-fluid px-3">
     <span class="navbar-brand mb-0 h5"><i class="bi bi-qr-code-scan me-2"></i>Warehouse QR</span>
     <div class="d-flex align-items-center gap-2">
+      <i id="wifiIcon" class="bi bi-wifi text-success" style="font-size:1.1rem;" title="Network Status"></i>
       <span id="sheetBadge" class="badge bg-light text-dark d-none" style="font-size:0.65rem;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
       <button class="btn btn-outline-light btn-sm" onclick="openSettings()" title="Settings">
         <i class="bi bi-gear-fill"></i>
@@ -175,6 +176,10 @@
     <div class="card shadow-sm mb-3">
       <div class="card-body p-3">
         <label class="form-label fw-bold mb-2" id="docSelectLabel">Select Document</label>
+        <div class="input-group mb-2">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="text" class="form-control" id="docSearch" placeholder="Search document (e.g. 2026SAMPLE)..." oninput="filterDocs(this.value)">
+        </div>
         <select class="form-select form-select-lg" id="docSelect" onchange="onDocSelect(this.value)">
           <option value="">-- Select Document --</option>
         </select>
@@ -202,6 +207,9 @@
         <span class="fw-bold"><i class="bi bi-camera me-2"></i>QR Scanner</span>
         <div class="d-flex align-items-center gap-2">
           <span id="camStatus" class="cam-status">Initializing...</span>
+          <button id="torchBtn" class="btn btn-outline-light btn-sm d-none" onclick="toggleTorch()" title="Toggle Flashlight">
+            <i class="bi bi-lightning" id="torchIcon"></i>
+          </button>
           <button id="camSwitchBtn" class="btn btn-outline-light btn-sm d-none" onclick="switchCamera()" title="Switch Camera">
             <i class="bi bi-arrow-repeat"></i>
           </button>
@@ -376,6 +384,7 @@ const state = {
   verifiedIds: new Set(),
   verifiedData: {}, // inventoryId -> { issuedQty, rowIndex }
   lastScanned: '',
+  torchOn: false,
   cameras: [],
   currentCameraIdx: 0,
   scanner: null,
@@ -418,8 +427,8 @@ function playErrorBeep() {
     osc.start(); osc.stop(audioCtx.currentTime + 0.3);
   } catch(e) {}
 }
-function vibrateSuccess() { if (navigator.vibrate) navigator.vibrate(50); }
-function vibrateError() { if (navigator.vibrate) navigator.vibrate([80, 50, 80]); }
+function vibrateSuccess() { if (navigator.vibrate) navigator.vibrate(100); }
+function vibrateError() { if (navigator.vibrate) navigator.vibrate([100, 50, 100]); }
 
 // ===================== SHEET ID HELPERS =====================
 function getStorageKey(module) { return 'sheetId_' + module; }
@@ -578,20 +587,39 @@ async function fetchPendingDocs(docType) {
       return;
     }
 
-    docs.forEach(doc => {
-      const docNo = typeof doc === 'object' ? (doc.docNo || doc.name || '') : String(doc);
-      if (!docNo) return;
-      const opt = document.createElement('option');
-      opt.value = docNo;
-      opt.textContent = docNo;
-      selectEl.appendChild(opt);
-    });
+    renderDocSelect(docs);
   } catch (err) {
     console.error('Fetch/Parsing Error:', err);
     loadingEl.classList.add('d-none');
     emptyEl.classList.remove('d-none');
     emptyEl.textContent = 'Error loading documents. Check console.';
   }
+}
+
+function renderDocSelect(docs) {
+  const selectEl = document.getElementById('docSelect');
+  selectEl.innerHTML = '<option value="">-- Select Document --</option>';
+  docs.forEach(doc => {
+    const docNo = typeof doc === 'object' ? (doc.docNo || doc.name || '') : String(doc);
+    if (!docNo) return;
+    const opt = document.createElement('option');
+    opt.value = docNo;
+    opt.textContent = docNo;
+    selectEl.appendChild(opt);
+  });
+}
+
+function filterDocs(query) {
+  const q = query.trim().toUpperCase();
+  if (!q) {
+    renderDocSelect(state.pendingDocs);
+    return;
+  }
+  const filtered = state.pendingDocs.filter(doc => {
+    const docNo = typeof doc === 'object' ? (doc.docNo || doc.name || '') : String(doc);
+    return docNo.toUpperCase().includes(q);
+  });
+  renderDocSelect(filtered);
 }
 
 // ===================== FETCH DOC ITEMS =====================
@@ -703,6 +731,9 @@ async function initScanner() {
     state.scanning = true;
     document.getElementById('scanFrame').classList.remove('d-none');
     updateCamStatus('Live', 'live');
+    // Show torch button and check support
+    document.getElementById('torchBtn').classList.remove('d-none');
+    checkTorchSupport();
   } catch (err) {
     console.error('Camera init error:', err);
     showCameraError(true);
@@ -730,7 +761,49 @@ async function switchCamera() {
   state.currentCameraIdx = (state.currentCameraIdx + 1) % state.cameras.length;
   try { await state.scanner.stop(); } catch(e) {}
   state.scanning = false;
+  state.torchOn = false;
+  document.getElementById('torchIcon').className = 'bi bi-lightning';
   await initScanner();
+}
+
+async function checkTorchSupport() {
+  try {
+    const video = document.querySelector('#qr-reader video');
+    if (!video || !video.srcObject) return;
+    const track = video.srcObject.getVideoTracks()[0];
+    if (!track) return;
+    const caps = track.getCapabilities();
+    if (!caps.torch) {
+      document.getElementById('torchBtn').classList.add('d-none');
+    }
+  } catch (e) {}
+}
+
+async function toggleTorch() {
+  try {
+    const video = document.querySelector('#qr-reader video');
+    if (!video || !video.srcObject) {
+      showToast('Camera not active', 'warning');
+      return;
+    }
+    const track = video.srcObject.getVideoTracks()[0];
+    if (!track) {
+      showToast('No video track found', 'warning');
+      return;
+    }
+    const caps = track.getCapabilities();
+    if (!caps.torch) {
+      showToast('Flashlight not supported on this device', 'warning');
+      return;
+    }
+    state.torchOn = !state.torchOn;
+    await track.applyConstraints({ advanced: [{ torch: state.torchOn }] });
+    document.getElementById('torchIcon').className = state.torchOn ? 'bi bi-lightning-fill text-warning' : 'bi bi-lightning';
+    showToast(state.torchOn ? '\u26a1 Flashlight ON' : 'Flashlight OFF', 'success');
+  } catch (err) {
+    console.error('Torch error:', err);
+    showToast('Failed to toggle flashlight', 'danger');
+  }
 }
 
 // ===================== SCAN HANDLING =====================
@@ -964,7 +1037,22 @@ function showToast(msg, type) {
 document.addEventListener('DOMContentLoaded', () => {
   checkFirstLoadSettings();
   updateSheetBadge();
+  updateWifiIcon(navigator.onLine);
+  window.addEventListener('online', () => updateWifiIcon(true));
+  window.addEventListener('offline', () => updateWifiIcon(false));
 });
+
+function updateWifiIcon(online) {
+  const icon = document.getElementById('wifiIcon');
+  if (!icon) return;
+  if (online) {
+    icon.className = 'bi bi-wifi text-success';
+    icon.title = 'Online';
+  } else {
+    icon.className = 'bi bi-wifi-off text-danger';
+    icon.title = 'Offline — Check Connection';
+  }
+}
 </script>
 </body>
 </html>
