@@ -495,9 +495,17 @@ function selectModule(module) {
 }
 
 function updateModuleLabels() {
-  const isMRR = state.currentModule === 'MRR';
-  document.getElementById('thReqQty').textContent = isMRR ? 'REC. QTY' : 'Req. Qty';
-  document.getElementById('thIssuedQty').textContent = isMRR ? 'ATL QTY' : 'Issued Qty';
+  const mod = state.currentModule;
+  if (mod === 'MRR') {
+    document.getElementById('thReqQty').textContent = 'REC. QTY';
+    document.getElementById('thIssuedQty').textContent = 'ATL QTY';
+  } else if (mod === 'MRS') {
+    document.getElementById('thReqQty').textContent = 'QTY RETURNED';
+    document.getElementById('thIssuedQty').textContent = 'ATL QTY (Actual Returned)';
+  } else {
+    document.getElementById('thReqQty').textContent = 'Req. Qty';
+    document.getElementById('thIssuedQty').textContent = 'Issued Qty';
+  }
 }
 
 // ===================== DOCUMENT PICKER =====================
@@ -768,11 +776,20 @@ function openQtyModal(item) {
 
   document.getElementById('modalItemCode').textContent = item.inventoryId;
   document.getElementById('modalReqQty').textContent = item.qty;
-  document.getElementById('modalQtyLabel').textContent = isMRR ? 'REC. QTY' : 'Requested Qty';
-  document.getElementById('modalInputLabel').textContent = isMRR ? 'ATL QTY (Received)' : 'Enter Issued Qty';
-  document.getElementById('modalModuleHint').textContent = isMRR
-    ? '\u2139 MRR Mode: You may receive any quantity (equal, less, or greater than expected).'
-    : '\u2139 MRIF Mode: Issued quantity cannot exceed requested quantity.';
+  const mod = state.currentModule;
+  if (mod === 'MRR') {
+    document.getElementById('modalQtyLabel').textContent = 'REC. QTY';
+    document.getElementById('modalInputLabel').textContent = 'ATL QTY (Received)';
+    document.getElementById('modalModuleHint').textContent = '\u2139 MRR Mode: You may receive any quantity (equal, less, or greater than expected).';
+  } else if (mod === 'MRS') {
+    document.getElementById('modalQtyLabel').textContent = 'QTY RETURNED';
+    document.getElementById('modalInputLabel').textContent = 'ATL QTY (Actual Returned)';
+    document.getElementById('modalModuleHint').textContent = '\u2139 MRS Mode: Returned quantity cannot exceed expected quantity.';
+  } else {
+    document.getElementById('modalQtyLabel').textContent = 'Requested Qty';
+    document.getElementById('modalInputLabel').textContent = 'Enter Issued Qty';
+    document.getElementById('modalModuleHint').textContent = '\u2139 MRIF Mode: Issued quantity cannot exceed requested quantity.';
+  }
 
   const input = document.getElementById('modalQtyInput');
   input.value = item.qty;
@@ -800,11 +817,14 @@ function confirmQty() {
 
   const isMRR = state.currentModule === 'MRR';
 
-  // MRIF: enforce max qty restriction
+  // MRIF & MRS: enforce max qty restriction
   if (!isMRR && qtyVal > item.qty) {
     input.classList.add('is-invalid');
     const fb = document.getElementById('qtyInvalidFeedback');
-    fb.textContent = '\u274c Error: Issued Qty cannot exceed Requested Qty (Max: ' + item.qty + ')';
+    const errMsg = state.currentModule === 'MRS'
+      ? '\u274c Error: Returned Qty cannot exceed Expected Qty (Max: ' + item.qty + ')'
+      : '\u274c Error: Issued Qty cannot exceed Requested Qty (Max: ' + item.qty + ')';
+    fb.textContent = errMsg;
     fb.style.display = 'block';
     playErrorBeep();
     vibrateError();
