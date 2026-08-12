@@ -346,17 +346,17 @@
         </div>
         <div class="mb-3">
           <label class="form-label fw-bold">MRR Sheet URL / ID</label>
-          <input type="text" class="form-control" id="sheetInputMRR" placeholder="Paste MRR Google Sheet URL">
+          <input type="text" class="form-control" id="sheetId_MRR" placeholder="Paste MRR Google Sheet URL">
           <div class="form-text">Receiving module sheet</div>
         </div>
         <div class="mb-3">
           <label class="form-label fw-bold">MRIF Sheet URL / ID</label>
-          <input type="text" class="form-control" id="sheetInputMRIF" placeholder="Paste MRIF Google Sheet URL">
+          <input type="text" class="form-control" id="sheetId_MRIF" placeholder="Paste MRIF Google Sheet URL">
           <div class="form-text">Releasing module sheet</div>
         </div>
         <div class="mb-0">
           <label class="form-label fw-bold">MRS Sheet URL / ID</label>
-          <input type="text" class="form-control" id="sheetInputMRS" placeholder="Paste MRS Google Sheet URL">
+          <input type="text" class="form-control" id="sheetId_MRS" placeholder="Paste MRS Google Sheet URL">
           <div class="form-text">Returns module sheet</div>
         </div>
       </div>
@@ -470,20 +470,30 @@ function updateSheetBadge() {
 }
 
 // ===================== SETTINGS =====================
+function loadSettingsToUI() {
+  const mrifEl = document.getElementById('sheetId_MRIF') || document.getElementById('mrifSheetId');
+  const mrrEl  = document.getElementById('sheetId_MRR')  || document.getElementById('mrrSheetId');
+  const mrsEl  = document.getElementById('sheetId_MRS')  || document.getElementById('mrsSheetId');
+  if (mrifEl) mrifEl.value = localStorage.getItem('sheetId_MRIF') || '';
+  if (mrrEl)  mrrEl.value  = localStorage.getItem('sheetId_MRR')  || '';
+  if (mrsEl)  mrsEl.value  = localStorage.getItem('sheetId_MRS')  || '';
+}
+
 function openSettings() {
-  document.getElementById('sheetInputMRR').value = localStorage.getItem('sheetId_MRR') || '';
-  document.getElementById('sheetInputMRIF').value = localStorage.getItem('sheetId_MRIF') || '';
-  document.getElementById('sheetInputMRS').value = localStorage.getItem('sheetId_MRS') || '';
+  loadSettingsToUI();
   settingsModal.show();
 }
 
 function saveSettings() {
-  const mrr = document.getElementById('sheetInputMRR').value.trim();
-  const mrif = document.getElementById('sheetInputMRIF').value.trim();
-  const mrs = document.getElementById('sheetInputMRS').value.trim();
-  if (mrr) localStorage.setItem('sheetId_MRR', mrr);
+  const mrrEl  = document.getElementById('sheetId_MRR')  || document.getElementById('mrrSheetId');
+  const mrifEl = document.getElementById('sheetId_MRIF') || document.getElementById('mrifSheetId');
+  const mrsEl  = document.getElementById('sheetId_MRS')  || document.getElementById('mrsSheetId');
+  const mrr  = mrrEl  ? mrrEl.value.trim()  : '';
+  const mrif = mrifEl ? mrifEl.value.trim() : '';
+  const mrs  = mrsEl  ? mrsEl.value.trim()  : '';
+  if (mrr)  localStorage.setItem('sheetId_MRR', mrr);
   if (mrif) localStorage.setItem('sheetId_MRIF', mrif);
-  if (mrs) localStorage.setItem('sheetId_MRS', mrs);
+  if (mrs)  localStorage.setItem('sheetId_MRS', mrs);
   updateSheetBadge();
   settingsModal.hide();
   showToast('Settings saved!', 'success');
@@ -491,64 +501,64 @@ function saveSettings() {
 }
 
 async function syncModuleLinks() {
-  const syncBtn = document.getElementById('syncBtn');
+  const syncBtn = document.getElementById('syncBtn') || document.querySelector('.btn-sync');
+  const originalText = syncBtn ? syncBtn.innerHTML : '';
+
   if (syncBtn) {
     syncBtn.disabled = true;
-    syncBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Syncing...';
+    syncBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Syncing...';
   }
 
   try {
-    // Cache-buster to prevent mobile browser aggressive caching
-    const cacheBuster = '&_t=' + new Date().getTime();
-    const response = await fetch(API_URL + '?action=getModuleLinks' + cacheBuster, {
-      method: 'GET',
-      redirect: 'follow'
-    });
-    const text = await response.text();
+    // 1. Fetch with Cache Buster for Mobile
+    const cleanApiUrl = API_URL.trim();
+    const fetchUrl = cleanApiUrl + '?action=getModuleLinks&_t=' + Date.now();
 
+    const response = await fetch(fetchUrl);
+    if (!response.ok) {
+      throw new Error('HTTP Error! Status: ' + response.status);
+    }
+    const text = await response.text();
     let data;
     try {
       data = JSON.parse(text);
     } catch (e) {
-      throw new Error('Invalid response format from server.');
+      throw new Error("Server returned HTML instead of JSON. Ensure Web App deployment is set to 'Anyone'.");
     }
 
     if (data && data.success && data.links) {
-      // 1. Get input elements (with fallbacks for different ID naming)
-      const mrifInput = document.getElementById('sheetInputMRIF') || document.getElementById('sheetId_MRIF');
-      const mrrInput  = document.getElementById('sheetInputMRR')  || document.getElementById('sheetId_MRR');
-      const mrsInput  = document.getElementById('sheetInputMRS')  || document.getElementById('sheetId_MRS');
+      const MRIF = data.links.MRIF;
+      const MRR  = data.links.MRR;
+      const MRS  = data.links.MRS;
 
-      // 2. Assign values explicitly
-      if (mrifInput && data.links.MRIF) mrifInput.value = data.links.MRIF;
-      if (mrrInput  && data.links.MRR)  mrrInput.value  = data.links.MRR;
-      if (mrsInput  && data.links.MRS)  mrsInput.value  = data.links.MRS;
+      // 2. Save directly to LocalStorage immediately
+      if (MRIF) localStorage.setItem('sheetId_MRIF', MRIF);
+      if (MRR)  localStorage.setItem('sheetId_MRR', MRR);
+      if (MRS)  localStorage.setItem('sheetId_MRS', MRS);
 
-      // 3. Save directly to localStorage for mobile persistence
-      if (data.links.MRIF) localStorage.setItem('sheetId_MRIF', data.links.MRIF);
-      if (data.links.MRR)  localStorage.setItem('sheetId_MRR',  data.links.MRR);
-      if (data.links.MRS)  localStorage.setItem('sheetId_MRS',  data.links.MRS);
+      // 3. Fallback Selector Injection for Modal Inputs
+      const mrifEl = document.getElementById('sheetId_MRIF') || document.getElementById('mrifSheetId') || document.querySelector('input[name="mrif"]');
+      const mrrEl  = document.getElementById('sheetId_MRR')  || document.getElementById('mrrSheetId')  || document.querySelector('input[name="mrr"]');
+      const mrsEl  = document.getElementById('sheetId_MRS')  || document.getElementById('mrsSheetId')  || document.querySelector('input[name="mrs"]');
+      if (mrifEl && MRIF) mrifEl.value = MRIF;
+      if (mrrEl && MRR)   mrrEl.value = MRR;
+      if (mrsEl && MRS)   mrsEl.value = MRS;
 
-      // 4. Force mobile UI update trigger via input events
-      [mrifInput, mrrInput, mrsInput].forEach(input => {
-        if (input) input.dispatchEvent(new Event('input', { bubbles: true }));
-      });
+      // 4. Force UI refresh
+      alert('\u2705 Successfully synced IDs from Master Sheet!\n\nMRIF: ' + (MRIF ? "OK" : "Missing") + '\nMRR: ' + (MRR ? "OK" : "Missing") + '\nMRS: ' + (MRS ? "OK" : "Missing"));
 
-      updateSheetBadge();
-      alert('\u2705 Module IDs successfully synced and saved!');
-
-      // Automatically refresh the active document list
+      // Reload document list if currently viewing a module
       if (state.currentModule) selectModule(state.currentModule);
     } else {
-      alert('\u274c Failed to fetch links: ' + (data.error || 'Unknown error'));
+      alert('\u274c Failed to sync: ' + (data.error || "No links found in Master Sheet"));
     }
   } catch (err) {
-    console.error(err);
-    alert('\u26a0\ufe0f Sync Error: Please check internet connection or Google Apps Script deployment.');
+    console.error("Sync Error:", err);
+    alert('\u26a0\ufe0f Sync Failed: ' + err.message);
   } finally {
     if (syncBtn) {
       syncBtn.disabled = false;
-      syncBtn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Sync IDs from Master Sheet';
+      syncBtn.innerHTML = originalText || '\u{1F504} Sync IDs from Master Sheet';
     }
   }
 }
