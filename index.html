@@ -278,7 +278,7 @@
 
     <!-- Submit Button -->
     <button class="btn btn-success w-100 btn-lg btn-submit" id="submitBtn" onclick="onSubmit()" disabled>
-      <i class="bi bi-check-circle me-2"></i>Confirm & Submit
+      <i class="bi bi-send me-2"></i>Submit Transaction
     </button>
   </div>
 
@@ -956,16 +956,40 @@ function updateProgress() {
   document.getElementById('progressBadge').textContent = verified + ' / ' + total + ' Verified';
   document.getElementById('progressBar').style.width = pct + '%';
 
+  // Button always enabled for partial submission
   const btn = document.getElementById('submitBtn');
-  btn.disabled = verified < total || total === 0;
+  btn.disabled = total === 0;
+  if (verified < total && total > 0) {
+    btn.classList.remove('btn-success');
+    btn.classList.add('btn-warning');
+    btn.innerHTML = '<i class="bi bi-send me-2"></i>Submit Partial (' + verified + '/' + total + ')';
+  } else if (verified === total && total > 0) {
+    btn.classList.remove('btn-warning');
+    btn.classList.add('btn-success');
+    btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Confirm & Submit';
+  } else {
+    btn.classList.remove('btn-warning');
+    btn.classList.add('btn-success');
+    btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Confirm & Submit';
+  }
 }
 
 async function onSubmit() {
+  const verifiedItems = state.items.filter(i => i.verified);
+  const totalItems = state.items.length;
+
+  // Confirm partial submission
+  if (verifiedItems.length < totalItems && totalItems > 0) {
+    const pendingCount = totalItems - verifiedItems.length;
+    const confirmed = confirm('You have ' + pendingCount + ' unverified item(s). Submit partial transaction now?\n\nOnly scanned/entered items will be sent to the server.');
+    if (!confirmed) return;
+  }
+
   const payload = {
     docNo: state.currentDoc,
     docType: state.currentModule,
     sheetId: getCleanSheetId(),
-    scannedItems: state.items.filter(i => i.verified).map(i => ({
+    scannedItems: verifiedItems.map(i => ({
       inventoryId: i.inventoryId,
       description: i.description,
       qty: i.qty,
