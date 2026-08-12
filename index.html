@@ -341,8 +341,7 @@
       <div class="modal-body">
         <div class="d-grid mb-3">
           <button class="btn btn-outline-primary" id="syncBtn" onclick="syncModuleLinks()">
-            <i class="bi bi-arrow-repeat me-2" id="syncIcon"></i>
-            <span id="syncText">Sync IDs from Master Sheet</span>
+            <i class="bi bi-arrow-repeat me-2"></i>Sync IDs from Master Sheet
           </button>
         </div>
         <div class="mb-3">
@@ -492,51 +491,65 @@ function saveSettings() {
 }
 
 async function syncModuleLinks() {
-  const btn = document.getElementById('syncBtn');
-  const icon = document.getElementById('syncIcon');
-  const text = document.getElementById('syncText');
-
-  btn.disabled = true;
-  icon.classList.add('bi-spin');
-  text.textContent = 'Syncing...';
+  const syncBtn = document.getElementById('syncBtn');
+  if (syncBtn) {
+    syncBtn.disabled = true;
+    syncBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Syncing...';
+  }
 
   try {
-    const url = API_URL + '?action=getModuleLinks';
-    const response = await fetch(url, { redirect: 'follow' });
-    const textResp = await response.text();
-    console.log('Raw Response Text (getModuleLinks):', textResp);
+    // Cache-buster to prevent mobile browser aggressive caching
+    const cacheBuster = '&_t=' + new Date().getTime();
+    const response = await fetch(API_URL + '?action=getModuleLinks' + cacheBuster, {
+      method: 'GET',
+      redirect: 'follow'
+    });
+    const text = await response.text();
 
     let data;
-    try { data = JSON.parse(textResp); } catch (e) { data = {}; }
-    console.log('Parsed JSON Data (getModuleLinks):', data);
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      throw new Error('Invalid response format from server.');
+    }
 
-    if (data.success && data.links) {
-      const links = data.links;
-      if (links.MRR) {
-        document.getElementById('sheetInputMRR').value = links.MRR;
-        localStorage.setItem('sheetId_MRR', links.MRR);
-      }
-      if (links.MRIF) {
-        document.getElementById('sheetInputMRIF').value = links.MRIF;
-        localStorage.setItem('sheetId_MRIF', links.MRIF);
-      }
-      if (links.MRS) {
-        document.getElementById('sheetInputMRS').value = links.MRS;
-        localStorage.setItem('sheetId_MRS', links.MRS);
-      }
+    if (data && data.success && data.links) {
+      // 1. Get input elements (with fallbacks for different ID naming)
+      const mrifInput = document.getElementById('sheetInputMRIF') || document.getElementById('sheetId_MRIF');
+      const mrrInput  = document.getElementById('sheetInputMRR')  || document.getElementById('sheetId_MRR');
+      const mrsInput  = document.getElementById('sheetInputMRS')  || document.getElementById('sheetId_MRS');
+
+      // 2. Assign values explicitly
+      if (mrifInput && data.links.MRIF) mrifInput.value = data.links.MRIF;
+      if (mrrInput  && data.links.MRR)  mrrInput.value  = data.links.MRR;
+      if (mrsInput  && data.links.MRS)  mrsInput.value  = data.links.MRS;
+
+      // 3. Save directly to localStorage for mobile persistence
+      if (data.links.MRIF) localStorage.setItem('sheetId_MRIF', data.links.MRIF);
+      if (data.links.MRR)  localStorage.setItem('sheetId_MRR',  data.links.MRR);
+      if (data.links.MRS)  localStorage.setItem('sheetId_MRS',  data.links.MRS);
+
+      // 4. Force mobile UI update trigger via input events
+      [mrifInput, mrrInput, mrsInput].forEach(input => {
+        if (input) input.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+
       updateSheetBadge();
-      showToast('\u2705 Module IDs successfully synced and updated!', 'success');
+      alert('\u2705 Module IDs successfully synced and saved!');
+
+      // Automatically refresh the active document list
       if (state.currentModule) selectModule(state.currentModule);
     } else {
-      showToast('Sync failed: ' + (data.error || data.message || 'Invalid response'), 'danger');
+      alert('\u274c Failed to fetch links: ' + (data.error || 'Unknown error'));
     }
   } catch (err) {
-    console.error('Sync error:', err);
-    showToast('Sync failed. Check network connection.', 'danger');
+    console.error(err);
+    alert('\u26a0\ufe0f Sync Error: Please check internet connection or Google Apps Script deployment.');
   } finally {
-    btn.disabled = false;
-    icon.classList.remove('bi-spin');
-    text.textContent = 'Sync IDs from Master Sheet';
+    if (syncBtn) {
+      syncBtn.disabled = false;
+      syncBtn.innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Sync IDs from Master Sheet';
+    }
   }
 }
 
